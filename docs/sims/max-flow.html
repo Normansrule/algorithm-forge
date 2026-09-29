@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maximum Flow · Algorithm Forge</title>
+<meta name="description" content="Shortest-augmenting-path (Edmonds–Karp) maximum flow with Breadth-First Search (BFS) labels, forward and backward edges, and the minimum cut.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .8rem; }
+  select { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .predict .q { font-weight: 700; margin-bottom: 6px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .predict .res { margin-top: 8px; font-size: .9rem; }
+  .edge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 6px 10px; margin-top: 8px; }
+  .edge-row { display: flex; align-items: center; gap: 6px; }
+  .edge-row.add { grid-column: 1 / -1; flex-wrap: wrap; }
+  .edge-row .mono { min-width: 40px; }
+  .edge-row input[type="number"] { width: 54px !important; padding: 4px 6px; }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  #queue { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 26px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 10 · Iterative Improvement</div>
+    <h1>Maximum Flow &amp; Minimum Cut</h1>
+    <p class="lead muted">Push as much material as possible from source to sink. Breadth-First Search (BFS) labels find the shortest augmenting path — even through a backward edge — until the sink can't be reached; the labeled vertices then reveal the minimum cut.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Network
+        <select id="preset">
+          <option value="textbook">Course example (6 vertices)</option>
+          <option value="lesson">Lesson network (s, a, b, c, d, t)</option>
+          <option value="bad">Bad-path example with capacity U</option>
+          <option value="random">Random network</option>
+        </select>
+      </label>
+      <label class="field">Path choice
+        <select id="variant">
+          <option value="bfs">Shortest augmenting path (BFS labels)</option>
+          <option value="unlucky">Unlucky: smallest-bottleneck path first</option>
+        </select>
+      </label>
+      <label class="field" id="ubox" style="display:none">U = <span id="Uv">6</span>
+        <input type="range" id="U" min="1" max="40" value="6" aria-label="Capacity U">
+      </label>
+      <button class="btn" id="rand">Random</button>
+      <label class="small muted"><input type="checkbox" id="pausePredict" checked> pause to predict</label>
+    </div>
+    <details style="margin-top:10px" open>
+      <summary class="small" style="cursor:pointer;font-weight:700">Edit capacities (or click an edge on the graph)</summary>
+      <div id="edges" class="edge-grid"></div>
+      <div id="err" class="err"></div>
+    </details>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Flow network with flow/capacity on each edge and BFS labels on vertices"></svg>
+      <div id="queue"></div>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>labeled vertex (l, i±)</span>
+        <span><i style="background:var(--c-compare)"></i>front of queue / edge being checked</span>
+        <span><i style="background:var(--ember)"></i>augmenting path, forward edge</span>
+        <span><i style="background:var(--c-pivot)"></i>backward edge (flow undone)</span>
+        <span><i style="background:var(--steel)"></i>edge carrying flow (thick = full)</span>
+        <span><i style="background:var(--c-swap)"></i>minimum-cut edge</span>
+        <span><i style="background:var(--c-done)"></i>source side X</span>
+        <span><i style="background:var(--c-dim)"></i>sink side</span>
+      </div>
+      <div id="player"></div>
+      <div class="callout steel" id="thm"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div>
+        <div id="predict" class="predict callout" style="margin-top:10px"><span class="muted small">Prediction prompts appear before each augmentation and at the end.</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>Each edge shows <b>flow/capacity</b> (x/u). Flow must stay between 0 and u, and at every middle vertex flow in = flow out.</li>
+        <li>A labeled vertex j carries <b>(l, i+)</b> or <b>(l, i−)</b>: l = how much extra flow can reach j; i = the vertex it was reached from; + means along a forward edge with room left, − means against an edge that already carries flow.</li>
+        <li>Chips under the graph are the queue; <b>↑</b> marks vertices already dequeued (as in Levitin's figures).</li>
+        <li>When the sink is labeled, its first label is the augmentation amount. Follow second labels backward to trace the path, add on forward edges, subtract on backward ones.</li>
+        <li>When the sink stays unlabeled, the labeled set X (green) and the rest form the <b>minimum cut</b> (red dashed edges).</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Course example: predict the second augmenting path. It must use edge 2→3 <em>backward</em>: 1→4→3←2→5→6 — the only way to use the idle capacity on 1→4.</li>
+        <li>At the end, check the cut {(1,2), (4,3)}: capacity 2 + 1 = 3 = the flow value. Try any other cut by hand (e.g. X = {1}: 2 + 3 = 5) — it's never smaller.</li>
+        <li>Pick the <b>bad-path example</b>, U = 20, with "Unlucky" path choice: 40 augmentations of 1 unit each. Switch to BFS: just 2. Now drag U to 40 — the unlucky count doubles, BFS stays at 2.</li>
+        <li>Raise capacity 4→3 from 1 to 2 in the course example. Does the max flow grow? (Yes, to 4 — and now two cuts tie at capacity 4: X = {1, 4} and X = {1, 3, 4}.)</li>
+        <li>Lesson network: the third augmenting path s→c→b←a→d→t reroutes 3 units from b over to d. Predict the final cut before playing to the end.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/10-iterative-improvement/README.md">📖 Lesson 10: Iterative Improvement</a>
+      <a class="btn" href="../arena/index.html?chapter=10">🏟️ Arena · Chapter 10</a>
+      <a class="btn" href="../arena/problem.html?id=max-flow-sap">🧩 Problem: max-flow-sap</a>
+      <a class="btn" href="../arena/problem.html?id=min-cut-capacity">🧩 Problem: min-cut-capacity</a>
+      <a class="btn" href="bipartite-matching.html">🎮 Bipartite matching (max flow in disguise)</a>
+      <a class="btn" href="simplex.html">🎮 Simplex</a>
+    </div>
+    <p class="small muted" style="margin-top:10px">Reference: Levitin §10.2. Edmonds and Karp showed the shortest-augmenting-path algorithm needs at most nm/2 augmentations, each a BFS in O(m), for O(nm²) total.</p>
+  </section>
+</main>
+<script src="js/max-flow.js"></script>
+</body>
+</html>

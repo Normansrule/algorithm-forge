@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Trees · Algorithm Forge</title>
+<meta name="description" content="Binary search tree insert, search and delete; AVL tree insertions with balance factors and animated R, L, LR, RL rotations; 2-3 tree insertion with node splits.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 410px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .field select, .field input[type="text"] { max-width: 100%; }
+  label.field { max-width: 100%; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 6 · Transform-and-Conquer</div>
+    <h1>Search Trees: BST, AVL, 2-3</h1>
+    <p class="lead muted">A Binary Search Tree (BST) can degrade into a list. Two fixes change the representation: Adelson-Velsky–Landis (AVL) trees rotate to stay balanced, and 2-3 trees let a node hold two keys and grow from the top. Watch the height stay near log₂ n.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Tree type
+        <select id="kind">
+          <option value="bst">Binary search tree (BST)</option>
+          <option value="avl">AVL tree (rotations)</option>
+          <option value="t23">2-3 tree (splits)</option>
+        </select>
+      </label>
+      <label class="field">Keys to insert, in order
+        <input id="inp" type="text" value="5, 6, 8, 3, 2, 4, 7" style="min-width:200px">
+      </label>
+      <button class="btn primary" id="build">Build</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn" id="sorted" title="Insert 1..10 in increasing order">Sorted 1..10</button>
+      <button class="btn" id="book">Book example</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field">One key <input id="key" type="number" value="4" style="width:90px"></label>
+      <button class="btn steel" id="ins">Insert</button>
+      <button class="btn steel" id="find">Search</button>
+      <button class="btn steel" id="del">Delete</button>
+      <span class="small muted" id="delNote"></span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="The search tree"></svg>
+      <div class="legend">
+        <span><i style="background:var(--ember)"></i>key travelling down (K)</span>
+        <span><i style="background:var(--c-compare)"></i>being compared</span>
+        <span><i style="background:var(--c-swap)"></i>new / overflowing / removed</span>
+        <span><i style="background:var(--c-pivot)"></i>unbalanced node / promoted key</span>
+        <span><i style="background:var(--c-done)"></i>found / fixed</span>
+        <span><i style="background:var(--c-active)"></i>node being checked</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>The orange ball</dt>
+      <dd>It is the key K being inserted or searched for. It rides down the tree one comparison at a time: smaller goes left, larger goes right (in a 2-3 node it picks the left, middle or right pointer).</dd>
+      <dt>Balance badges (AVL)</dt>
+      <dd>The small badge on each AVL node is its balance factor: height(left subtree) − height(right subtree), where an empty tree has height −1. AVL trees allow only −1, 0, +1. A ±2 badge turns purple and triggers one of four rotations: R (single right), L (single left), LR (double left-right) or RL (double right-left).</dd>
+      <dt>2-3 nodes</dt>
+      <dd>A box with one key is a 2-node (two children); a box with two keys is a 3-node (three children). A box that briefly shows three keys has overflowed and is about to split, sending its middle key up to the parent.</dd>
+      <dt>Height readout</dt>
+      <dd>Height counts edges on the longest root-to-leaf path (a single node has height 0). Compare it with ⌊log₂ n⌋, the best any binary tree with n keys can do, and with the guaranteed bounds for AVL trees (h &lt; 1.4405 log₂(n + 2) − 1.3277) and 2-3 trees (log₃(n + 1) − 1 ≤ h ≤ log₂(n + 1) − 1), from Levitin §6.3.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>The book's AVL example.</b> Pick AVL and build 5, 6, 8, 3, 2, 4, 7. You should see exactly four rotations, in this order: L(5), R(5), LR(6), RL(6). The final root is 5 and the height is 2.</li>
+      <li><b>Worst case for a plain BST.</b> Pick BST and press “Sorted 1..10”. Height 9 = n − 1: the tree is a linked list. Switch to AVL with the same keys: height 3. Switch to 2-3: height 2.</li>
+      <li><b>The three delete cases.</b> Build the BST 8, 3, 10, 1, 6, 14, 4, 7, 13. Delete 7 (a leaf), then 14 (one child), then 3 (two children: its in-order successor 4 takes its place).</li>
+      <li><b>2-3 growth.</b> Pick 2-3 and build 9, 5, 8, 3, 2, 4, 7. Count the splits (4) and notice the tree only gets taller when the <i>root</i> splits, so all leaves always stay on one level.</li>
+      <li><b>Search cost.</b> After building any tree, search for a key that is not there. The number of comparisons is at most height + 1 for a BST or AVL tree.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/06-transform-and-conquer/README.md">📖 Lesson: Chapter 6 Transform-and-Conquer</a>
+      <a href="../arena/index.html?chapter=6">🏟️ Arena: Chapter 6 problems</a>
+      <a href="../arena/problem.html?id=bst-insert-inorder">Arena: bst-insert-inorder</a>
+      <a href="../arena/problem.html?id=avl-is-balanced">Arena: avl-is-balanced</a>
+      <a href="../arena/problem.html?id=bst-max-key">Arena: bst-max-key</a>
+      <a href="../arena/problem.html?id=tree-height">Arena: tree-height</a>
+      <a href="b-tree.html">🎮 B-Tree Lab (2-3 trees grown up)</a>
+      <a href="tree-traversals.html">🎮 Tree Traversals</a>
+      <a href="heap-lab.html">🎮 Heap Lab</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Search Trees", chapter: "Ch 6 · Transform-and-Conquer" });
+
+const $ = (id) => document.getElementById(id);
+const view = FX.treeView($("stage"));
+const codes = FX.codeSwitch($("code"));
+const say = Forge.narrate($("say"));
+const pred = FX.predict($("pred"), () => player);
+let ctr = null, ctrKeys = "";
+
+let KIND = "bst";
+let CUR = null;            // current tree (plain object)
+let uid = 1;
+const DEFAULTS = { bst: [8, 3, 10, 1, 6, 14, 4, 7, 13], avl: [5, 6, 8, 3, 2, 4, 7], t23: [9, 5, 8, 3, 2, 4, 7] };
+
+/* ------------------------------------------------------------- listings */
+const LIST = {
+  "bst-insert": [
+    "ALGORITHM BSTInsert(t, K)",
+    "    if t = null then return new node(K)",
+    "    if K < t.key then",
+    "        t.left ← BSTInsert(t.left, K)",
+    "    else",
+    "        t.right ← BSTInsert(t.right, K)",
+    "    return t",
+  ],
+  "bst-search": [
+    "ALGORITHM BSTSearch(t, K)",
+    "    while t ≠ null do",
+    "        if K = t.key then return t",
+    "        if K < t.key then t ← t.left",
+    "        else t ← t.right",
+    "    return null          // not found",
+  ],
+  "bst-delete": [
+    "ALGORITHM BSTDelete(t, K)",
+    "    p ← BSTSearch(t, K)",
+    "    if p has no children then",
+    "        remove p                 // case 1",
+    "    else if p has one child then",
+    "        link p's parent to it    // case 2",
+    "    else                         // case 3",
+    "        s ← leftmost node in p.right",
+    "        p.key ← s.key   // in-order successor",
+    "        remove s (s has no left child)",
+  ],
+  "avl-insert": [
+    "ALGORITHM AVLInsert(t, K)",
+    "    insert K as in a BST (a new leaf)",
+    "    for each r on the path, leaf up to root do",
+    "        update r.height;  bf ← h(r.left) − h(r.right)",
+    "        if bf = 2 and K < r.left.key then R-rotate(r)",
+    "        else if bf = 2 then LR-rotate(r)",
+    "        else if bf = −2 and K > r.right.key then L-rotate(r)",
+    "        else if bf = −2 then RL-rotate(r)",
+    "        if a rotation happened then return",
+  ],
+  "t23-insert": [
+    "ALGORITHM Insert23(tree, K)",
+    "    leaf ← the leaf where a search for K ends",
+    "    add K to leaf, keeping its keys sorted",
+    "    node ← leaf",
+    "    while node has 3 keys do",
+    "        split node: smallest and largest keys",
+    "            become two separate 2-nodes",
+    "        if node is the root then",
+    "            new root ← middle key over the halves",
+    "        else",
+    "            push middle key up into the parent",
+    "        node ← node's parent",
+  ],
+  "t23-search": [
+    "ALGORITHM Search23(t, K)",
+    "    while t ≠ null do",
+    "        if K is one of t's keys then return t",
+    "        t ← the child whose range holds K",
+    "    return null          // not found",
+  ],
+};
+
+/* ---------------------------------------------------------- tree helpers */
+const newNode = (key) => ({ id: "n" + uid++, key, left: null, right: null, h: 0 });
+const ht = (t) => (t ? t.h : -1);
+function fixHeights(t) { if (!t) return -1; t.h = 1 + Math.max(fixHeights(t.left), fixHeights(t.right)); return t.h; }
+const bf = (t) => ht(t.left) - ht(t.right);
+function count(t) { if (!t) return 0; if (t.keys) return t.keys.length + (t.kids || []).reduce((s, c) => s + count(c), 0); return 1 + count(t.left) + count(t.right); }
+function height(t) { if (!t) return -1; if (t.keys) return t.kids && t.kids.length ? 1 + height(t.kids[0]) : 0; return 1 + Math.max(height(t.left), height(t.right)); }
+const clone = (x) => (x ? JSON.parse(JSON.stringify(x)) : null);
+
+/* -------------------------------------------------------------- recorder */
+function Rec(kind) {
+  const R = {
+    kind, tree: clone(CUR), frames: [], cmp: 0, rot: 0, splits: 0, asks: 0,
+    push(code, line, st, text, extra) {
+      R.frames.push(Object.assign({ tree: clone(R.tree), code, line, st: st || {}, text, cmp: R.cmp, rot: R.rot, splits: R.splits, ghost: null, ask: null }, extra || {}));
+    },
+    canAsk() { return R.asks < 3 && ++R.asks; },
+  };
+  return R;
+}
+function shuffleOpts(correct, others) {
+  const all = [correct, ...others.filter((o) => o !== correct)].slice(0, 4);
+  for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
+  return { opts: all, ans: all.indexOf(correct) };
+}
+
+/* ---- BST insertion (also phase 1 of AVL) ---- */
+function bstInsert(R, K, code) {
+  const avl = code === "avl-insert";
+  const L = (a, b) => (avl ? 1 : a);
+  if (!R.tree) {
+    R.tree = newNode(K);
+    R.push(code, avl ? 1 : 1, { [R.tree.id]: "swap" }, `The tree is empty, so <b>${K}</b> becomes the root.`);
+    return [R.tree];
+  }
+  // prediction: which empty slot receives K?
+  let ask = null;
+  if (!avl && R.canAsk()) {
+    const slots = [];
+    (function walk(t) { if (!t) return; if (!t.left) slots.push(`left child of ${t.key}`); if (!t.right) slots.push(`right child of ${t.key}`); walk(t.left); walk(t.right); })(R.tree);
+    let t = R.tree, ans = "";
+    while (t) { if (K < t.key) { if (!t.left) { ans = `left child of ${t.key}`; break; } t = t.left; } else { if (!t.right) { ans = `right child of ${t.key}`; break; } t = t.right; } }
+    const others = slots.filter((s) => s !== ans).sort(() => Math.random() - 0.5);
+    const o = shuffleOpts(ans, others);
+    ask = { q: `Where will <b>${K}</b> end up?`, opts: o.opts, ans: o.ans, why: `Follow the comparisons: it lands as the ${ans}.` };
+  }
+  R.push(code, avl ? 1 : 0, {}, `Insert <b>${K}</b>: start at the root and compare on the way down.`, { ghost: { key: K, at: R.tree.id }, ask });
+  const path = [];
+  let t = R.tree;
+  for (;;) {
+    path.push(t);
+    R.cmp++;
+    if (K === t.key) {
+      R.push(code, L(2), { [t.id]: "compare" }, `${K} = ${t.key}: the key is already in the tree, so nothing is inserted (keys are distinct).`, { ghost: { key: K, at: t.id } });
+      return null;
+    }
+    const goLeft = K < t.key;
+    R.push(code, goLeft ? L([2, 3]) : L([4, 5]), { [t.id]: "compare" }, `${K} ${goLeft ? "<" : ">"} ${t.key}, so go ${goLeft ? "left" : "right"}.`, { ghost: { key: K, at: t.id } });
+    const nxt = goLeft ? t.left : t.right;
+    if (!nxt) {
+      const nn = newNode(K);
+      if (goLeft) t.left = nn; else t.right = nn;
+      fixHeights(R.tree);
+      path.push(nn);
+      R.push(code, avl ? 1 : 1, { [nn.id]: "swap" }, `The ${goLeft ? "left" : "right"} pointer of ${t.key} is empty, so ${K} becomes a new leaf there. That took ${path.length - 1} comparison${path.length > 2 ? "s" : ""}.`);
+      return path;
+    }
+    t = nxt;
+  }
+}
+
+function rotR(r) { const c = r.left; r.left = c.right; c.right = r; return c; }
+function rotL(r) { const c = r.right; r.right = c.left; c.left = r; return c; }
+function replaceChild(R, parent, oldT, newT) {
+  if (!parent) R.tree = newT;
+  else if (parent.left === oldT) parent.left = newT;
+  else parent.right = newT;
+}
+
+function avlInsert(R, K) {
+  const path = bstInsert(R, K, "avl-insert");
+  if (!path) return;
+  for (let idx = path.length - 2; idx >= 0; idx--) {
+    const r = path[idx], b = bf(r);
+    if (Math.abs(b) < 2) {
+      R.push("avl-insert", [2, 3], { [r.id]: "active" }, `Back up at ${r.key}: height ${r.h}, balance ${b > 0 ? "+" : ""}${b}. Still within −1..+1, keep climbing.`);
+      continue;
+    }
+    let type;
+    if (b === 2) type = K < r.left.key ? "R" : "LR";
+    else type = K > r.right.key ? "L" : "RL";
+    const opts = ["R", "L", "LR", "RL"];
+    const why = {
+      R: `The new key went left, then left again (outer case on the left): one right rotation.`,
+      L: `The new key went right, then right again (outer case on the right): one left rotation.`,
+      LR: `The new key went left, then right (inner case): rotate the left child left, then the node right.`,
+      RL: `The new key went right, then left (inner case): rotate the right child right, then the node left.`,
+    }[type];
+    R.push("avl-insert", 3, { [r.id]: "pivot" }, `Back up at ${r.key}: balance ${b > 0 ? "+" : ""}${b}. This node is out of balance, the one closest to the new leaf.`,
+      { ask: { q: `Node <b>${r.key}</b> has balance ${b > 0 ? "+" : ""}${b}. Which rotation fixes it?`, opts, ans: opts.indexOf(type), why } });
+    const parent = idx > 0 ? path[idx - 1] : null;
+    let top;
+    if (type === "R") { top = rotR(r); R.rot++; }
+    else if (type === "L") { top = rotL(r); R.rot++; }
+    else if (type === "LR") {
+      const c = r.left; r.left = rotL(c); fixHeights(R.tree);
+      R.push("avl-insert", 5, { [r.left.id]: "active", [c.id]: "active", [r.id]: "pivot" }, `LR, first half: rotate the left subtree of ${r.key} to the left, so ${r.left.key} moves up. Now it is an outer (left-left) case.`);
+      top = rotR(r); R.rot++;
+    } else {
+      const c = r.right; r.right = rotR(c); fixHeights(R.tree);
+      R.push("avl-insert", 7, { [r.right.id]: "active", [c.id]: "active", [r.id]: "pivot" }, `RL, first half: rotate the right subtree of ${r.key} to the right, so ${r.right.key} moves up. Now it is an outer (right-right) case.`);
+      top = rotL(r); R.rot++;
+    }
+    replaceChild(R, parent, r, top);
+    fixHeights(R.tree);
+    const line = { R: 4, LR: 5, L: 6, RL: 7 }[type];
+    const st = { [top.id]: "done" };
+    if (top.left) st[top.left.id] = "done";
+    if (top.right) st[top.right.id] = "done";
+    R.push("avl-insert", [line, 8], st, `${type}-rotation at ${r.key}: ${top.key} becomes the root of this subtree with ${top.left ? top.left.key : "–"} and ${top.right ? top.right.key : "–"} as children. The in-order sequence (sorted order) is unchanged, and the subtree is back to its old height, so nothing above needs fixing.`);
+    return;
+  }
+  R.push("avl-insert", 2, {}, `Reached the root: every balance factor is −1, 0 or +1. No rotation needed.`);
+}
+
+function bstSearch(R, K) {
+  let t = R.tree;
+  R.push("bst-search", 0, {}, `Search for <b>${K}</b>.`, { ghost: R.tree ? { key: K, at: R.tree.id } : null });
+  while (t) {
+    R.cmp++;
+    if (K === t.key) { R.push("bst-search", 2, { [t.id]: "done" }, `${K} = ${t.key}: found after ${R.cmp} comparison${R.cmp > 1 ? "s" : ""}.`, { ghost: { key: K, at: t.id } }); return t; }
+    const left = K < t.key;
+    R.push("bst-search", left ? 3 : 4, { [t.id]: "compare" }, `${K} ${left ? "<" : ">"} ${t.key}: go ${left ? "left" : "right"}.`, { ghost: { key: K, at: t.id } });
+    t = left ? t.left : t.right;
+  }
+  R.push("bst-search", 5, {}, `Fell off the tree: ${K} is not here. That cost ${R.cmp} comparison${R.cmp === 1 ? "" : "s"}, at most height + 1.`);
+  return null;
+}
+
+function bstDelete(R, K) {
+  const code = "bst-delete";
+  let t = R.tree, parent = null;
+  while (t && t.key !== K) { R.cmp++; R.push(code, 1, { [t.id]: "compare" }, `Find ${K}: ${K} ${K < t.key ? "<" : ">"} ${t.key}, go ${K < t.key ? "left" : "right"}.`, { ghost: { key: K, at: t.id } }); parent = t; t = K < t.key ? t.left : t.right; }
+  if (!t) { R.push(code, 1, {}, `${K} is not in the tree, so there is nothing to delete.`); return; }
+  R.cmp++;
+  const kids = (t.left ? 1 : 0) + (t.right ? 1 : 0);
+  if (kids === 0) {
+    R.push(code, [2, 3], { [t.id]: "swap" }, `Found ${K}. Case 1: it is a leaf, so we simply cut it off.`);
+    replaceChild(R, parent, t, null);
+    fixHeights(R.tree);
+    R.push(code, 3, parent ? { [parent.id]: "done" } : {}, `Removed ${K}.`);
+  } else if (kids === 1) {
+    const child = t.left || t.right;
+    R.push(code, [4, 5], { [t.id]: "swap", [child.id]: "active" }, `Found ${K}. Case 2: it has exactly one child (${child.key}), so ${parent ? parent.key : "the root pointer"} adopts that child directly.`);
+    replaceChild(R, parent, t, child);
+    fixHeights(R.tree);
+    R.push(code, 5, { [child.id]: "done" }, `Removed ${K}; ${child.key}'s whole subtree moved up one level. BST order is intact because every key there was on the correct side of ${parent ? parent.key : "everything"} already.`);
+  } else {
+    let s = t.right, sp = t;
+    const path = [];
+    while (s.left) { path.push(s); sp = s; s = s.left; }
+    let pred = t.left; while (pred.right) pred = pred.right;
+    const o = shuffleOpts(String(s.key), [String(pred.key), String(t.left.key), String(t.right.key)]);
+    R.push(code, [6], { [t.id]: "pivot" }, `Found ${K}. Case 3: two children. We cannot just cut it out; we need a replacement key that keeps the left side smaller and the right side larger.`,
+      { ask: R.canAsk() ? { q: `Which key will take ${K}'s place (using the in-order successor)?`, opts: o.opts, ans: o.ans, why: `The successor is the smallest key in the right subtree: go right once, then left as far as possible → ${s.key}.` } : null });
+    let w = t.right;
+    R.push(code, 7, { [t.id]: "pivot", [w.id]: "active" }, `Go right once to ${w.key}…`);
+    while (w.left) { w = w.left; R.push(code, 7, { [t.id]: "pivot", [w.id]: "active" }, `…then left to ${w.key}.`); }
+    R.push(code, 7, { [t.id]: "pivot", [s.id]: "compare" }, `${s.key} has no left child: it is the smallest key larger than ${K}, the in-order successor.`);
+    t.key = s.key;
+    if (sp === t) sp.right = s.right; else sp.left = s.right;
+    fixHeights(R.tree);
+    R.push(code, [8, 9], { [t.id]: "done" }, `Copy ${s.key} into ${K}'s node and remove the old ${s.key} node (it had at most a right child, which is a case 1 or case 2 removal).`);
+  }
+}
+
+/* ---- 2-3 trees ---- */
+const node23 = (keys, kids) => ({ id: "m" + uid++, keys, kids: kids || [] });
+function descend23(R, K, code) {
+  const path = [];
+  let t = R.tree;
+  while (t) {
+    path.push(t);
+    let i = 0;
+    const cmpd = {};
+    for (; i < t.keys.length; i++) {
+      R.cmp++; cmpd[i] = "compare";
+      if (K === t.keys[i]) { R.push(code, 2, { [t.id]: "active" }, `${K} = ${t.keys[i]}: found in this node.`, { ghost: { key: K, at: t.id }, keySt: { [t.id]: { [i]: "done" } } }); return { path, found: t }; }
+      if (K < t.keys[i]) break;
+    }
+    const nKids = t.keys.length + 1;
+    const which = nKids === 2 ? ["left", "right"][i] : ["left", "middle", "right"][i];
+    const desc = i === 0 ? `${K} < ${t.keys[0]}` : i === t.keys.length ? `${K} > ${t.keys[t.keys.length - 1]}` : `${t.keys[i - 1]} < ${K} < ${t.keys[i]}`;
+    const leaf = !t.kids.length;
+    R.push(code, code === "t23-insert" ? 1 : 3, { [t.id]: "active" }, leaf ? `${desc}. This is a leaf, so the search ends here.` : `${desc}: follow the ${which} pointer.`, { ghost: { key: K, at: t.id }, keySt: { [t.id]: cmpd } });
+    if (leaf) return { path, found: null, slot: i };
+    t = t.kids[i];
+  }
+  return { path, found: null };
+}
+function insert23(R, K) {
+  const code = "t23-insert";
+  if (!R.tree) { R.tree = node23([K]); R.push(code, 2, { [R.tree.id]: "swap" }, `Empty tree: ${K} becomes a one-key root (a 2-node).`); return; }
+  R.push(code, 1, {}, `Insert <b>${K}</b>: first search for the leaf where it belongs.`, { ghost: { key: K, at: R.tree.id } });
+  const { path, found } = descend23(R, K, code);
+  if (found) { R.push(code, 1, { [found.id]: "compare" }, `${K} is already in the tree; keys are distinct, so nothing changes.`); return; }
+  let node = path[path.length - 1];
+  node.keys.push(K); node.keys.sort((a, b) => a - b);
+  if (node.keys.length === 2) { R.push(code, 2, { [node.id]: "done" }, `The leaf had room: it becomes a 3-node (${node.keys.join(", ")}). Done.`); return; }
+  R.push(code, [2, 4], { [node.id]: "swap" }, `The leaf now holds three keys (${node.keys.join(", ")}): too many for a 2-3 tree. It must split.`,
+    { ask: R.canAsk() ? { q: `Which key moves up when (${node.keys.join(", ")}) splits?`, opts: node.keys.map(String), ans: 1, why: `The middle key ${node.keys[1]} goes up; ${node.keys[0]} and ${node.keys[2]} become two separate 2-nodes.` } : null });
+  let depth = path.length - 1;
+  while (node.keys.length === 3) {
+    const [a, mid, c] = node.keys;
+    const k = node.kids;
+    const right = node23([c], k.length ? [k[2], k[3]] : []);
+    node.keys = [a]; node.kids = k.length ? [k[0], k[1]] : [];
+    R.splits++;
+    if (depth === 0) {
+      R.tree = node23([mid], [node, right]);
+      R.push(code, [5, 6, 7, 8], { [R.tree.id]: "pivot", [node.id]: "done", [right.id]: "done" }, `Split: ${a} and ${c} become separate nodes and ${mid} becomes a brand-new root. The tree grows taller <b>at the top</b>, so every leaf stays on the same level.`);
+      return;
+    }
+    const parent = path[depth - 1];
+    const pos = parent.kids.indexOf(node);
+    parent.keys.splice(pos, 0, mid);
+    parent.kids.splice(pos + 1, 0, right);
+    R.push(code, [5, 6, 10], { [parent.id]: parent.keys.length === 3 ? "swap" : "pivot", [node.id]: "done", [right.id]: "done" },
+      `Split: ${a} and ${c} become separate nodes, and the middle key ${mid} is promoted into the parent, which now holds ${parent.keys.join(", ")}.` + (parent.keys.length === 3 ? ` The parent overflowed too, so the split repeats one level up.` : ` The parent had room, so we are done.`),
+      { keySt: { [parent.id]: { [parent.keys.indexOf(mid)]: "pivot" } } });
+    node = parent; depth--;
+  }
+}
+function search23(R, K) {
+  if (!R.tree) { R.push("t23-search", 4, {}, "The tree is empty."); return; }
+  R.push("t23-search", 0, {}, `Search for <b>${K}</b>.`, { ghost: { key: K, at: R.tree.id } });
+  const r = descend23(R, K, "t23-search");
+  if (r.found) R.push("t23-search", 2, { [r.found.id]: "done" }, `Found ${K} with ${R.cmp} key comparison${R.cmp > 1 ? "s" : ""}. A 2-3 node needs at most two comparisons, so a search costs at most 2(h + 1).`);
+  else R.push("t23-search", 4, {}, `${K} is not in the tree (${R.cmp} comparisons).`);
+}
+
+/* ---------------------------------------------------------------- render */
+function finalize(frames) {
+  // fix one viewBox for the whole run so the picture does not jump in scale
+  let W = 360, depth = 0;
+  frames.forEach((f) => {
+    if (!f.tree) return;
+    if (f.tree.keys) { const l = FX.layoutMulti(f.tree, 32, 18, 0, 1); W = Math.max(W, l.width + 80); depth = Math.max(depth, l.depth); }
+    else { depth = Math.max(depth, height(f.tree)); W = Math.max(W, Math.min(760, (count(f.tree) - 1) * 58 + 110)); }
+  });
+  const gap = KIND === "t23" ? 74 : depth > 6 ? 48 : 62;
+  frames.forEach((f) => { f.W = W; f.H = 70 + depth * gap + 50; f.gap = gap; });
+  return frames;
+}
+
+function render(f) {
+  const nodes = [], edges = [];
+  const t = f.tree;
+  const W = f.W, top = 56;
+  let gpos = null;
+  if (t && t.keys) {
+    const l = FX.layoutMulti(t, 32, 18, top, f.gap);
+    const off = (W - l.width) / 2;
+    (function walk(n) {
+      const p = l.pos[n.id];
+      nodes.push({ id: n.id, x: p.x + off, y: p.y, keys: n.keys, cw: 32, h: 30, state: f.st[n.id] || null, keyState: f.keySt && f.keySt[n.id] });
+      n.kids.forEach((c, i) => { edges.push({ from: n.id, to: c.id, slot: i }); walk(c); });
+    })(t);
+  } else if (t) {
+    const l = FX.layoutBinary(t, W, top, f.gap, 40);
+    (function walk(n) {
+      const p = l.pos[n.id];
+      const b = KIND === "avl" ? bf(n) : null;
+      nodes.push({ id: n.id, x: p.x, y: p.y, label: n.key, state: f.st[n.id] || null, r: 18,
+        badge: b == null ? null : (b > 0 ? "+" + b : String(b)), badgeState: b != null && Math.abs(b) > 1 ? "pivot" : null });
+      [n.left, n.right].forEach((c) => { if (c) { edges.push({ from: n.id, to: c.id, state: f.st[c.id] === "done" && f.st[n.id] === "done" ? "done" : null }); walk(c); } });
+    })(t);
+  }
+  if (f.ghost) {
+    const host = nodes.find((n) => n.id === f.ghost.at);
+    if (host) {
+      const dx = host.keys ? host.keys.length * 16 + 22 : 34;
+      gpos = { x: host.x - dx, y: host.y - 30 };
+      nodes.push({ id: "ghost", x: gpos.x, y: gpos.y, label: f.ghost.key, state: "ember", r: 15, fs: 12 });
+    }
+  }
+  view.draw({
+    W, H: f.H, nodes, edges,
+    under(g) {
+      if (!t) g.appendChild(Forge.svg("text", { x: W / 2, y: 90, "text-anchor": "middle", fill: "var(--muted)" }, "(empty tree)"));
+    },
+  });
+  codes.show(f.code, LIST[f.code]).highlight(f.line);
+  const n = count(t), h = height(t);
+  const c = { comparisons: f.cmp };
+  if (KIND === "avl") c.rotations = f.rot;
+  if (KIND === "t23") c.splits = f.splits;
+  c.n = n;
+  c["height h"] = n ? h : "–";
+  if (KIND === "t23") {
+    c["log₃(n+1)−1"] = n ? (Math.log(n + 1) / Math.log(3) - 1).toFixed(2) : "–";
+    c["log₂(n+1)−1"] = n ? (Math.log2(n + 1) - 1).toFixed(2) : "–";
+  } else {
+    c["⌊log₂ n⌋ (best)"] = n ? Math.floor(Math.log2(n)) : "–";
+    if (KIND === "avl") c["AVL bound"] = n ? (1.4405 * Math.log2(n + 2) - 1.3277).toFixed(2) : "–";
+    else c["n − 1 (worst)"] = n ? n - 1 : "–";
+  }
+  const keys = Object.keys(c).join("|");
+  if (keys !== ctrKeys) { $("ctr").innerHTML = ""; ctr = Forge.counters($("ctr"), c); ctrKeys = keys; }
+  ctr.set(c);
+  say.say(f.text);
+}
+
+const player = Forge.player($("player"), { frames: [], render: (f, i) => { render(f); pred.update(f, i); } });
+
+/* -------------------------------------------------------------- actions */
+function play(R) {
+  CUR = clone(R.tree);
+  pred.reset();
+  player.load(finalize(R.frames));
+}
+function buildFrom(keys) {
+  CUR = null;
+  view.reset();
+  const R = Rec(KIND);
+  R.push(KIND === "t23" ? "t23-insert" : KIND === "avl" ? "avl-insert" : "bst-insert", 0, {}, `Build a ${KIND === "t23" ? "2-3 tree" : KIND === "avl" ? "AVL tree" : "binary search tree"} by inserting ${keys.join(", ")} one at a time.`);
+  for (const k of keys) {
+    if (KIND === "bst") bstInsert(R, k, "bst-insert");
+    else if (KIND === "avl") avlInsert(R, k);
+    else insert23(R, k);
+  }
+  const last = R.frames[R.frames.length - 1];
+  R.push(last.code, [], {}, `Built: n = ${count(R.tree)} keys, height ${height(R.tree)}` + (KIND === "avl" ? `, ${R.rot} rotation${R.rot === 1 ? "" : "s"}` : KIND === "t23" ? `, ${R.splits} split${R.splits === 1 ? "" : "s"}` : "") + `, ${R.cmp} key comparisons in total. Try a single ${KIND === "bst" ? "insert, search or delete" : "insert or search"} below. Press ⏮ and ▶ to replay the build.`);
+  play(R);
+}
+function one(op) {
+  const K = Math.round(Number($("key").value));
+  if (!Number.isFinite(K)) return;
+  if (op === "ins" && count(CUR) >= 31) { say.say("This demo holds at most 31 keys. Build a smaller tree first."); return; }
+  const R = Rec(KIND);
+  if (op === "ins") { if (KIND === "bst") bstInsert(R, K, "bst-insert"); else if (KIND === "avl") avlInsert(R, K); else insert23(R, K); }
+  else if (op === "find") { if (KIND === "t23") search23(R, K); else bstSearch(R, K); }
+  else if (op === "del") { if (KIND !== "bst") return; bstDelete(R, K); }
+  play(R);
+}
+function readKeys() {
+  const seen = new Set();
+  const a = FX.nums($("inp").value).map((x) => Math.round(x)).filter((x) => !seen.has(x) && seen.add(x)).slice(0, 24);
+  if (a.length) $("inp").value = a.join(", ");
+  return a.length ? a : DEFAULTS[KIND];
+}
+function setKind(k) {
+  KIND = k;
+  $("del").disabled = k !== "bst";
+  $("delNote").textContent = k === "bst" ? "" : "Delete is shown for the plain BST (its three cases); AVL and 2-3 deletion are left as a reading exercise.";
+  $("inp").value = DEFAULTS[k].join(", ");
+  ctrKeys = "";
+  buildFrom(DEFAULTS[k]);
+}
+$("kind").onchange = (e) => setKind(e.target.value);
+$("build").onclick = () => buildFrom(readKeys());
+$("inp").addEventListener("keydown", (e) => { if (e.key === "Enter") buildFrom(readKeys()); });
+$("rand").onclick = () => {
+  const s = new Set();
+  while (s.size < 9) s.add(1 + Math.floor(Math.random() * 60));
+  $("inp").value = [...s].join(", ");
+  buildFrom([...s]);
+};
+$("sorted").onclick = () => { const a = Array.from({ length: 10 }, (_, i) => i + 1); $("inp").value = a.join(", "); buildFrom(a); };
+$("book").onclick = () => { const a = KIND === "t23" ? [9, 5, 8, 3, 2, 4, 7] : KIND === "avl" ? [5, 6, 8, 3, 2, 4, 7] : [8, 3, 10, 1, 6, 14, 4, 7, 13]; $("inp").value = a.join(", "); buildFrom(a); };
+$("ins").onclick = () => one("ins");
+$("find").onclick = () => one("find");
+$("del").onclick = () => one("del");
+
+setKind("bst");
+player.go(player.frames.length - 1);   // open on the finished tree; ⏮ replays the build
+</script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horner and Binary Powers · Algorithm Forge</title>
+<meta name="description" content="Horner's rule as a synthetic-division table, and left-to-right and right-to-left binary exponentiation, with exact multiplication counts.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 410px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .field select, .field input[type="text"] { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .grp[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 6 · Transform-and-Conquer</div>
+    <h1>Horner's Rule &amp; Binary Exponentiation</h1>
+    <p class="lead muted">Rewrite the problem in a smarter form. A polynomial becomes nested multiply-and-add steps (Horner), and the exponent n becomes its binary digits, so aⁿ needs only about log₂ n multiplications instead of n − 1.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="algo">
+          <option value="horner">Horner's rule (synthetic division)</option>
+          <option value="lr">Left-to-right binary exponentiation</option>
+          <option value="rl">Right-to-left binary exponentiation</option>
+        </select>
+      </label>
+      <span class="row grp" id="gH">
+        <label class="field">Coefficients, highest power first <input id="coef" type="text" value="2, -1, 3, 1, -5" style="min-width:180px"></label>
+        <label class="field">x <input id="x" type="number" value="3" style="width:80px"></label>
+      </span>
+      <span class="row grp" id="gE" hidden>
+        <label class="field">a <input id="a" type="number" value="2" style="width:80px"></label>
+        <label class="field">n <input id="n" type="number" value="13" min="1" style="width:100px"></label>
+        <label class="field">mod m (optional) <input id="m" type="number" placeholder="none" style="width:100px"></label>
+      </span>
+      <button class="btn primary" id="go">Run</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn" id="book">Book example</button>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Table of the computation"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>current column / bit</span>
+        <span><i style="background:var(--c-compare)"></i>multiplication</span>
+        <span><i style="background:var(--c-swap)"></i>addition / multiply-by-a</span>
+        <span><i style="background:var(--c-done)"></i>finished value</span>
+        <span><i style="background:var(--c-dim)"></i>skipped (bit 0)</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>Horner table</dt>
+      <dd>Top row: the coefficients from the highest power down. Middle row: x times the running value from the previous column. Bottom row: that product plus the coefficient above it. The last bottom cell is p(x); the other bottom cells are the coefficients of the quotient p(x) / (x − x₀), so the same table performs synthetic division.</dd>
+      <dt>Bits of n</dt>
+      <dd>For the exponentiation algorithms the top row is n in binary, most significant bit on the left. Under each bit you see what happened there: S = square, SM = square and then multiply by a. The right-to-left method instead squares a running term a, a², a⁴, a⁸, … and multiplies in only the terms whose bit is 1.</dd>
+      <dt>Counters</dt>
+      <dd>Horner does exactly n multiplications and n additions for a degree-n polynomial, versus n(n + 1)/2 multiplications if every power is computed from scratch. With b = the number of bits of n, binary exponentiation uses between b − 1 and 2(b − 1) multiplications (Levitin §6.5).</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Book check (Horner).</b> Run the default p(x) = 2x⁴ − x³ + 3x² + x − 5 at x = 3. The bottom row reads 2, 5, 18, 55, 160: p(3) = 160, with 4 multiplications and 4 additions.</li>
+      <li><b>Synthetic division.</b> Try coefficients 1, −6, 11, −6 at x = 1. The remainder is 0, so 1 is a root, and the bottom row gives the quotient x² − 5x + 6.</li>
+      <li><b>a¹³ both ways.</b> n = 13 is 1101 in binary (b = 4 bits). Left-to-right: SM, S, SM after the leading 1, so 5 multiplications. Right-to-left also needs 5. Both sit between b − 1 = 3 and 2(b − 1) = 6.</li>
+      <li><b>Best and worst n.</b> Try n = 64 (1000000: only squarings, 6 multiplications) and n = 63 (111111: every bit costs two, 10 multiplications). The naive method would need 63 and 62.</li>
+      <li><b>Modular power.</b> Set a = 7, n = 560, m = 561. The answer is 1 even though 561 = 3·11·17 is not prime (a Carmichael number), and left-to-right needed only 11 multiplications (560 = 1000110000₂).</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/06-transform-and-conquer/README.md">📖 Lesson: Chapter 6 Transform-and-Conquer</a>
+      <a href="../arena/index.html?chapter=6">🏟️ Arena: Chapter 6 problems</a>
+      <a href="../arena/problem.html?id=horner">Arena: horner</a>
+      <a href="../arena/problem.html?id=binary-exponentiation-lr">Arena: binary-exponentiation-lr</a>
+      <a href="../arena/problem.html?id=power-mod">Arena: power-mod</a>
+      <a href="../arena/problem.html?id=exp-by-squaring">Arena: exp-by-squaring</a>
+      <a href="../arena/problem.html?id=polynomial-eval-improved">Arena: polynomial-eval-improved</a>
+      <a href="search-lab.html">🎮 Search Lab (exponentiation by squaring, Ch 4)</a>
+      <a href="gaussian.html">🎮 Gaussian Elimination</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Horner and Binary Powers", chapter: "Ch 6 · Transform-and-Conquer" });
+const $ = (id) => document.getElementById(id);
+const S = Forge.svg;
+const stage = $("stage");
+const codes = FX.codeSwitch($("code"));
+const say = Forge.narrate($("say"));
+const pred = FX.predict($("pred"), () => player);
+let ctr = null, ctrKeys = "";
+let ALGO = "horner";
+
+const LISTS = {
+  horner: [
+    "ALGORITHM Horner(P[0..n], x)",
+    "    // P[i] is the coefficient of x^i",
+    "    p ← P[n]",
+    "    for i ← n − 1 downto 0 do",
+    "        p ← x * p + P[i]",
+    "    return p",
+  ],
+  lr: [
+    "ALGORITHM LeftRightBinaryExponentiation(a, b[k..0])",
+    "    // b[k..0]: the bits of n, with b[k] = 1",
+    "    product ← a",
+    "    for i ← k − 1 downto 0 do",
+    "        product ← product * product",
+    "        if b[i] = 1 then",
+    "            product ← product * a",
+    "    return product",
+  ],
+  rl: [
+    "ALGORITHM RightLeftBinaryExponentiation(a, b[k..0])",
+    "    term ← a                  // a^(2^0)",
+    "    if b[0] = 1 then product ← a",
+    "    else product ← 1",
+    "    for i ← 1 to k do",
+    "        term ← term * term    // a^(2^i)",
+    "        if b[i] = 1 then",
+    "            product ← product * term",
+    "    return product",
+  ],
+};
+
+/* ------------------------------------------------------------ formatting */
+const fmt = (v) => (Number.isInteger(v) ? String(v) : String(+v.toFixed(4)));
+function big(v) {
+  const s = v.toString();
+  return s.length <= 22 ? s : `${s.slice(0, 8)}…${s.slice(-6)} (${s.length} digits)`;
+}
+const shortBig = (v) => { const s = v.toString(); return s.length <= 7 ? s : s.slice(0, 3) + "…" + ` (${s.length}d)`; };
+function polyStr(c) {
+  const d = c.length - 1, parts = [];
+  c.forEach((a, t) => {
+    if (a === 0) return;
+    const p = d - t;
+    const mag = Math.abs(a);
+    const coef = mag === 1 && p > 0 ? "" : fmt(mag);
+    const xp = p === 0 ? "" : p === 1 ? "x" : "x" + String(p).split("").map((ch) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[ch]).join("");
+    parts.push((a < 0 ? (parts.length ? " − " : "−") : parts.length ? " + " : "") + coef + xp);
+  });
+  return parts.join("") || "0";
+}
+const sup = (k) => String(k).split("").map((ch) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[ch]).join("");
+
+/* --------------------------------------------------------------- Horner */
+function recHorner(c, x) {
+  const d = c.length - 1;
+  const frames = [];
+  const prod = Array(d + 1).fill(null), run = Array(d + 1).fill(null);
+  let mul = 0, add = 0, asks = 0, nested = "";
+  const push = (line, col, st, text, ask) => frames.push({ algo: "horner", c, x, prod: prod.slice(), run: run.slice(), col, st, line, text, ask: ask || null, nested,
+    ctr: { multiplications: mul, additions: add, "degree n": d, "brute force mults": (d * (d + 1)) / 2, "p so far": (() => { const k = run.findLastIndex((v) => v != null); return k < 0 ? "–" : fmt(run[k]); })() } });
+  push(0, -1, {}, `Evaluate p(x) = ${polyStr(c)} at x = ${fmt(x)}. Horner rewrites it as nested brackets: start with the leading coefficient and repeatedly multiply by x and add the next coefficient.`);
+  run[0] = c[0];
+  nested = fmt(c[0]);
+  push(2, 0, { run: "active" }, `p ← P[${d}] = ${fmt(c[0])}, the leading coefficient. No arithmetic yet.`);
+  for (let t = 1; t <= d; t++) {
+    const pv = run[t - 1], cv = c[t], xp = x * pv, nv = xp + cv;
+    let ask = null;
+    if (asks < 2) {
+      asks++;
+      const cand = [nv, x * pv - cv, pv + x * cv, x * (pv + cv), xp].map(fmt);
+      const opts = [...new Set(cand)].slice(0, 4).sort(() => Math.random() - 0.5);
+      ask = { q: `Next step: p ← x·p + P[${d - t}] with p = ${fmt(pv)}, x = ${fmt(x)}, P[${d - t}] = ${fmt(cv)}. What is the new p?`, opts, ans: opts.indexOf(fmt(nv)), why: `${fmt(x)} · ${fmt(pv)} = ${fmt(xp)}, then ${fmt(xp)} + (${fmt(cv)}) = ${fmt(nv)}.` };
+    }
+    if (ask) frames[frames.length - 1].ask = ask;   // ask before the step is shown
+    prod[t] = xp; mul++;
+    push([3, 4], t, { prod: "compare", runPrev: "active" }, `Multiply the running value by x: ${fmt(x)} · ${fmt(pv)} = <b>${fmt(xp)}</b> (multiplication ${mul}). It is written under the next coefficient.`);
+    run[t] = nv; add++;
+    nested = `(${nested})·${fmt(x)} ${cv < 0 ? "−" : "+"} ${fmt(Math.abs(cv))}`;
+    push(4, t, { run: "swap" }, `Add the coefficient: ${fmt(xp)} + (${fmt(cv)}) = <b>${fmt(nv)}</b> (addition ${add}).`);
+  }
+  const q = run.slice(0, d);
+  const qs = d ? polyStr(q) : "0";
+  push(5, d, { run: "done", final: true }, `p(${fmt(x)}) = <b>${fmt(run[d])}</b> with ${mul} multiplications and ${add} additions (exactly n each). Bonus: the other bottom-row numbers are the quotient, so ${polyStr(c)} = (x − ${fmt(x)})(${qs}) + ${fmt(run[d])}.`);
+  return frames;
+}
+
+/* ----------------------------------------------------- binary exponentiation */
+function modOf(v, m) { return m ? ((v % m) + m) % m : v; }
+function recLR(a, n, m) {
+  const bits = n.toString(2).split("").map(Number), B = bits.length;
+  const frames = [];
+  const act = Array(B).fill(null), expo = Array(B).fill(null), vals = Array(B).fill(null);
+  let sq = 0, ma = 0, asks = 0, e = 1n, prod = modOf(a, m);
+  const push = (line, pos, st, text, ask) => frames.push({ algo: "lr", bits, a, n, m, act: act.slice(), expo: expo.slice(), vals: vals.slice(), pos, st, line, text, ask: ask || null,
+    ctr: { squarings: sq, "multiply by a": ma, "total M(n)": sq + ma, "b (bits)": B, "bounds b−1 … 2(b−1)": `${B - 1} … ${2 * (B - 1)}` } });
+  push(0, -1, {}, `Compute a${sup(n)} with a = ${a}${m ? ` (mod ${m})` : ""}. n = ${n} = ${n.toString(2)} in binary: ${B} bits. Scan them left to right; the exponent built so far doubles at every bit (Horner's rule on the bits!).`);
+  act[0] = "start"; expo[0] = 1n; vals[0] = prod;
+  push(2, 0, { cur: "active" }, `The leading bit is always 1: product ← a, so the exponent so far is 1 (binary 1).`);
+  for (let i = 1; i < B; i++) {
+    const b = bits[i];
+    const newE = 2n * e + BigInt(b);
+    let ask = null;
+    if (asks < 3) {
+      asks++;
+      const cands = [...new Set([newE, 2n * e + BigInt(1 - b), e + 1n, 2n * e + 2n].map(String))].slice(0, 4).sort(() => Math.random() - 0.5);
+      ask = { q: `The exponent so far is ${e} (binary ${e.toString(2)}). The next bit is <b>${b}</b>. What will the exponent be after this bit?`, opts: cands, ans: cands.indexOf(String(newE)),
+        why: `Appending a bit doubles the exponent and adds the bit: 2·${e} + ${b} = ${newE} (binary ${newE.toString(2)}).` };
+    }
+    prod = modOf(prod * prod, m); e = 2n * e; sq++;
+    act[i] = "S"; expo[i] = e; vals[i] = prod;
+    if (ask) frames[frames.length - 1].ask = ask;   // ask before the step is shown
+    push(4, i, { cur: "compare" }, `Bit ${bits.slice(0, i + 1).join("")}${"·".repeat(B - i - 1)}: square. product ← product² = a${sup(e)}${m ? ` mod ${m}` : ""} = ${big(prod)}.`);
+    if (b === 1) {
+      prod = modOf(prod * a, m); e += 1n; ma++;
+      act[i] = "SM"; expo[i] = e; vals[i] = prod;
+      push([5, 6], i, { cur: "swap" }, `The bit is 1, so also multiply by a: product ← product · a = a${sup(e)}${m ? ` mod ${m}` : ""} = ${big(prod)}.`);
+    } else {
+      push(5, i, { cur: "dim" }, `The bit is 0: no extra multiplication.`);
+    }
+  }
+  push(7, B - 1, { final: true }, `a${sup(n)}${m ? ` mod ${m}` : ""} = <b>${big(prod)}</b> using ${sq} squarings + ${ma} multiplications by a = ${sq + ma}. Bounds: b − 1 = ${B - 1} ≤ M(n) ≤ 2(b − 1) = ${2 * (B - 1)}. The naive method needs n − 1 = ${n - 1n}.`);
+  return frames;
+}
+function recRL(a, n, m) {
+  const bits = n.toString(2).split("").map(Number), B = bits.length;   // bits[0] is the leading bit
+  const at = (i) => bits[B - 1 - i];                                     // b_i, i = 0 is the least significant
+  const frames = [];
+  const termE = Array(B).fill(null), prodE = Array(B).fill(null), used = Array(B).fill(null);
+  let sq = 0, pm = 0, asks = 0;
+  let term = modOf(a, m), tE = 1n, prod = 1n, pE = 0n, trivial = true;
+  const push = (line, i, st, text, ask) => frames.push({ algo: "rl", bits, a, n, m, termE: termE.slice(), prodE: prodE.slice(), used: used.slice(), pos: i < 0 ? -1 : B - 1 - i, st, line, text, ask: ask || null, prodV: prod,
+    ctr: { squarings: sq, "product mults": pm, "total M(n)": sq + pm, "b (bits)": B, "bounds b−1 … 2(b−1)": `${B - 1} … ${2 * (B - 1)}` } });
+  push(0, -1, {}, `Compute a${sup(n)} with a = ${a}${m ? ` (mod ${m})` : ""}. n = ${n} = ${n.toString(2)}. Scan the bits right to left, keeping a term that squares itself: a, a², a⁴, a⁸, … Multiply into the product exactly the terms whose bit is 1.`);
+  termE[0] = tE;
+  push(1, 0, { cur: "active" }, `term ← a = a${sup(1)} (that is a^(2^0)).`);
+  if (at(0) === 1) { prod = term; pE = 1n; trivial = false; used[0] = true; }
+  prodE[0] = pE;
+  push(at(0) ? 2 : 3, 0, { cur: at(0) ? "swap" : "dim" }, at(0) ? `b₀ = 1, so product ← a. (n is odd.)` : `b₀ = 0, so product ← 1. (n is even.)`);
+  for (let i = 1; i < B; i++) {
+    const b = at(i);
+    term = modOf(term * term, m); tE *= 2n; sq++;
+    termE[i] = tE;
+    const newPE = b ? pE + tE : pE;
+    let ask = null;
+    if (asks < 3) {
+      asks++;
+      const cands = [...new Set([newPE, pE + tE * BigInt(1 - b), pE * 2n || tE * 2n, pE + 1n].map(String))].slice(0, 4).sort(() => Math.random() - 0.5);
+      ask = { q: `term is now a${sup(tE)}, and the product so far is a${sup(pE)}. Bit b${String(i).split("").map((ch) => "₀₁₂₃₄₅₆₇₈₉"[ch]).join("")} = <b>${b}</b>. What will the product's exponent be after this step?`, opts: cands, ans: cands.indexOf(String(newPE)),
+        why: b ? `The bit is 1, so the term is multiplied in: ${pE} + ${tE} = ${newPE}.` : `The bit is 0, so the product is untouched: still ${pE}.` };
+    }
+    push(5, i, { cur: "compare" }, `Square the term: a${sup(tE / 2n)} · a${sup(tE / 2n)} = a${sup(tE)}${m ? ` mod ${m}` : ""} = ${big(term)}.`, ask);
+    if (b) {
+      used[i] = true;
+      if (trivial) { prod = term; trivial = false; push([6, 7], i, { cur: "swap" }, `b${i} = 1 and the product is still 1, so it simply becomes the term (1 · a${sup(tE)} needs no real multiplication).`); }
+      else { prod = modOf(prod * term, m); pm++; push([6, 7], i, { cur: "swap" }, `b${i} = 1: product ← product · term = a${sup(pE)} · a${sup(tE)} = a${sup(pE + tE)}${m ? ` mod ${m}` : ""} = ${big(prod)}.`); }
+      pE += tE;
+    } else push(6, i, { cur: "dim" }, `b${i} = 0: this term is skipped.`);
+    prodE[i] = pE;
+  }
+  const usedTerms = []; for (let i = B - 1; i >= 0; i--) if (used[i]) usedTerms.push("a" + sup(2n ** BigInt(i)));
+  push(8, B - 1, { final: true }, `a${sup(n)}${m ? ` mod ${m}` : ""} = ${usedTerms.join(" · ")} = <b>${big(prod)}</b>, using ${sq} squarings + ${pm} product multiplications = ${sq + pm}, within b − 1 = ${B - 1} … 2(b − 1) = ${2 * (B - 1)}.`);
+  return frames;
+}
+
+/* ---------------------------------------------------------------- render */
+function box(g, x, y, w, h, s, st, fs) {
+  const fill = st ? FX.COL[st] : "var(--panel)";
+  g.appendChild(S("rect", { x: x + 2, y: y + 2, width: w - 4, height: h - 4, rx: 6, fill, stroke: st ? fill : "var(--line)" }));
+  const str = String(s);
+  g.appendChild(S("text", { x: x + w / 2, y: y + h / 2 + 4.5, "text-anchor": "middle", "font-size": fs || (str.length > 8 ? 10 : str.length > 6 ? 11.5 : 13), "font-weight": st && st !== "dim" ? 700 : 500, fill: FX.ink(st) }, str));
+}
+function label(g, x, y, s, o) { g.appendChild(S("text", Object.assign({ x, y, "font-size": 12, fill: "var(--muted)" }, o || {}), s)); }
+
+function renderHorner(f, g) {
+  const d = f.c.length - 1, cw = 76, x0 = 130, rh = 44, y0 = 64;
+  const W = Math.max(420, x0 + (d + 1) * cw + 20), H = y0 + 3 * rh + 110;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  label(g, 16, 26, `p(x) = ${polyStr(f.c)},   x = ${fmt(f.x)}`, { "font-size": 14, fill: "var(--ink)" });
+  ["coefficient", `× x (= ${fmt(f.x)})`, "running p"].forEach((t, r) => label(g, 12, y0 + r * rh + rh / 2 + 4, t));
+  for (let t = 0; t <= d; t++) {
+    const x = x0 + t * cw, active = t === f.col;
+    label(g, x + cw / 2, y0 - 10, d - t === 0 ? "x⁰" : "x" + sup(d - t), { "text-anchor": "middle", "font-size": 11 });
+    box(g, x, y0, cw, rh, fmt(f.c[t]), active && f.st.run === "swap" ? "swap" : active ? "active" : null);
+    box(g, x, y0 + rh, cw, rh, f.prod[t] == null ? (t === 0 ? "" : "·") : fmt(f.prod[t]), active && f.st.prod ? "compare" : null);
+    const done = f.st.final && t === d;
+    box(g, x, y0 + 2 * rh, cw, rh, f.run[t] == null ? "·" : fmt(f.run[t]), done ? "done" : active && f.st.run ? f.st.run : t === f.col - 1 && f.st.runPrev ? "active" : null);
+  }
+  g.appendChild(S("line", { x1: x0, y1: y0 + 2 * rh + 1, x2: x0 + (d + 1) * cw, y2: y0 + 2 * rh + 1, stroke: "var(--ink-2)", "stroke-width": 1.5 }));
+  if (f.nested) label(g, 16, y0 + 3 * rh + 30, "nested: " + f.nested, { fill: "var(--ember-2)", "font-size": f.nested.length > 60 ? 10 : 12 });
+  if (f.st.final && d > 0) {
+    const bx = x0 + d * cw;
+    g.appendChild(S("rect", { x: bx + 1, y: y0 + 2 * rh + 1, width: cw - 2, height: rh - 2, rx: 7, fill: "none", stroke: "var(--c-done)", "stroke-width": 2 }));
+    label(g, x0, y0 + 3 * rh + 56, `quotient: ${polyStr(f.run.slice(0, d))}      remainder = p(${fmt(f.x)}) = ${fmt(f.run[d])}`, { fill: "var(--ink-2)" });
+  }
+}
+function renderBits(f, g) {
+  const B = f.bits.length, cw = 58, x0 = 132, rh = 40, y0 = 70;
+  const W = Math.max(420, x0 + B * cw + 20), H = y0 + 4 * rh + 60;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  label(g, 16, 24, `a = ${f.a},  n = ${f.n} = ${f.n.toString(2)}₂${f.m ? `,  mod ${f.m}` : ""}`, { "font-size": 14, fill: "var(--ink)" });
+  const rows = f.algo === "lr" ? ["bit of n", "step", "exponent so far", "product"] : ["bit of n", "term a^(2^i)", "used?", "product exponent"];
+  rows.forEach((t, r) => label(g, 12, y0 + r * rh + rh / 2 + 4, t));
+  for (let p = 0; p < B; p++) {
+    const x = x0 + p * cw, i = B - 1 - p, cur = p === f.pos;
+    label(g, x + cw / 2, y0 - 10, "b" + String(i).split("").map((ch) => "₀₁₂₃₄₅₆₇₈₉"[ch]).join(""), { "text-anchor": "middle", "font-size": 11 });
+    const st = cur ? f.st.cur || null : null;
+    box(g, x, y0, cw, rh, f.bits[p], cur && !f.st.final ? "active" : null, 15);
+    if (f.algo === "lr") {
+      box(g, x, y0 + rh, cw, rh, f.act[p] || "", st);
+      box(g, x, y0 + 2 * rh, cw, rh, f.expo[p] == null ? "" : String(f.expo[p]), null);
+      box(g, x, y0 + 3 * rh, cw, rh, f.vals[p] == null ? "" : shortBig(f.vals[p]), f.st.final && p === B - 1 ? "done" : null);
+    } else {
+      box(g, x, y0 + rh, cw, rh, f.termE[i] == null ? "" : "a" + sup(f.termE[i]), st === "compare" ? "compare" : null);
+      box(g, x, y0 + 2 * rh, cw, rh, f.used[i] == null ? (f.termE[i] != null ? "–" : "") : "✓", f.used[i] ? (cur && st === "swap" ? "swap" : "done") : f.termE[i] != null && f.bits[p] === 0 ? "dim" : null);
+      box(g, x, y0 + 3 * rh, cw, rh, f.prodE[i] == null ? "" : f.prodE[i] === 0n ? "1" : "a" + sup(f.prodE[i]), f.st.final && p === 0 ? "done" : null);
+    }
+  }
+  if (f.pos >= 0) {
+    const x = x0 + f.pos * cw + cw / 2;
+    g.appendChild(S("path", { d: `M${x - 7} ${y0 - 34} L${x + 7} ${y0 - 34} L${x} ${y0 - 24} Z`, fill: "var(--ember)" }));
+  }
+  label(g, x0, y0 + 4 * rh + 28, f.algo === "lr" ? "scan →  (most significant bit first)" : "←  scan (least significant bit first)", { fill: "var(--ember-2)" });
+}
+function render(f) {
+  stage.innerHTML = "";
+  const g = S("g");
+  stage.appendChild(g);
+  if (f.algo === "horner") renderHorner(f, g); else renderBits(f, g);
+  codes.show(f.algo, LISTS[f.algo]).highlight(f.line);
+  const keys = Object.keys(f.ctr).join("|");
+  if (keys !== ctrKeys) { $("ctr").innerHTML = ""; ctr = Forge.counters($("ctr"), f.ctr); ctrKeys = keys; }
+  ctr.set(f.ctr);
+  say.say(f.text);
+}
+const player = Forge.player($("player"), { frames: [], render: (f, i) => { render(f); pred.update(f, i); } });
+
+/* -------------------------------------------------------------- controls */
+function run() {
+  pred.reset();
+  $("gH").hidden = ALGO !== "horner";
+  $("gE").hidden = ALGO === "horner";
+  if (ALGO === "horner") {
+    let c = FX.nums($("coef").value).slice(0, 9);
+    while (c.length > 1 && c[0] === 0) c.shift();
+    if (!c.length) c = [2, -1, 3, 1, -5];
+    $("coef").value = c.join(", ");
+    const x = Number($("x").value);
+    player.load(recHorner(c, Number.isFinite(x) ? x : 3));
+  } else {
+    let a, n, m = null;
+    try {
+      a = BigInt(Math.round(Number($("a").value) || 2));
+      n = BigInt(Math.max(1, Math.round(Number($("n").value) || 13)));
+      const mv = $("m").value.trim();
+      if (mv) { m = BigInt(Math.round(Number(mv))); if (m < 2n) m = null; }
+    } catch (e) { say.say("Please enter whole numbers for a, n and m."); return; }
+    const cap = m ? 1048575n : 4096n;
+    if (n > cap) { n = cap; $("n").value = String(n); say.say(`n was capped at ${cap}${m ? "" : " (without a modulus the answer has thousands of digits; add mod m for bigger n)"}.`); }
+    player.load(ALGO === "lr" ? recLR(a, n, m) : recRL(a, n, m));
+  }
+}
+$("algo").onchange = (e) => { ALGO = e.target.value; run(); };
+$("go").onclick = run;
+["coef", "x", "a", "n", "m"].forEach((id) => $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") run(); }));
+$("rand").onclick = () => {
+  const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  if (ALGO === "horner") {
+    const d = r(3, 6);
+    const c = Array.from({ length: d + 1 }, (_, t) => (t === 0 ? r(1, 5) : r(-6, 6)));
+    $("coef").value = c.join(", "); $("x").value = r(-3, 4);
+  } else { $("a").value = r(2, 9); $("n").value = r(9, 200); $("m").value = ""; }
+  run();
+};
+$("book").onclick = () => {
+  if (ALGO === "horner") { $("coef").value = "2, -1, 3, 1, -5"; $("x").value = 3; }
+  else { $("a").value = 2; $("n").value = 13; $("m").value = ""; }
+  run();
+};
+run();
+</script>
+</body>
+</html>

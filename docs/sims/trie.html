@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trie · Algorithm Forge</title>
+<meta name="description" content="Interactive trie (prefix tree): insert words, search, prefix count, autocomplete suggestions and delete, with node count compared to total characters.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  .sugg { display: flex; flex-wrap: wrap; gap: 6px; min-height: 26px; align-items: center; }
+  .words { display: flex; flex-wrap: wrap; gap: 6px; }
+  .words .chip { cursor: pointer; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 13 · Advanced Data Structures</div>
+    <h1>Trie (Prefix Tree)</h1>
+    <p class="lead muted">Words that share a beginning share a path. Insert, search, count a prefix and autocomplete in time proportional to the word's length, no matter how many words are stored.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field" style="flex:1;min-width:0">Word list (letters a–z; up to 24 words)
+        <input type="text" id="list" value="car, card, care, cat, dog, dot" style="width:100%">
+      </label>
+      <button class="btn primary" id="buildList">Build from list</button>
+      <button class="btn" id="rand">Random words</button>
+      <button class="btn" id="reset">Empty trie</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Word or prefix
+        <input type="text" id="word" value="care" style="width:160px">
+      </label>
+      <button class="btn steel" id="doInsert">Insert</button>
+      <button class="btn steel" id="doSearch">Search</button>
+      <button class="btn steel" id="doPrefix">Prefix count + autocomplete</button>
+      <button class="btn steel" id="doDelete">Delete</button>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="small muted">Stored words (click one to put it in the box):</span>
+      <div class="words" id="words"></div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Trie drawn as a tree of letters"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>walked (one hash-map lookup per letter)</span>
+        <span><i style="background:var(--c-swap)"></i>node created / removed</span>
+        <span><i style="background:var(--c-done)"></i>found / suggestion</span>
+        <span><i style="background:var(--c-active)"></i>current node</span>
+        <span><i style="background:transparent;border:2px solid var(--c-done)"></i>end of a word (isEnd)</span>
+        <span><i style="background:transparent;border:2px dashed var(--c-swap)"></i>missing child</span>
+      </div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+      <div class="panel">
+        <div class="panel-title">Autocomplete suggestions</div>
+        <div class="sugg" id="sugg"><span class="small muted">Run "Prefix count + autocomplete".</span></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li>Each circle is a node; the letter on it is the edge you followed to get there. Reading the letters from the root down spells a prefix.</li>
+      <li>A <b>green ring</b> means <code>isEnd = true</code>: a stored word ends here. Without that flag, "ca" would look like a word just because "car" passes through it.</li>
+      <li>The small number under a node is <code>pass</code>: how many stored words go through it. It turns "how many words start with p?" into one walk of |p| steps, and it tells delete which nodes nobody else uses.</li>
+      <li>The two bars at the bottom compare the total characters of all stored words with the number of letter nodes. The gap is what prefix sharing saves.</li>
+      <li><b>Counters:</b> <i>steps</i> counts child lookups in this operation, which is at most the length of the word, independent of how many words are stored.</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Build the default list <code>car, card, care, cat, dog, dot</code>. You should get <b>11 nodes</b> (10 letters + the root) for 20 characters, so sharing saves 10 letter nodes.</li>
+      <li>Search <code>ca</code>: every letter is found, yet the answer is <b>false</b> because the node for "a" has no green ring. Then run prefix count on <code>ca</code>: 4 words (car, card, care, cat).</li>
+      <li>Search <code>cow</code>: the walk stops at the dashed "o" under "c" after 2 steps. A miss can be even cheaper than a hit.</li>
+      <li>Delete <code>card</code>: only the "d" node disappears. Then delete <code>car</code>: no node disappears, only the green ring on "r" (because "care" still uses it).</li>
+      <li>Add words with no shared beginnings (<code>zebra, quilt, juice</code>). Watch the node count approach the character count: a trie saves space only when prefixes are shared.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/13-advanced-data-structures/README.md#build-card-5--trie-and-compressed-trie-radix-tree">📖 Lesson 13 · Build Card 5</a>
+      <a class="btn" href="../arena/index.html?chapter=13">🏟️ Chapter 13 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=trie-prefix-count">🧩 Arena: trie-prefix-count</a>
+      <a class="btn" href="hashing.html">🎮 Hashing</a>
+      <a class="btn" href="search-trees.html">🎮 Search trees</a>
+      <a class="btn" href="string-match.html">🎮 String matching</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Trie", chapter: "Ch 13 · Advanced Data Structures" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to watch.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+/* ---------------- the trie (live state) ---------------- */
+let T; // {nodes: [{id, ch, parent, kids: {ch: id}, end, pass, alive}]}
+function emptyTrie() { T = { nodes: [{ id: 0, ch: "", parent: -1, kids: {}, end: false, pass: 0, alive: true }] }; }
+const alive = () => T.nodes.filter((x) => x.alive);
+const words = () => { const out = []; const dfs = (id, s) => { const nd = T.nodes[id]; if (nd.end) out.push(s); Object.keys(nd.kids).sort().forEach((c) => dfs(nd.kids[c], s + c)); }; dfs(0, ""); return out; };
+const clean = (w) => (w || "").toLowerCase().replace(/[^a-z]/g, "").slice(0, 12);
+function walk(w) { let id = 0; for (const c of w) { const nx = T.nodes[id].kids[c]; if (nx == null) return -1; id = nx; } return id; }
+const has = (w) => { const id = walk(w); return id >= 0 && T.nodes[id].end; };
+
+/* ---------------- pseudocode per operation ---------------- */
+const CODE = {
+  insert: [
+    "ALGORITHM TrieInsert(root, w[0..m-1])",
+    "    // node.child is a hash map; node.pass counts words through node",
+    "    if TrieSearch(root, w) then return      // already stored",
+    "    node ← root",
+    "    node.pass ← node.pass + 1",
+    "    for i ← 0 to m - 1 do",
+    "        if node.child[w[i]] = null then",
+    "            node.child[w[i]] ← new Node()",
+    "        node ← node.child[w[i]]",
+    "        node.pass ← node.pass + 1",
+    "    node.isEnd ← true",
+  ],
+  search: [
+    "ALGORITHM TrieSearch(root, w[0..m-1])",
+    "    node ← root",
+    "    for i ← 0 to m - 1 do",
+    "        node ← node.child[w[i]]",
+    "        if node = null then",
+    "            return false",
+    "    return node.isEnd",
+  ],
+  prefix: [
+    "ALGORITHM StartsWith(root, p[0..m-1])",
+    "    node ← root",
+    "    for i ← 0 to m - 1 do",
+    "        node ← node.child[p[i]]",
+    "        if node = null then",
+    "            return 0, empty list",
+    "    count ← node.pass              // O(m): no scan of the words",
+    "    out ← empty list",
+    "    Collect(node, p, out)          // up to 8 suggestions",
+    "    return count, out",
+    "ALGORITHM Collect(node, s, out)",
+    "    if node.isEnd then",
+    "        append(out, s)",
+    "    for each c in sorted keys of node.child do",
+    "        Collect(node.child[c], s + c, out)",
+  ],
+  delete: [
+    "ALGORITHM TrieDelete(root, w[0..m-1])",
+    "    if not TrieSearch(root, w) then",
+    "        return false",
+    "    node ← root",
+    "    node.pass ← node.pass - 1",
+    "    for i ← 0 to m - 1 do",
+    "        next ← node.child[w[i]]",
+    "        next.pass ← next.pass - 1",
+    "        if next.pass = 0 then          // no other word uses it",
+    "            node.child[w[i]] ← null    // cut the whole tail",
+    "            return true",
+    "        node ← next",
+    "    node.isEnd ← false",
+    "    return true",
+  ],
+};
+
+/* ---------------- 1. RECORD ---------------- */
+let frames, steps, opName;
+function snap(line, text, extra) {
+  const nodes = T.nodes.map((x) => ({ id: x.id, ch: x.ch, parent: x.parent, kids: Object.assign({}, x.kids), end: x.end, pass: x.pass, alive: x.alive }));
+  frames.push(Object.assign({ nodes, line, text, st: {}, steps, op: opName, sugg: null, ghost: null }, extra || {}));
+}
+function stateOfPath(ids, last) { const o = {}; ids.forEach((id) => (o[id] = "compare")); if (last != null) o[last] = "active"; return o; }
+function optionsAround(ans, max) { const s = new Set([ans]); for (let d = 1; s.size < 4; d++) { if (ans - d >= 0) s.add(ans - d); if (ans + d <= max) s.add(ans + d); if (d > max + 4) break; } return [...s].sort((a, b) => a - b); }
+
+function recInsert(w, noAsk) {
+  const m = w.length;
+  if (!m) return;
+  if (has(w)) { snap(2, `"${w}" is already stored, so insert does nothing (pass counts must not be bumped twice).`, { st: { [walk(w)]: "done" } }); return; }
+  // predict: how many new nodes?
+  let id = 0, newCount = 0, k = 0;
+  for (; k < m; k++) { const nx = T.nodes[id].kids[w[k]]; if (nx == null) break; id = nx; }
+  newCount = m - k;
+  const ask = noAsk ? null : { id: "ins-" + w + "-" + alive().length, q: `Inserting <b>"${w}"</b> (${m} letters). How many <b>new</b> nodes will it create?`, options: optionsAround(newCount, m), answer: newCount, why: k ? `The first ${k} letter${k > 1 ? "s" : ""} ("${w.slice(0, k)}") already exist as a path, so only the remaining ${m - k} need new nodes.` : "No stored word starts with that letter, so every letter needs a new node." };
+  snap(3, `Insert "${w}": start at the root.`, { st: { 0: "active" }, ask });
+  const path = [0];
+  let node = 0;
+  T.nodes[0].pass++;
+  const created = {};
+  for (let i = 0; i < m; i++) {
+    const c = w[i];
+    let nx = T.nodes[node].kids[c];
+    steps++;
+    if (nx == null) {
+      nx = T.nodes.length;
+      T.nodes.push({ id: nx, ch: c, parent: node, kids: {}, end: false, pass: 0, alive: true });
+      T.nodes[node].kids[c] = nx;
+      created[nx] = "swap";
+      T.nodes[nx].pass++;
+      path.push(nx); node = nx;
+      snap(7, `No child "${c}" here: create a new node for "${w.slice(0, i + 1)}".`, { st: Object.assign(stateOfPath(path), created, { [nx]: "swap" }) });
+    } else {
+      T.nodes[nx].pass++;
+      path.push(nx); node = nx;
+      snap(8, `Child "${c}" already exists (shared prefix "${w.slice(0, i + 1)}"): just follow it. pass is now ${T.nodes[nx].pass}.`, { st: Object.assign(stateOfPath(path, nx), created) });
+    }
+  }
+  T.nodes[node].end = true;
+  snap(10, `Mark the last node isEnd: "${w}" is stored. ${Object.keys(created).length} new node${Object.keys(created).length === 1 ? "" : "s"}, ${m} steps.`, { st: Object.assign(stateOfPath(path), created, { [node]: "done" }) });
+}
+function recSearch(w) {
+  const ans = has(w);
+  snap(1, `Search "${w}": start at the root and follow one child per letter.`, { st: { 0: "active" }, ask: { id: "s-" + w + "-" + alive().length, q: `Will <b>search("${w}")</b> return true or false?`, options: ["true", "false"], answer: String(ans), why: ans ? `"${w}" was inserted, so the walk succeeds and its last node has isEnd = true.` : walk(w) >= 0 ? `The path exists, but its last node has no isEnd flag: "${w}" is only a prefix of stored words.` : `Some letter of "${w}" has no child to follow.` } });
+  let node = 0; const path = [0];
+  for (let i = 0; i < w.length; i++) {
+    const nx = T.nodes[node].kids[w[i]];
+    steps++;
+    if (nx == null) {
+      snap(5, `No child "${w[i]}" under "${w.slice(0, i) || "root"}": return <b>false</b> after ${i + 1} step${i ? "s" : ""}.`, { st: stateOfPath(path, node), ghost: { parent: node, ch: w[i] } });
+      return;
+    }
+    node = nx; path.push(nx);
+    snap(3, `Follow "${w[i]}" → prefix "${w.slice(0, i + 1)}".`, { st: stateOfPath(path, nx) });
+  }
+  const end = T.nodes[node].end;
+  snap(6, end ? `Reached the end of "${w}" and isEnd is true: return <b>true</b> (${w.length} steps).` : `The whole path "${w}" exists, but isEnd is false here: return <b>false</b>. "${w}" is only a prefix of stored words.`, { st: Object.assign(stateOfPath(path), { [node]: end ? "done" : "swap" }) });
+}
+function recPrefix(p) {
+  let node = 0; const path = [0];
+  const target = walk(p), cnt = target >= 0 ? T.nodes[target].pass : 0;
+  snap(1, `Prefix "${p}": walk down the prefix first.`, { st: { 0: "active" }, ask: { id: "p-" + p + "-" + alive().length, q: `How many stored words start with <b>"${p}"</b>?`, options: optionsAround(cnt, T.nodes[0].pass), answer: cnt, why: `The pass counter on the prefix's last node answers it in ${p.length} steps: ${cnt}.` } });
+  for (let i = 0; i < p.length; i++) {
+    const nx = T.nodes[node].kids[p[i]];
+    steps++;
+    if (nx == null) { snap(5, `No child "${p[i]}": no stored word starts with "${p}". Count 0, no suggestions.`, { st: stateOfPath(path, node), ghost: { parent: node, ch: p[i] }, sugg: [] }); return; }
+    node = nx; path.push(nx);
+    snap(3, `Follow "${p[i]}" → "${p.slice(0, i + 1)}".`, { st: stateOfPath(path, nx) });
+  }
+  const base = stateOfPath(path);
+  snap(6, `Read pass = <b>${T.nodes[node].pass}</b>: that many words start with "${p || "(empty)"}". No need to visit them.`, { st: Object.assign({}, base, { [node]: "done" }) });
+  const out = [], st = Object.assign({}, base, { [node]: "done" });
+  const dfs = (id, s) => {
+    if (out.length >= 8) return;
+    st[id] = st[id] === "done" ? "done" : "active";
+    if (T.nodes[id].end) { out.push(s); st[id] = "done"; snap(12, `"${s}" ends here: suggestion #${out.length}.`, { st: Object.assign({}, st), sugg: out.slice() }); }
+    else snap(13, `Visit "${s}" (not a word) and try its children in alphabetical order.`, { st: Object.assign({}, st), sugg: out.slice() });
+    Object.keys(T.nodes[id].kids).sort().forEach((c) => dfs(T.nodes[id].kids[c], s + c));
+  };
+  dfs(node, p);
+  snap(9, `Autocomplete done: ${out.length} suggestion${out.length === 1 ? "" : "s"} in dictionary order${out.length >= 8 ? " (capped at 8)" : ""}. Depth-First Search (DFS) with sorted children lists them alphabetically.`, { st: Object.assign({}, st), sugg: out.slice() });
+}
+function recDelete(w) {
+  if (!has(w)) { steps += w.length; snap(2, `"${w}" is not stored, so there is nothing to delete.`, {}); return; }
+  // how many nodes will be removed?
+  let node = 0, removed = 0;
+  for (let i = 0; i < w.length; i++) { const nx = T.nodes[node].kids[w[i]]; if (T.nodes[nx].pass === 1) { removed = w.length - i; break; } node = nx; }
+  snap(3, `Delete "${w}": walk down and decrement pass on each node.`, { st: { 0: "active" }, ask: { id: "d-" + w + "-" + alive().length, q: `Deleting <b>"${w}"</b>: how many nodes will be removed?`, options: optionsAround(removed, w.length), answer: removed, why: removed ? `The last ${removed} node${removed > 1 ? "s are" : " is"} used by "${w}" alone (pass = 1).` : `Every node on the path is shared with another word, so only the isEnd flag is cleared.` } });
+  node = 0; const path = [0];
+  T.nodes[0].pass--;
+  for (let i = 0; i < w.length; i++) {
+    const nx = T.nodes[node].kids[w[i]];
+    steps++;
+    T.nodes[nx].pass--;
+    if (T.nodes[nx].pass === 0) {
+      const tail = [];
+      const collect = (id) => { tail.push(id); Object.values(T.nodes[id].kids).forEach(collect); };
+      collect(nx);
+      const st = stateOfPath(path); tail.forEach((id) => (st[id] = "swap"));
+      snap(8, `pass of "${w.slice(0, i + 1)}" dropped to 0: no other word uses this node or anything below it. Cut the tail (${tail.length} node${tail.length > 1 ? "s" : ""}).`, { st });
+      delete T.nodes[node].kids[w[i]];
+      tail.forEach((id) => (T.nodes[id].alive = false));
+      snap(10, `Removed. "${w}" is gone; ${alive().length} nodes remain.`, { st: stateOfPath(path, node) });
+      return;
+    }
+    node = nx; path.push(nx);
+    snap(7, `"${w.slice(0, i + 1)}" is still used by ${T.nodes[nx].pass} other word${T.nodes[nx].pass > 1 ? "s" : ""}: keep it (pass ${T.nodes[nx].pass + 1} → ${T.nodes[nx].pass}).`, { st: stateOfPath(path, nx) });
+  }
+  T.nodes[node].end = false;
+  snap(12, `Every node is shared with longer words, so just clear isEnd on "${w}". Nothing is removed.`, { st: Object.assign(stateOfPath(path), { [node]: "swap" }) });
+}
+
+/* ---------------- 2. RENDER ---------------- */
+const stage = $("stage");
+let code = null, codeFor = null;
+const ctr = Forge.counters($("ctr"), { nodes: 0, "total chars": 0, words: 0, "steps (this op)": 0, "saved by sharing": 0 });
+const say = Forge.narrate($("say"));
+function setCode(op) { if (codeFor === op) return; codeFor = op; $("code").innerHTML = ""; code = Forge.code($("code"), CODE[op]); }
+
+function render(f, i) {
+  const nodes = f.nodes, live = nodes.filter((x) => x.alive);
+  const kidsOf = (id) => Object.keys(nodes[id].kids).sort().map((c) => nodes[id].kids[c]).filter((k) => nodes[k].alive);
+  const wid = {}, pos = {};
+  const width = (id) => (wid[id] = Math.max(1, kidsOf(id).reduce((s, k) => s + width(k), 0)));
+  width(0);
+  let maxD = 0;
+  const place = (id, d, left) => {
+    maxD = Math.max(maxD, d);
+    const ks = kidsOf(id);
+    if (!ks.length) { pos[id] = { u: left + 0.5, d }; return; }
+    let x = left; ks.forEach((k) => { place(k, d + 1, x); x += wid[k]; });
+    pos[id] = { u: (pos[ks[0]].u + pos[ks[ks.length - 1]].u) / 2, d };
+  };
+  place(0, 0, 0);
+  const units = wid[0] + (f.ghost ? 1 : 0);
+  const W = Math.max(760, units * 46), unit = Math.min(64, (W - 40) / units), rowH = 58, r = 15;
+  const treeH = 36 + (maxD + (f.ghost ? 1 : 0)) * rowH + 36;
+  const H = treeH + 70;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  const ox = (W - unit * wid[0]) / 2;
+  const P = (id) => ({ x: ox + pos[id].u * unit, y: 30 + pos[id].d * rowH });
+  live.forEach((nd) => { if (nd.parent >= 0 && pos[nd.id]) { const a = P(nd.parent), b = P(nd.id); const s = f.st[nd.id]; stage.appendChild(S("line", { x1: a.x, y1: a.y + r, x2: b.x, y2: b.y - r, stroke: s && s !== "active" ? COL[s] : s ? COL.compare : "var(--line-2)", "stroke-width": s ? 3 : 1.8 })); } });
+  if (f.ghost && pos[f.ghost.parent]) {
+    const a = P(f.ghost.parent), g = { x: a.x + unit * 0.6, y: a.y + rowH };
+    stage.appendChild(S("line", { x1: a.x, y1: a.y + r, x2: g.x, y2: g.y - r, stroke: "var(--c-swap)", "stroke-width": 2, "stroke-dasharray": "5 4" }));
+    stage.appendChild(S("circle", { cx: g.x, cy: g.y, r, fill: "none", stroke: "var(--c-swap)", "stroke-width": 2, "stroke-dasharray": "4 3" }));
+    stage.appendChild(S("text", { x: g.x, y: g.y + 5, "text-anchor": "middle", "font-size": 14, "font-weight": 700, fill: "var(--c-swap)" }, f.ghost.ch));
+    stage.appendChild(S("text", { x: g.x, y: g.y + r + 14, "text-anchor": "middle", "font-size": 10, fill: "var(--c-swap)" }, "missing"));
+  }
+  live.forEach((nd) => {
+    if (!pos[nd.id]) return;
+    const p = P(nd.id), s = f.st[nd.id];
+    if (nd.end) stage.appendChild(S("circle", { cx: p.x, cy: p.y, r: r + 4, fill: "none", stroke: "var(--c-done)", "stroke-width": 2.5 }));
+    stage.appendChild(S("circle", { cx: p.x, cy: p.y, r, fill: s ? COL[s] : "var(--panel-2)", stroke: s ? COL[s] : "var(--line-2)", "stroke-width": 2 }, S("title", null, nd.id === 0 ? `root, pass ${nd.pass}` : `pass ${nd.pass}${nd.end ? ", end of a word" : ""}`)));
+    stage.appendChild(S("text", { x: p.x, y: p.y + 5, "text-anchor": "middle", "font-size": nd.id === 0 ? 10 : 14, "font-weight": 700, fill: s ? "#0d1117" : "var(--ink)" }, nd.id === 0 ? "root" : nd.ch));
+    stage.appendChild(S("text", { x: p.x + r + 5, y: p.y + r + 6, "font-size": 10, fill: "var(--ember-2)" }, String(nd.pass)));
+  });
+  // node count vs total characters bars
+  const wl = (() => { const out = []; const dfs = (id, s) => { const nd = nodes[id]; if (nd.end) out.push(s); kidsOf(id).forEach((k) => dfs(k, s + nodes[k].ch)); }; dfs(0, ""); return out; })();
+  const chars = wl.reduce((s, w) => s + w.length, 0), letters = live.length - 1;
+  const by = treeH + 6, maxv = Math.max(1, chars), bw = W - 220;
+  [["total characters", chars, "var(--c-bar)"], ["letter nodes", letters, "var(--steel)"]].forEach(([name, v, c], j) => {
+    const y = by + j * 26;
+    stage.appendChild(S("text", { x: 20, y: y + 13, "font-size": 11, fill: "var(--ink-2)" }, name));
+    stage.appendChild(S("rect", { x: 150, y, width: Math.max(2, (bw * v) / maxv), height: 16, rx: 4, fill: c }));
+    stage.appendChild(S("text", { x: 156 + Math.max(2, (bw * v) / maxv), y: y + 13, "font-size": 11, "font-weight": 700, fill: "var(--ink)" }, String(v)));
+  });
+  setCode(f.op);
+  code.highlight(f.line);
+  ctr.set({ nodes: live.length, "total chars": chars, words: wl.length, "steps (this op)": f.steps, "saved by sharing": chars - letters });
+  say.say(f.text);
+  const sg = $("sugg");
+  if (f.sugg) { sg.innerHTML = ""; if (!f.sugg.length) sg.appendChild(el("span", { class: "small muted" }, "(none yet)")); f.sugg.forEach((w) => sg.appendChild(el("span", { class: "chip ok" }, w))); }
+  predict.show(f, i);
+}
+player = Forge.player($("player"), { frames: [], render });
+
+/* ---------------- controls ---------------- */
+function showWords() {
+  const box = $("words"); box.innerHTML = "";
+  const ws = words();
+  if (!ws.length) box.appendChild(el("span", { class: "small muted" }, "(empty)"));
+  ws.forEach((w) => box.appendChild(el("span", { class: "chip", title: "Use this word", onclick: () => ($("word").value = w) }, w)));
+}
+function runOp(op, fn) {
+  frames = []; steps = 0; opName = op;
+  fn();
+  predict.reset();
+  $("sugg").innerHTML = op === "prefix" ? "" : '<span class="small muted">Run "Prefix count + autocomplete".</span>';
+  player.load(frames);
+  showWords();
+}
+function buildList() {
+  const ws = $("list").value.split(/[\s,;]+/).map(clean).filter(Boolean).slice(0, 24);
+  emptyTrie();
+  runOp("insert", () => {
+    opName = "insert";
+    snap(3, `Build the trie by inserting ${ws.length} words one after another.`, { st: { 0: "active" } });
+    ws.forEach((w) => { steps = 0; recInsert(w, true); });
+    const n = alive().length, chars = words().reduce((s, w) => s + w.length, 0);
+    snap(10, `Done: ${words().length} words, ${chars} characters, but only ${n} nodes (${n - 1} letters + the root). Shared prefixes are stored once.`, {});
+  });
+}
+const wordBox = () => clean($("word").value);
+$("buildList").onclick = buildList;
+$("list").addEventListener("keydown", (e) => { if (e.key === "Enter") buildList(); });
+$("reset").onclick = () => { emptyTrie(); runOp("insert", () => snap(3, "Empty trie: just the root. Insert some words.", {})); };
+$("doInsert").onclick = () => { const w = wordBox(); if (w) runOp("insert", () => recInsert(w)); };
+$("doSearch").onclick = () => { const w = wordBox(); if (w) runOp("search", () => recSearch(w)); };
+$("doPrefix").onclick = () => { const w = wordBox(); runOp("prefix", () => recPrefix(w)); };
+$("doDelete").onclick = () => { const w = wordBox(); if (w) runOp("delete", () => recDelete(w)); };
+$("word").addEventListener("keydown", (e) => { if (e.key === "Enter") $("doSearch").click(); });
+const VOCAB = ["car", "card", "care", "careful", "cart", "cat", "catalog", "do", "dog", "dot", "dote", "tea", "team", "ten", "tent", "to", "toe", "tree", "trie", "trip", "in", "inn", "ink", "an", "and", "ant"];
+$("rand").onclick = () => {
+  const pool = VOCAB.slice(); const out = [];
+  const k = 6 + Math.floor(Math.random() * 4);
+  while (out.length < k) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  $("list").value = out.join(", ");
+  buildList();
+};
+emptyTrie();
+buildList();
+</script>
+</body>
+</html>

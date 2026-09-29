@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warshall &amp; Floyd · Algorithm Forge</title>
+<meta name="description" content="Warshall's transitive closure R(0)..R(n) and Floyd's all-pairs shortest paths D(0)..D(n), with row k and column k highlighted, updated cells flashing, an editable digraph, and path reconstruction.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  label.field { max-width: 100%; }
+  label.field[hidden] { display: none; }
+  select { max-width: 100%; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  .wf-inputs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .wf-inputs input[type="text"] { width: 100%; max-width: 330px; }
+  .ttl { font-size: 0.75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  .formula { font-family: var(--mono); font-size: 0.86rem; min-height: 1.6em; overflow-wrap: anywhere; }
+  .strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .strip button { flex: 0 0 auto; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 4px; cursor: pointer; color: var(--ink-2); font: 700 0.75rem var(--mono); }
+  .strip button.on { border-color: var(--ember); box-shadow: 0 0 0 1px var(--ember); }
+  .strip button:disabled { opacity: .35; cursor: default; }
+  .strip svg { display: block; width: 92px; height: auto; }
+  @keyframes wf-flash { 0% { fill-opacity: .95; } 100% { fill-opacity: .3; } }
+  .flash { animation: wf-flash .9s ease-out; }
+  .ask[hidden] { display: none; }
+  .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .go-deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  #svgG { cursor: default; }
+  #svgG.editing { cursor: crosshair; outline: 2px dashed var(--ember); outline-offset: -2px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 8 · Dynamic Programming</div>
+    <h1>Warshall &amp; Floyd</h1>
+    <p class="lead muted">Both algorithms build a sequence of n × n matrices. Matrix number k answers the question using only vertices 1..k as stepping stones. Each pass lets one more vertex, k, act as a shortcut: row k and column k tell you everything.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="wf-inputs">
+      <label class="field">Algorithm
+        <select id="algo"><option value="warshall">Warshall: transitive closure</option><option value="floyd">Floyd: all-pairs shortest paths</option></select>
+      </label>
+      <label class="field">Preset
+        <select id="preset">
+          <option value="lw">Levitin §8.4 Warshall digraph</option>
+          <option value="lecw">Lecture 8 Warshall example</option>
+          <option value="lf" selected>Levitin §8.4 Floyd digraph</option>
+          <option value="chain">Chain a→b→c→d→e</option>
+        </select>
+      </label>
+      <label class="field">Step through
+        <select id="gran"><option value="changes">only cells that change</option><option value="all">every cell (n³ checks)</option></select>
+      </label>
+      <button class="btn" id="rand">Random graph</button>
+    </div>
+    <div class="wf-inputs" style="margin-top:12px">
+      <label class="field">Edges (from&gt;to weight), editable<input type="text" id="edges" spellcheck="false"></label>
+      <button class="btn primary" id="load">Load &amp; run</button>
+      <label class="row small" style="gap:6px"><input type="checkbox" id="edit"> ✏️ Edit by clicking the graph</label>
+      <label class="field">New edge weight<input type="number" id="ew" value="4" min="1" max="99" style="width:80px"></label>
+      <button class="btn sm" id="addV">+ vertex</button>
+      <button class="btn sm" id="delV">− vertex</button>
+    </div>
+    <p class="small muted" id="editHint" style="margin:8px 0 0">Edit mode: click a vertex, then another vertex to add (or remove) that directed edge. Weights are used by Floyd only.</p>
+    <div class="row" style="margin-top:8px">
+      <label class="row small" style="gap:6px"><input type="checkbox" id="predictMode"> 🤔 Predict which cells change in each pass</label>
+      <span class="chip" id="score">passes predicted exactly: 0 / 0</span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="grid cols-2">
+        <div><p class="ttl" id="gTitle">Digraph</p><svg class="stage" id="svgG" role="img" aria-label="Directed graph"></svg></div>
+        <div><p class="ttl" id="mTitle">Matrix</p><svg class="stage" id="svgM" role="img" aria-label="Current matrix"></svg></div>
+      </div>
+      <div class="callout steel formula" id="formula">&nbsp;</div>
+      <div class="callout ask" id="ask" hidden><b>🤔 Predict:</b> <span id="askQ"></span> <button class="btn sm primary" id="askGo">Check my guess</button> <span id="askFb" class="small"></span></div>
+      <div><p class="ttl">The whole sequence (click to jump)</p><div class="strip" id="strip"></div></div>
+      <div class="panel" id="pathPanel">
+        <div class="panel-title">Floyd path reconstruction</div>
+        <div class="row">
+          <label class="field">from <select id="pf"></select></label>
+          <label class="field">to <select id="pt"></select></label>
+          <button class="btn sm steel" id="showPath">Show shortest path</button>
+          <span id="pathOut" class="small"></span>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--c-pivot)"></i>vertex k (the new stepping stone) and its row/column</span>
+        <span><i style="background:var(--c-active)"></i>cell (i, j) being checked</span>
+        <span><i style="background:var(--c-compare)"></i>R[i, k] and R[k, j] (or D[i, k], D[k, j])</span>
+        <span><i style="background:var(--c-swap)"></i>updated in this pass</span>
+        <span><i style="background:var(--c-done)"></i>shortest path</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Warshall:</b> R(k)[i, j] = 1 means there is a path from i to j whose intermediate vertices are all among the first k. R(0) is the adjacency matrix; R(n) is the transitive closure.</li>
+        <li><b>Floyd:</b> D(k)[i, j] is the length of the shortest path from i to j using only vertices 1..k in between. D(0) is the weight matrix (∞ = no edge); D(n) is the distance matrix.</li>
+        <li>During pass k the <b style="color:var(--c-pivot)">purple row k and column k</b> never change, so every other cell can be updated from them: a 0 turns into 1 when both R[i, k] and R[k, j] are 1; a distance shrinks when D[i, k] + D[k, j] is smaller.</li>
+        <li>In the graph, dashed yellow arrows show the detour i → k → j that the update uses; the red dashed arrow is the new (or shorter) connection i ⇢ j.</li>
+        <li>The strip below the stage keeps every matrix of the sequence, so you can compare R(k − 1) with R(k).</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Run Warshall on the Levitin digraph (a→b, b→d, d→a, d→c). Only three passes change anything. Which one, and why does pass c do nothing? (c has no outgoing edges.)</li>
+        <li>Switch to Floyd on the Levitin digraph. Check D(4): row a should read 0, 10, 3, 4 and the entry D[c, a] should drop from 9 to 7 in the last pass.</li>
+        <li>Use the path finder: the shortest path from b to d is b → a → c → d of length 6.</li>
+        <li>Set “every cell” and watch the counter: n³ checks no matter what the graph looks like (64 for n = 4). That is why both algorithms are Θ(n³).</li>
+        <li>Turn on 🤔 Predict. At the start of each pass, click the cells you expect to change. Hint: only rows with a 1 (or a finite value) in column k and columns with a 1 in row k can change.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="go-deeper">
+      <a class="btn sm" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/08-dynamic-programming/README.md">📖 Lesson 8: Dynamic Programming</a>
+      <a class="btn sm" href="../arena/index.html?chapter=8">🏟️ Arena: Chapter 8 problems</a>
+      <a class="btn sm" href="../arena/problem.html?id=warshall-closure">warshall-closure</a>
+      <a class="btn sm" href="../arena/problem.html?id=floyd-all-pairs">floyd-all-pairs</a>
+      <a class="btn sm" href="dp-studio.html">Sim: Dynamic Programming (DP) Table Studio</a>
+      <a class="btn sm" href="optimal-bst.html">Sim: Optimal Binary Search Tree (BST)</a>
+      <a class="btn sm" href="greedy-graphs.html">Sim: Dijkstra (single-source shortest paths)</a>
+      <a class="btn sm" href="graph-traversal.html">Sim: Depth-First Search (DFS) / Breadth-First Search (BFS) (closure by traversal)</a>
+    </div>
+  </section>
+</main>
+<script src="js/warshall-floyd.js"></script>
+</body>
+</html>

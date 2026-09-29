@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simplex Method · Algorithm Forge</title>
+<meta name="description" content="Interactive Linear Programming (LP) lab: feasible region, objective-line sweep and a step-by-step simplex tableau synchronized with the plot.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .8rem; }
+  select { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .predict .q { font-weight: 700; margin-bottom: 6px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .predict .res { margin-top: 8px; font-size: .9rem; }
+  .lp-form { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; align-items: start; }
+  .lp-form textarea { width: 100%; min-height: 84px; font-family: var(--mono); resize: vertical; }
+  .lp-form input[type="text"] { width: 64px; }
+  .obj-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-family: var(--mono); }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  #zs { width: 100%; }
+  .zbox { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  @media (max-width: 640px) { .lp-form { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 10 · Iterative Improvement</div>
+    <h1>The Simplex Method</h1>
+    <p class="lead muted">A Linear Programming (LP) problem in two variables: see its feasible region, slide the objective line to the best corner, and watch the simplex tableau walk from corner to adjacent corner — each step better than the last.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="lp-form">
+      <label class="field">Preset
+        <select id="preset" aria-label="Preset problem"></select>
+      </label>
+      <div class="field" style="font-size:.8rem;color:var(--muted);font-weight:600">Objective
+        <div class="obj-row">
+          <select id="sense" aria-label="Maximize or minimize"><option value="max">maximize</option><option value="min">minimize</option></select>
+          <input id="c1" type="text" value="3" aria-label="coefficient of x"> x +
+          <input id="c2" type="text" value="5" aria-label="coefficient of y"> y
+        </div>
+      </div>
+      <label class="field">Constraints<br><span class="small">one per line; x, y ≥ 0 is automatic</span></label>
+      <div>
+        <textarea id="cons" aria-label="Constraints, one per line" spellcheck="false">x + y <= 4
+x + 3y <= 6</textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" id="load">Solve</button>
+          <button class="btn" id="rand">Random</button>
+          <label class="small muted"><input type="checkbox" id="pausePredict" checked> pause to predict</label>
+          <span id="err" class="err"></span>
+        </div>
+        <div class="small muted" style="margin-top:6px">Use ≤ / &lt;=, ≥ / &gt;=, or =. Fractions and decimals work: <code>1/2x + y &lt;= 3.5</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Feasible region, constraint lines, objective line and the current basic solution" style="touch-action:none"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-done);opacity:.6"></i>feasible region</span>
+        <span><i style="background:var(--steel)"></i>constraint line</span>
+        <span><i style="background:var(--ember)"></i>objective line / simplex path</span>
+        <span><i style="background:transparent;border:3px solid var(--c-active);border-radius:50%"></i>current basic solution</span>
+        <span><i style="background:transparent;border:3px dashed var(--c-swap);border-radius:50%"></i>not yet feasible (Phase I)</span>
+      </div>
+      <div class="panel">
+        <div class="zbox"><b class="small">Objective line</b><button class="btn sm" id="sweep">Sweep to the optimum</button><span class="small muted">or drag on the plot</span></div>
+        <input type="range" id="zs" min="0" max="20" step="0.05" value="0" aria-label="Objective value z">
+        <div id="zmsg" class="small" style="min-height:2.6em"></div>
+      </div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title" id="tabcap">Simplex tableau</div>
+        <div class="scroll-x" id="tableau"></div>
+        <div class="legend" style="margin-top:8px">
+          <span><i style="background:var(--steel-soft);border:1px solid var(--steel)"></i>pivot column (entering)</span>
+          <span><i style="background:var(--ember-soft);border:1px solid var(--ember)"></i>pivot row (departing)</span>
+          <span><i style="background:var(--c-swap)"></i>negative objective entry</span>
+        </div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div>
+        <div id="predict" class="predict callout" style="margin-top:10px"><span class="muted small">Prediction prompts appear at decision points. With “pause to predict” on, autoplay stops there.</span></div>
+      </div>
+      <div class="panel"><div class="panel-title">Extreme points</div><div id="ptable" class="scroll-x"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Green region</b> = every point (x, y) that satisfies all constraints. Its corners are the <b>extreme points</b>; the table lists each with its objective value.</li>
+        <li><b>Blue lines</b> are the constraint boundaries. A dashed green edge means the region keeps going forever in that direction.</li>
+        <li>The <b>orange dashed line</b> is a level line c₁x + c₂y = z. Sliding it shows the geometric solution: the last corner it touches is optimal.</li>
+        <li>The <b>tableau</b> is the same problem in algebra. Each row's basic variable equals that row's right-hand side (RHS); all other variables are 0. That basic feasible solution is the <b>blue ring</b> on the plot.</li>
+        <li>Each pivot swaps one basic variable for one nonbasic one — on the plot, a hop along an edge to an <b>adjacent corner</b> (orange arrows).</li>
+        <li>Minimizing f is done as maximizing z = −f. If the origin breaks a ≥ or = constraint, <b>Phase I</b> first drives artificial variables a₁, a₂, … to 0; the ring is dashed red until the point is feasible.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Default problem: predict the path before pressing play. Simplex goes O → C → B (z = 0 → 10 → 14) and never visits A, even though A (z = 12) is also a corner.</li>
+        <li>Change the objective to <code>1x + 1y</code>. Now the level line is parallel to x + y ≤ 4: every point on edge A–B is optimal. Which corner does simplex report?</li>
+        <li>Load <b>Unbounded</b>. Watch the step where the entering column has no positive entry — no θ-ratio exists, so nothing stops the growth.</li>
+        <li>Load <b>Infeasible</b>. Phase I ends with W &lt; 0: the artificial variables can't all reach 0, so no point satisfies both constraints.</li>
+        <li>Add <code>x &lt;= 3.5</code> to the default problem. Does the optimum change? (It shouldn't: B = (3, 1) already satisfies it — the new constraint is not binding.)</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/10-iterative-improvement/README.md">📖 Lesson 10: Iterative Improvement</a>
+      <a class="btn" href="../arena/index.html?chapter=10">🏟️ Arena · Chapter 10</a>
+      <a class="btn" href="../arena/problem.html?id=simplex-max-2var">🧩 Problem: simplex-max-2var</a>
+      <a class="btn" href="max-flow.html">🎮 Max-flow (an LP with special structure)</a>
+      <a class="btn" href="bipartite-matching.html">🎮 Bipartite matching</a>
+      <a class="btn" href="stable-marriage.html">🎮 Stable marriage</a>
+    </div>
+    <p class="small muted" style="margin-top:10px">Reference: Levitin §10.1. Simplex takes about m to 3m pivots on typical inputs (m = number of constraints) but is exponential in the worst case; interior-point methods such as Karmarkar's algorithm are polynomial.</p>
+  </section>
+</main>
+<script src="js/simplex.js"></script>
+</body>
+</html>

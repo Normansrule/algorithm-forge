@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bin Packing · Algorithm Forge</title>
+<meta name="description" content="Next fit, first fit, first-fit decreasing and best fit for bin packing, with the lower bound, accuracy ratios and random experiments.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .ask { border: 1px solid var(--ember); background: var(--ember-soft); border-radius: 10px; padding: 12px; }
+  .ask p { margin: 0 0 8px; }
+  .ask .btn.pick-ok { background: var(--c-done); border-color: var(--c-done); color: #0d1117; }
+  .ask .btn.pick-bad { background: var(--c-swap); border-color: var(--c-swap); color: #0d1117; }
+  .ask .fb { margin-top: 8px; }
+  table.res { width: 100%; }
+  table.res td.n, table.res th.n { text-align: right; }
+  table.res td:first-child, table.res th:first-child { text-align: left; }
+  table.res tr.on td { background: var(--ember-soft); }
+  table.res button { font: inherit; background: none; border: 0; color: var(--steel); cursor: pointer; padding: 0; text-align: left; }
+  #exp svg { width: 100%; display: block; }
+  #exp .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 8px; font-size: .8rem; box-shadow: var(--shadow); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 12 · Coping with the Limitations of Algorithm Power</div>
+    <h1>Bin packing: four greedy rules, one hard problem</h1>
+    <p class="lead muted">Pack items of size between 0 and 1 into as few unit-capacity bins as possible. Finding the minimum is NP-hard (NP = Nondeterministic Polynomial time), but simple greedy rules get close. Watch each rule decide where every item goes, and measure how far it lands from the lower bound ⌈Σ sizes⌉.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="alg">
+          <option value="nf">Next Fit (NF)</option>
+          <option value="ff" selected>First Fit (FF)</option>
+          <option value="ffd">First-Fit Decreasing (FFD)</option>
+          <option value="bf">Best Fit (BF)</option>
+        </select>
+      </label>
+      <label class="field">Item sizes (each in (0, 1])
+        <input id="items" type="text" value="0.4, 0.2, 0.6, 0.7" style="min-width:240px">
+      </label>
+      <button class="btn primary" id="load">Load</button>
+      <label class="field">Preset
+        <select id="preset">
+          <option value="lec">Lecture example</option>
+          <option value="nf">Next Fit trap</option>
+          <option value="ff">First Fit's bad family (ratio 5/3)</option>
+          <option value="ffd">FFD's tricky case</option>
+        </select>
+      </label>
+      <label class="field"><span>Random: n = <b id="nval">12</b></span>
+        <input id="rn" type="range" min="4" max="30" value="12" aria-label="Number of random items">
+      </label>
+      <label class="field">Sizes
+        <select id="dist">
+          <option value="u">uniform in (0, 1]</option>
+          <option value="s">small, in (0, 0.5]</option>
+          <option value="m">medium, in [0.2, 0.7]</option>
+        </select>
+      </label>
+      <button class="btn" id="rand">Random</button>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predict"> 🤔 Predict mode</label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Bins filling up"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>current item / bin being checked</span>
+        <span><i style="background:var(--c-swap)"></i>does not fit</span>
+        <span><i style="background:var(--c-active)"></i>item just placed</span>
+        <span><i style="background:var(--c-bar)"></i>packed item</span>
+        <span><i style="background:var(--c-dim)"></i>closed bin (Next Fit never looks back)</span>
+      </div>
+      <div id="player"></div>
+      <div id="ask" class="ask" hidden></div>
+      <div class="panel">
+        <div class="panel-title">All four rules on these items</div>
+        <div class="scroll-x"><table class="t res" id="res"></table></div>
+        <p class="small muted" id="resNote" style="margin:8px 0 0"></p>
+      </div>
+      <div class="panel" id="exp">
+        <div class="panel-title">Random experiment: average behavior</div>
+        <div class="row">
+          <label class="field">Instances
+            <select id="reps"><option>50</option><option selected>200</option><option>1000</option></select>
+          </label>
+          <button class="btn steel" id="runExp">Run experiment</button>
+          <span class="small muted">uses n and the size distribution chosen above</span>
+        </div>
+        <div id="expOut" style="position:relative;margin-top:10px"></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <p><b>Columns are bins</b> of capacity 1 (the dashed line at the top). Items stack from the bottom; the number on a block is its size. The strip above shows the items in the order the rule processes them.</p>
+      <p><b>The four rules.</b> <b>Next Fit</b> keeps only the newest bin open. <b>First Fit</b> scans bins left to right and uses the first with room. <b>First-Fit Decreasing</b> sorts the items largest first, then runs First Fit. <b>Best Fit</b> picks the bin that would be left <i>fullest</i> (least room to spare).</p>
+      <p><b>Lower bound.</b> Every bin holds at most 1, so any packing needs at least ⌈Σ sizes⌉ bins. bins / ⌈Σ⌉ therefore overestimates the true accuracy ratio. For small inputs (n ≤ 14) the table also finds the true optimum by exhaustive backtracking, so you see the exact ratio bins / OPT.</p>
+      <p><b>Known guarantees</b> (Levitin §12.3 and exercises): FF uses at most about 1.7·OPT bins, FFD at most about (11/9)·OPT + a small constant (the lecture quotes the simpler ratio 1.5), and NF at most 2·OPT. On random inputs all of them do much better.</p>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Lecture example 0.4, 0.2, 0.6, 0.7.</b> Predict FF's result: 0.4 and 0.2 share bin 1, 0.6 no longer fits there, 0.7 fits nowhere, so 3 bins. FFD sorts first (0.7, 0.6, 0.4, 0.2) and needs only 2 = ⌈1.9⌉, which is optimal.</li>
+        <li><b>Next Fit trap</b> (0.5, 0.1, 0.5, 0.1, …): NF opens a new bin for almost every 0.5 while FF tucks every 0.1 into an earlier bin. Count the bins for each.</li>
+        <li><b>First Fit's bad family:</b> six items each of 0.15, 0.34 and 0.51. The optimum packs one of each per bin (6 bins, all exactly full), but FF in this order uses 10: ratio 5/3. Does FFD fix it?</li>
+        <li><b>Random experiment</b> with n = 30 and uniform sizes: the average bins / ⌈Σ⌉ for FFD is typically only a few percent above 1. Switch the distribution to “small”: which rule suffers most?</li>
+        <li>With Predict mode on, guess the bin for each item under Best Fit, then rerun under First Fit. When do they disagree?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <p class="row">
+      <a class="chip ember" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/12-coping-with-limitations/README.md">📖 Lesson 12: Coping with Limitations</a>
+      <a class="chip steel" href="../arena/index.html?chapter=12">🏟️ Arena · Chapter 12</a>
+      <a class="chip" href="../arena/problem.html?id=bin-packing-first-fit">bin-packing-first-fit</a>
+      <a class="chip" href="../arena/problem.html?id=bin-packing-ffd">bin-packing-ffd</a>
+      <a class="chip" href="../arena/problem.html?id=knapsack-greedy-approx">knapsack-greedy-approx</a>
+    </p>
+    <p class="row">
+      <span class="muted small">Related sims:</span>
+      <a class="chip" href="tsp-approx.html">Traveling salesman approximations</a>
+      <a class="chip" href="greedy-choices.html">Greedy choices (Ch 9)</a>
+      <a class="chip" href="backtracking.html">Backtracking</a>
+      <a class="chip" href="p-np.html">P vs. NP (Ch 11)</a>
+    </p>
+  </section>
+</main>
+<script src="js/bin-packing.js"></script>
+</body>
+</html>

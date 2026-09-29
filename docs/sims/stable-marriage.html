@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stable Marriage · Algorithm Forge</title>
+<meta name="description" content="Gale–Shapley stable marriage algorithm step by step on the ranking matrix, plus a blocking-pair checker and man-optimal vs woman-optimal comparison.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .8rem; }
+  select { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .predict .q { font-weight: 700; margin-bottom: 6px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .predict .res { margin-top: 8px; font-size: .9rem; }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  #prefs { width: 100%; min-height: 120px; font-family: var(--mono); resize: vertical; }
+  #freelist { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 26px; }
+  table.rank td { min-width: 52px; }
+  table.t td.pair { background: color-mix(in srgb, var(--c-done) 22%, transparent); outline: 2px solid var(--c-done); outline-offset: -2px; font-weight: 700; }
+  table.t td.rej { color: var(--muted); text-decoration: line-through; }
+  table.t td.block { background: color-mix(in srgb, var(--c-swap) 22%, transparent); outline: 2px dashed var(--c-swap); outline-offset: -2px; }
+  table.t td:focus-visible { outline: 2px solid var(--ember); }
+  .prefgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .prefgrid { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 10 · Iterative Improvement</div>
+    <h1>The Stable Marriage Problem</h1>
+    <p class="lead muted">Gale–Shapley: free people propose down their preference lists; the other side keeps the best offer so far. After at most n² proposals the matching has no blocking pair — and it is optimal for whoever proposes.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="prefgrid">
+      <div class="stack">
+        <div class="row">
+          <label class="field">Instance
+            <select id="preset">
+              <option value="course">Course example (Bob/Jim/Tom)</option>
+              <option value="cyclic">Two different stable matchings</option>
+              <option value="random">Random</option>
+            </select>
+          </label>
+          <label class="field">n
+            <select id="n"><option>3</option><option>4</option><option>5</option></select>
+          </label>
+          <label class="field">Who proposes?
+            <select id="side">
+              <option value="men">Men propose (man-optimal)</option>
+              <option value="women">Women propose (woman-optimal)</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="load">Run with these lists</button>
+          <button class="btn" id="rand">Random</button>
+          <label class="small muted"><input type="checkbox" id="pausePredict" checked> pause to predict</label>
+        </div>
+        <span id="err" class="err"></span>
+      </div>
+      <label class="field">Preference lists (best first) — edit freely
+        <textarea id="prefs" spellcheck="false" aria-label="Preference lists"></textarea>
+      </label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Men on the left, women on the right; current pairs and the current proposal"></svg>
+      <div id="freelist"></div>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>current proposal</span>
+        <span><i style="background:var(--c-done)"></i>currently matched</span>
+        <span><i style="background:var(--c-swap)"></i>rejected / dumped</span>
+        <span><i style="background:var(--panel-2);border:2px dashed var(--muted)"></i>free</span>
+      </div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">Ranking matrix (row man's rank of her, column woman's rank of him)</div>
+        <div id="matrix" class="scroll-x"></div>
+        <div class="legend" style="margin-top:8px">
+          <span><i style="background:var(--ember-soft);border:2px solid var(--ember)"></i>proposal now</span>
+          <span><i style="background:color-mix(in srgb, var(--c-done) 30%, transparent);border:2px solid var(--c-done)"></i>matched pair</span>
+          <span><i style="background:var(--panel-2)"></i><s>struck</s> = rejected or dumped</span>
+        </div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div>
+        <div id="predict" class="predict callout" style="margin-top:10px"><span class="muted small">Before every response you can predict: accept or reject?</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Blocking-pair checker</h2>
+    <p class="small muted">Build any matching: click a cell to pair that man with that woman (clicking again un-pairs). When everyone has a partner, the checker lists every blocking pair — a man and a woman who both prefer each other to their partners.</p>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn sm" id="useM">Load men-proposing result</button>
+      <button class="btn sm" id="useW">Load women-proposing result</button>
+      <button class="btn sm" id="clearB">Clear</button>
+    </div>
+    <div class="grid cols-2">
+      <div id="bpMatrix" class="scroll-x"></div>
+      <div id="bpResult" class="callout steel"></div>
+    </div>
+    <details id="allbox" style="margin-top:12px">
+      <summary style="cursor:pointer;font-weight:700">Show all n! matchings and which are stable (brute force)</summary>
+      <div id="allm" class="scroll-x" style="margin-top:8px"></div>
+    </details>
+  </section>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>Each matrix cell <b>“a, b”</b>: a = where the row's man ranks the column's woman, b = where she ranks him (1 = favorite). Levitin's Figure 10.11 uses the same format.</li>
+        <li>Yellow arrow = a proposal. Green lines/boxes = current pairs. A red ✕ = rejection; a red dashed line = a partner being dumped for someone better.</li>
+        <li>Free proposers are listed under the picture. We always pick the first free one in list order, so a rejected proposer proposes again right away.</li>
+        <li>A proposer only moves <b>down</b> the list; a receiver only trades <b>up</b>. That's why it ends in at most n² proposals and why no blocking pair survives.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Course example: predict each response. Tom's proposal to Lea is the twist — Lea trades Bob (her #2) for Tom (her #1), and Bob falls to Ann.</li>
+        <li>In the checker, pair (Bob, Ann), (Jim, Lea), (Tom, Sue). The checker finds the blocking pair (Bob, Lea): he ranks her 1 &gt; 2, she ranks him 2 &gt; 3.</li>
+        <li>Load <b>Two different stable matchings</b> and run with men proposing, then women proposing. Each man gets his #1 in the first run and his #3 in the second — same instance, both stable.</li>
+        <li>Open "all n! matchings" for the course example: exactly one of the 6 is stable, so both proposing orders must find it.</li>
+        <li>Pick n = 5 and Random a few times. Count proposals: never more than n² = 25 (in fact at most n² − n + 1 = 21).</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/10-iterative-improvement/README.md">📖 Lesson 10: Iterative Improvement</a>
+      <a class="btn" href="../arena/index.html?chapter=10">🏟️ Arena · Chapter 10</a>
+      <a class="btn" href="../arena/problem.html?id=gale-shapley">🧩 Problem: gale-shapley</a>
+      <a class="btn" href="../arena/problem.html?id=is-stable-matching">🧩 Problem: is-stable-matching</a>
+      <a class="btn" href="bipartite-matching.html">🎮 Bipartite matching</a>
+      <a class="btn" href="max-flow.html">🎮 Max-flow</a>
+    </div>
+    <p class="small muted" style="margin-top:10px">Reference: Levitin §10.4. Real uses: residency matching of medical graduates to hospitals, school choice, and the market-design work honored by the 2012 Nobel Prize in Economic Sciences.</p>
+  </section>
+</main>
+<script src="js/stable-marriage.js"></script>
+</body>
+</html>

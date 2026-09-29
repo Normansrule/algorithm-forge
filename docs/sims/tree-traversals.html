@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Tree Traversals · Algorithm Forge</title>
+<meta name="description" content="Build a binary tree and watch preorder, inorder, postorder and level-order traversals, recursive height and leaf count, and the extended tree with x = n + 1 external nodes.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  .calls { font-family: var(--mono); font-size: .82rem; display: flex; flex-direction: column-reverse; gap: 3px; align-items: flex-start; min-height: 40px; }
+  .calls span { padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--bg-2); }
+  .calls span.top { border-color: var(--c-active); background: var(--steel-soft); font-weight: 700; }
+  .k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 10px 0 4px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 5 · Divide-and-Conquer</div>
+    <h1>Binary Tree Traversals</h1>
+    <p class="lead muted">A binary tree is either empty or a root with a left and a right subtree, so almost every tree algorithm is divide-and-conquer: solve both subtrees, then combine. Build a tree, pick an algorithm and watch the recursion.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="fx-seg" id="ops">
+        <button data-o="pre" class="on">Preorder</button><button data-o="in">Inorder</button><button data-o="post">Postorder</button><button data-o="level">Level-order</button><button data-o="height">Height</button><button data-o="leaves">Leaf count</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Preset <select id="preset">
+        <option value="levitin">Letters a…g (like Levitin Fig. 5.6)</option>
+        <option value="bst">Balanced binary search tree (BST): 50 30 70 20 40 60 80</option>
+        <option value="chain">Chain (1 2 3 4 5 inserted into a BST)</option>
+        <option value="one">A single node</option>
+        <option value="empty">Empty tree</option>
+      </select></label>
+      <label class="field">Or insert keys into a BST <input id="keys" type="text" value="8 3 10 1 6 14 4 7 13" style="width:210px"></label>
+      <button class="btn primary" id="build">Build</button>
+      <button class="btn" id="rand">Random tree</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div class="fx-seg" id="tool"><button data-t="grow" class="on">✚ Grow: click a □ to add a node</button><button data-t="prune">✖ Prune: click a node to cut its subtree</button></div>
+      <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ext" checked> show external nodes □ (the extended tree)</label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Binary tree"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="grid cols-2">
+        <div class="panel"><div class="panel-title" id="dsTitle">Recursion stack</div><div id="ds"></div></div>
+        <div class="panel"><div class="panel-title">Output</div><div id="out"></div></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Circles</b> are the tree's real (internal) nodes. <b>Squares</b> □ are external nodes: they stand for the empty subtrees hanging below. Together they form the <b>extended tree</b>, and there is always exactly one more square than circle: x = n + 1.</p>
+      <p><b>Colors.</b> <span style="color:var(--c-active);font-weight:700">Blue</span> is the call running right now. <span style="color:var(--c-pivot);font-weight:700">Purple</span> nodes are waiting on the recursion stack (their call started but hasn't finished). <span style="color:var(--c-done);font-weight:700">Green</span> nodes have been visited (output) or have returned. A <span style="color:var(--c-compare);font-weight:700">yellow</span> square is a call on an empty subtree, which returns at once.</p>
+      <p><b>Numbers.</b> For the traversals, the small number under a node is its position in the output. For Height and Leaf count, the number next to a node or square is the value its call returned (−1 for an empty tree's height).</p>
+      <p><b>Counters.</b> Every recursive traversal makes one call per internal and external node: C(n) = n + x = 2n + 1 checks of "T = ∅". Height also does n additions, one per internal node (Levitin §5.3).</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>With the a…g preset, predict all three orders before playing. Check: preorder a b d g e c f, inorder d g b e a f c, postorder g d e b f c a.</li>
+        <li>Build a BST from any keys and run inorder: the output is sorted. That's Levitin Exercise 5.3.7.</li>
+        <li>Grow the tree by clicking squares. After every click, check n, x and the "T = ∅ checks" counter after a full run: 2n + 1 every time.</li>
+        <li>Load the chain. Its height is n − 1 = 4, the worst possible. The balanced BST with 7 nodes has height 2. Which one would you rather search?</li>
+        <li>Run Height on the empty tree and on a single node: −1 and 0. Why is −1 the right answer for ∅? (Hint: a single node must get max(−1, −1) + 1 = 0.)</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/05-divide-and-conquer/README.md">📘 Lesson: Ch 5 Divide-and-Conquer</a>
+      <a href="../arena/index.html?chapter=5">⚔️ Arena: Chapter 5 problems</a>
+      <a href="../arena/problem.html?id=tree-height">Tree height</a>
+      <a href="../arena/problem.html?id=leaf-count">Leaf count</a>
+      <a href="../arena/problem.html?id=bst-max-key">BST max key</a>
+      <a href="search-trees.html">🌳 Sim: BST, Adelson-Velsky–Landis (AVL) and 2-3 trees</a>
+      <a href="graph-traversal.html">🕸️ Sim: Depth-First Search (DFS) &amp; BFS (level-order is BFS)</a>
+      <a href="heap-lab.html">⛰️ Sim: heaps</a>
+    </div>
+  </section>
+</main>
+<script src="js/tree-traversals.js"></script>
+</body>
+</html>

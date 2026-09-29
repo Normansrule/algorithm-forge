@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Branch-and-Bound · Algorithm Forge</title>
+<meta name="description" content="Best-first branch-and-bound for the assignment problem and the 0/1 knapsack problem: live nodes, bounds, pruning and the state-space tree.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .bb-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+  @media (max-width: 760px) { .bb-grid { grid-template-columns: minmax(0, 1fr); } }
+  .tree-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .tree-box { overflow-x: auto; border-radius: var(--radius); }
+  .tree-box.zoom svg { max-width: none; }
+  .ctl-group[hidden] { display: none !important; }
+  .ask { border: 1px solid var(--ember); background: var(--ember-soft); border-radius: 10px; padding: 12px; }
+  .ask p { margin: 0 0 8px; }
+  .ask .btn.pick-ok { background: var(--c-done); border-color: var(--c-done); color: #0d1117; }
+  .ask .btn.pick-bad { background: var(--c-swap); border-color: var(--c-swap); color: #0d1117; }
+  .ask .fb { margin-top: 8px; }
+  table.mx input { width: 44px; padding: 3px 4px; text-align: center; }
+  table.mx th, table.mx td { padding: 2px 3px; min-width: 0; }
+  .live { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 28px; }
+  .live .chip.pick { background: var(--c-active); color: #0d1117; border-color: transparent; }
+  .live .chip.dead { text-decoration: line-through; opacity: .6; }
+  input.num { width: 80px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 12 · Coping with the Limitations of Algorithm Power</div>
+    <h1>Branch-and-bound: expand the most promising node first</h1>
+    <p class="lead muted">Backtracking plus a bound. Every node gets an optimistic estimate of the best any completion could achieve; a node whose estimate cannot beat the best solution already found is cut off, and the node with the best estimate is always expanded next (best-first).</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row" style="align-items:flex-start">
+      <label class="field">Problem
+        <select id="prob">
+          <option value="assign">Assignment (minimize cost)</option>
+          <option value="knap">0/1 knapsack (maximize value)</option>
+        </select>
+      </label>
+      <div class="row ctl-group" id="g-assign" style="align-items:flex-start">
+        <label class="field">Size n
+          <select id="an"><option>3</option><option selected>4</option><option>5</option></select>
+        </label>
+        <div class="field"><span>Cost matrix C (rows = people a, b, …; columns = jobs)</span>
+          <div class="scroll-x"><table class="t mx" id="mx"></table></div>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="aLoad">Run</button>
+          <button class="btn" id="aRand">Random</button>
+          <button class="btn" id="aBook">Book instance</button>
+        </div>
+      </div>
+      <div class="row ctl-group" id="g-knap" hidden>
+        <label class="field">Items as weight:value
+          <input id="kItems" type="text" value="4:40, 7:42, 5:25, 3:12" style="min-width:210px">
+        </label>
+        <label class="field">Capacity W
+          <input id="kW" class="num" type="number" value="10" min="1">
+        </label>
+        <button class="btn primary" id="kLoad">Run</button>
+        <button class="btn" id="kRand">Random</button>
+        <button class="btn" id="kBook">Book instance</button>
+        <label class="row small" style="gap:6px"><input type="checkbox" id="eager"> update best from every feasible node</label>
+      </div>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predict"> 🤔 Predict mode</label>
+    </div>
+    <p class="small muted" id="hint" style="margin:8px 0 0"></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div>
+        <div class="tree-head">
+          <span class="panel-title" style="margin:0">State-space tree</span>
+          <button class="btn sm" id="zoom" title="Toggle between fit-to-width and full-size (scrollable) tree">⤢ Full size</button>
+        </div>
+        <div class="tree-box" id="treeBox"><svg class="stage" id="tree" role="img" aria-label="State-space tree"></svg></div>
+      </div>
+      <div id="player"></div>
+      <div class="bb-grid">
+        <div>
+          <div class="tree-head"><span class="panel-title" style="margin:0" id="viewTitle">Cost matrix</span></div>
+          <svg class="stage" id="view" role="img" aria-label="Problem view"></svg>
+        </div>
+        <div class="stack">
+          <div id="ask" class="ask" hidden></div>
+          <div class="panel" style="padding:10px 12px">
+            <div class="panel-title" style="margin-bottom:6px">Live nodes (still promising leaves), best first</div>
+            <div class="live" id="live"></div>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--c-bar)"></i>live node</span>
+            <span><i style="background:var(--c-active)"></i>being expanded / already expanded</span>
+            <span><i style="background:var(--c-compare)"></i>just generated</span>
+            <span><i style="background:var(--c-swap)"></i>terminated (bound can't win, infeasible, or inferior)</span>
+            <span><i style="background:var(--c-done)"></i>best solution so far</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <p><b>Boxes are nodes</b> of the state-space tree, numbered in the order they are generated (as in Levitin §12.2). Each shows the choice it adds and its bound.</p>
+      <p><b>Assignment problem.</b> A node fixes jobs for the first few people. Its <b>lower bound (lb)</b> is the cost already committed plus, for every person still unassigned, the cheapest job still free. No completion can cost less than lb. In the matrix, blue cells are committed, yellow-ringed cells are the row minima that make up the rest of the bound.</p>
+      <p><b>Knapsack.</b> Items are sorted by value per unit weight. A node records the weight w and value v of the items taken so far; its <b>upper bound (ub)</b> = v + (W − w) · (value/weight of the next item): fill the leftover room with the best remaining payoff rate, as if items could be cut. The bar shows w (blue) and that imaginary fill (yellow).</p>
+      <p><b>Terminated nodes</b> (red) are cut for one of three reasons: the bound is not better than the best solution found so far, the node breaks a constraint (too heavy), or it is a complete solution that is worse than the best one.</p>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Book assignment instance.</b> Predict the root bound before pressing play: 2 + 3 + 1 + 4 = 10. The search generates only 10 nodes (0–9) and finds cost 13 = a→2, b→1, c→3, d→4. Exhaustive search would check all 4! = 24 assignments.</li>
+        <li>Turn on <b>Predict mode</b> and guess each time which live node gets expanded. Why is node 5 (lb = 13) expanded before node 6 (lb = 14) even though both are on the same branch?</li>
+        <li><b>Book knapsack instance</b> (W = 10). The root's ub is 0 + 10 · 10 = 100. The optimal subset {1, 3} worth $65 appears at node 8, after which nodes 2 (ub 60) and 6 (ub 64) are cut. Now tick “update best from every feasible node”: node 5 already has value 65, so which nodes die earlier?</li>
+        <li>Press <b>Random</b> for a 5 × 5 matrix a few times. How many of the 5! = 120 complete assignments does branch-and-bound actually generate? When does it do badly?</li>
+        <li>Make the bound useless: set every entry of the matrix to the same number. Every lb equals every cost, so nothing can be pruned early. Watch the tree grow.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <p class="row">
+      <a class="chip ember" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/12-coping-with-limitations/README.md">📖 Lesson 12: Coping with Limitations</a>
+      <a class="chip steel" href="../arena/index.html?chapter=12">🏟️ Arena · Chapter 12</a>
+      <a class="chip" href="../arena/problem.html?id=assignment-branch-bound">assignment-branch-bound</a>
+      <a class="chip" href="../arena/problem.html?id=knapsack-branch-bound">knapsack-branch-bound</a>
+      <a class="chip" href="../arena/problem.html?id=knapsack-greedy-approx">knapsack-greedy-approx</a>
+    </p>
+    <p class="row">
+      <span class="muted small">Related sims:</span>
+      <a class="chip" href="backtracking.html">Backtracking</a>
+      <a class="chip" href="exhaustive-search.html">Exhaustive search: assignment &amp; knapsack (Ch 3)</a>
+      <a class="chip" href="dp-studio.html">Knapsack by dynamic programming (Ch 8)</a>
+      <a class="chip" href="greedy-choices.html">Fractional knapsack (Ch 9)</a>
+      <a class="chip" href="tsp-approx.html">Traveling salesman approximations</a>
+    </p>
+  </section>
+</main>
+<script src="js/branch-and-bound.js"></script>
+</body>
+</html>

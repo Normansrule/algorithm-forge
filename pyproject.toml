@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algoforge"
+version = "1.0.0"
+description = "Algorithm Forge: tested, beginner-readable implementations of the algorithms in Levitin's textbook (chapters 1-12) plus beyond chapters 13-16."
+readme = "src/python/README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Aleksander Norman" }]
+
+[tool.setuptools.packages.find]
+where = ["src/python"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src/python"]
+testpaths = ["tests"]
+addopts = "-ra"

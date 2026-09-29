@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorting Studio · Algorithm Forge</title>
+<meta name="description" content="Ten sorting algorithms animated step by step with pseudocode, operation counters, stable/in-place badges and a side-by-side race mode.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  [hidden] { display: none !important; }
+  .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+  .seg .btn.on { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
+  .field select, .field input[type="text"] { max-width: 100%; }
+  #extra { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); min-height: 1.2em; overflow-wrap: anywhere; }
+  .ask-q { font-weight: 600; margin-bottom: 8px; }
+  .race-pick { cursor: pointer; padding: 4px 10px; }
+  .race-pick input { margin: 0; accent-color: var(--ember); }
+  .lane .stage { margin-top: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .links a { font-weight: 600; }
+  #practice { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; font-weight: 600; }
+  .how dt { font-weight: 700; margin-top: 8px; }
+  .how dd { margin: 2px 0 0 0; color: var(--ink-2); }
+  @media (max-width: 640px) { #inp { min-width: 0 !important; width: 100%; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapters 3–7 · Brute Force · Decrease-, Divide- and Transform-and-Conquer · Space-Time Tradeoffs</div>
+    <h1>Sorting Studio</h1>
+    <p class="lead muted">Ten ways to sort one array, from selection sort to Least Significant Digit (LSD) radix sort. Watch every key comparison, swap and write as it happens, or race up to four algorithms on the same input and see which one does the least work.</p>
+  </header>
+
+  <section class="panel stack" style="margin-top:16px">
+    <div class="row">
+      <div class="seg" role="group" aria-label="Mode">
+        <button class="btn sm" id="modeSingle" aria-pressed="true">One algorithm</button>
+        <button class="btn sm" id="modeRace" aria-pressed="false">🏁 Race (2–4)</button>
+      </div>
+    </div>
+    <div class="row">
+      <label class="field" id="algField">Algorithm <select id="alg"></select></label>
+      <span class="row" id="quickOpts">
+        <label class="field">Partition <select id="part"><option value="hoare">Hoare (Levitin §5.2)</option><option value="lomuto">Lomuto (Levitin §4.5)</option></select></label>
+        <label class="field">Pivot <select id="pivot"><option value="first">first element</option><option value="med3">median of three</option></select></label>
+      </span>
+    </div>
+    <div id="raceRow">
+      <div class="small muted" style="margin-bottom:6px">Pick 2 to 4 racers. All of them sort the same input.</div>
+      <div class="row" id="raceAlgs"></div>
+      <div class="small" id="raceMsg" style="color:var(--warn);min-height:1.2em"></div>
+    </div>
+    <div class="row">
+      <label class="field" style="flex:1 1 240px">Your array (whole numbers 0–999, up to 32)
+        <input id="inp" type="text" style="min-width:240px" aria-label="Array to sort"></label>
+      <button class="btn primary" id="load">Load</button>
+    </div>
+    <div class="row">
+      <label class="field"><span>Size n = <span id="nval">10</span></span><input type="range" id="n" min="4" max="32" value="10" aria-label="Array size for presets"></label>
+      <button class="btn sm" data-preset="random">🎲 Random</button>
+      <button class="btn sm" data-preset="sorted">Sorted</button>
+      <button class="btn sm" data-preset="reversed">Reversed</button>
+      <button class="btn sm" data-preset="few">Few unique</button>
+      <button class="btn sm" data-preset="nearly">Nearly sorted</button>
+      <button class="btn sm" id="book">📖 Book example</button>
+    </div>
+    <div class="small" id="msg" style="color:var(--warn);min-height:1.2em"></div>
+    <div class="row" id="badges"></div>
+    <div id="practice"></div>
+  </section>
+
+  <div class="sim-layout" id="singleView" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="The array being sorted, drawn as bars, with extra rows for helper arrays"></svg>
+      <div id="extra"></div>
+      <div class="legend" id="legend"></div>
+      <div id="slotSingle"><div id="player"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="codeHost"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctrHost"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel">
+        <div class="panel-title">🤔 Predict <span class="chip" id="predictScore" style="margin-left:auto">0 / 0 right</span></div>
+        <label class="small"><input type="checkbox" id="predictOn" checked> Pause and quiz me at key moments</label>
+        <div id="predictBox" class="small" style="margin-top:8px">When a question appears here, answer it before stepping on.</div>
+      </div>
+    </aside>
+  </div>
+
+  <section id="raceView" class="stack" style="margin-top:16px">
+    <div class="grid cols-2" id="lanes"></div>
+    <div id="slotRace"></div>
+    <div class="panel">
+      <div class="panel-title">Key comparisons</div>
+      <svg class="stage" id="raceChart" role="img" aria-label="Bar chart of key comparisons for each racer"></svg>
+      <div class="narrate" id="raceSay" style="margin-top:10px" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel how">
+      <h2>How to read this</h2>
+      <dl>
+        <dt>Bars</dt><dd>Each bar is one array element; its height is its value and the small number under it is its index. Colors follow the legend: yellow = being compared, blue = current/active, red = just swapped or written, purple = pivot, green = in its final place, grey = out of play.</dd>
+        <dt>Shaded band</dt><dd>Quicksort and mergesort work on a sub-range A[l..r]; the orange band marks it.</dd>
+        <dt>Mergesort rows</dt><dd>Row d holds the pieces at recursion depth d. Going down the rows is splitting; coming back up is merging. Green outline = sorted run, orange = being built.</dd>
+        <dt>Heap tree</dt><dd>The tree and the array are the same data: the children of index k are 2k + 1 and 2k + 2. Nodes that turn green have left the heap and are final.</dd>
+        <dt>Count / D / S rows and buckets</dt><dd>The counting sorts and the bucket-based sorts use extra arrays; those rows are that extra memory, and the "extra cells" counter measures it.</dd>
+        <dt>Counters</dt><dd><b>Key comparisons</b> is the basic operation Levitin counts for comparison sorts. <b>Swaps / moves</b> counts data movement. <b>Extra cells</b> is the peak number of extra array cells. <b>Recursion depth</b> is how deep the call stack got.</dd>
+        <dt>Badges</dt><dd><b>Stable</b>: equal keys keep their original order. <b>In place</b>: only a constant amount of extra memory (plus, for quicksort, the recursion stack).</dd>
+      </dl>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Same count, any input.</b> Run selection sort on <i>Sorted</i>, then <i>Reversed</i>, with n = 10. Both make exactly n(n−1)/2 = 45 comparisons. Bubble sort with early exit drops to n − 1 = 9 on sorted input.</li>
+        <li><b>Quicksort's bad day.</b> Pick quicksort (Hoare, first-element pivot) and load <i>Sorted</i> with n = 16. Every split is lopsided and the recursion depth reaches about n. Switch the pivot to <i>median of three</i> and watch the depth and comparisons fall.</li>
+        <li><b>Stability you can see.</b> Load <code>5, 3, 5, 1, 3</code> into mergesort and watch the tie rule "B[i] ≤ C[j], take B" keep equal keys in order. Then try comparison counting sort: as written, it places equal keys in reverse order.</li>
+        <li><b>Race.</b> Race selection, insertion, mergesort and quicksort on <i>Nearly sorted</i> with n = 32. Insertion sort should win comparisons; on <i>Random</i>, mergesort or quicksort wins. Why does the ranking flip?</li>
+        <li><b>Zero comparisons.</b> Race distribution counting sort against mergesort on <i>Few unique</i>. Distribution counting makes 0 key comparisons, so what does it pay instead? (Check its extra-cells counter in single mode.)</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/03-brute-force/README.md">📘 Ch 3 lesson: Brute Force</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/04-decrease-and-conquer/README.md">📘 Ch 4 lesson: Decrease-and-Conquer</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/05-divide-and-conquer/README.md">📘 Ch 5 lesson: Divide-and-Conquer</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/06-transform-and-conquer/README.md">📘 Ch 6 lesson: Transform-and-Conquer</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/07-space-time-tradeoffs/README.md">📘 Ch 7 lesson: Space-Time Tradeoffs</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="../arena/index.html?chapter=3">⚔️ Arena: Ch 3</a>
+      <a href="../arena/index.html?chapter=5">⚔️ Arena: Ch 5</a>
+      <a href="../arena/index.html?chapter=7">⚔️ Arena: Ch 7</a>
+      <a href="../arena/problem.html?id=selection-sort">selection-sort</a>
+      <a href="../arena/problem.html?id=bubble-sort-early-exit">bubble-sort-early-exit</a>
+      <a href="../arena/problem.html?id=insertion-sort">insertion-sort</a>
+      <a href="../arena/problem.html?id=merge-sort">merge-sort</a>
+      <a href="../arena/problem.html?id=quicksort-hoare">quicksort-hoare</a>
+      <a href="../arena/problem.html?id=heapsort">heapsort</a>
+      <a href="../arena/problem.html?id=comparison-counting-sort">comparison-counting-sort</a>
+      <a href="../arena/problem.html?id=distribution-counting-sort">distribution-counting-sort</a>
+      <a href="../arena/problem.html?id=radix-sort-lsd">radix-sort-lsd</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="heap-lab.html">🌳 Sim: Heap Lab</a>
+      <a href="search-lab.html">🔎 Sim: Search Lab (binary search, quickselect)</a>
+      <a href="empirical-lab.html">📈 Sim: Empirical analysis lab</a>
+      <a href="growth-rates.html">📊 Sim: Growth rates</a>
+      <a href="recurrence-lab.html">🧮 Sim: Recurrence lab</a>
+    </div>
+  </section>
+</main>
+<script>Forge.page({ title: "Sorting Studio", chapter: "Ch 3–7 · Sorting" });</script>
+<script src="js/sorting-studio.js"></script>
+</body>
+</html>

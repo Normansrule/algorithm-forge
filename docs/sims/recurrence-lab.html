@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recurrence Lab · Algorithm Forge</title>
+<meta name="description" content="Solve recurrences by backward substitution one step at a time, watch the recursion tree grow level by level with per-level cost sums, and classify divide-and-conquer recurrences with the Master Theorem.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/ch01-02-kit.js"></script>
+<style>
+  .deriv { font-family: var(--mono); font-size: .88rem; line-height: 1.5; }
+  .deriv .dr { display: grid; grid-template-columns: 2.2em minmax(0, 1fr); gap: 6px; padding: 5px 8px; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; }
+  .deriv .dr.hidden { display: none; }
+  .deriv .dr.cur { background: var(--ember-soft); border-left-color: var(--ember); }
+  .deriv .dr .eq { color: var(--muted); text-align: right; }
+  .deriv .dr .note { grid-column: 2; font-family: var(--font); font-size: .8rem; color: var(--muted); }
+  .deriv sup, .deriv sub { font-size: .72em; }
+  .custom-only { display: none; }
+  .custom-on .custom-only { display: flex; }
+  .master-out { margin-top: 10px; }
+  .case-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+  .case-row div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: .85rem; background: var(--bg-2); }
+  .case-row div.win { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 12%, transparent); }
+  @media (max-width: 640px) { .case-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 2 · Analysis Framework</div>
+    <h1>Recurrence lab</h1>
+    <p class="lead muted">Substitute, substitute, spot the pattern, hit the initial condition. Each step of the algebra is matched by one more level of the recursion tree, so you can see where the cost comes from.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px" id="ctlPanel">
+    <div class="row">
+      <label class="field">Recurrence
+        <select id="preset" style="max-width:calc(100vw - 72px)">
+          <option value="sum">T(n) = T(n−1) + n, T(0) = 0</option>
+          <option value="hanoi">M(n) = 2M(n−1) + 1, M(1) = 1 (Tower of Hanoi)</option>
+          <option value="merge">T(n) = 2T(n/2) + n, T(1) = 0 (mergesort)</option>
+          <option value="bs">T(n) = T(n/2) + 1, T(1) = 1 (binary search)</option>
+          <option value="midterm">T(n) = T(n/2) + log₂ n, T(1) = 1 (Midterm 1, Q4)</option>
+          <option value="custom">Custom: T(n) = a·T(n/b) + nᵈ, T(1) = c</option>
+        </select>
+      </label>
+      <label class="field"><span id="sizeLbl">n</span> <input id="size" type="range" min="1" max="8" value="5" style="width:160px"></label>
+      <button class="btn" id="rand">Random</button>
+    </div>
+    <div class="row custom-only" style="margin-top:10px">
+      <label class="field">a (subproblems) <input id="ca" type="number" min="1" max="9" value="3" style="width:80px"></label>
+      <label class="field">b (shrink factor) <input id="cb" type="number" min="2" max="5" value="2" style="width:80px"></label>
+      <label class="field">d (work nᵈ) <input id="cd" type="number" min="0" max="3" value="1" style="width:80px"></label>
+      <label class="field">c = T(1) <input id="cc" type="number" min="0" max="9" value="1" style="width:80px"></label>
+      <button class="btn primary" id="loadCustom">Load</button>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Recursion tree, level by level"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>level just added</span>
+        <span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>earlier levels</span>
+        <span><i style="background:var(--c-done)"></i>base case (leaf)</span>
+        <span><i style="background:var(--c-compare)"></i>level cost sum</span>
+      </div>
+      <div id="player"></div>
+      <div class="row"><button class="btn" id="predictBtn">🤔 Predict the next level's cost</button></div>
+      <div id="predict"></div>
+      <div class="panel"><div class="panel-title">Backward substitution</div><div class="deriv" id="deriv"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode (the algorithm behind it)</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>📈 Check: recursion vs closed form</h2>
+      <p class="muted small">Dots: T(n) computed by running the recurrence itself. Line: the closed form from the substitution. If the algebra is right they agree exactly.</p>
+      <svg class="stage" id="valPlot" role="img" aria-label="Values of T(n) against the closed form"></svg>
+    </section>
+    <section class="panel">
+      <h2>🏛️ Master Theorem calculator</h2>
+      <p class="muted small">For T(n) = a·T(n/b) + f(n) with f(n) ∈ Θ(nᵈ), d ≥ 0 (Levitin §5.1). Compare a with bᵈ.</p>
+      <div class="row">
+        <label class="field">a <input id="ma" type="number" min="1" value="2" style="width:80px"></label>
+        <label class="field">b <input id="mb" type="number" min="2" value="2" style="width:80px"></label>
+        <label class="field">d <input id="md" type="number" min="0" step="0.5" value="1" style="width:80px"></label>
+        <button class="btn primary" id="mGo">Classify</button>
+        <button class="btn" id="mTree">Draw its tree</button>
+      </div>
+      <div id="mPredict" style="margin-top:10px"></div>
+      <div class="master-out" id="mOut"></div>
+    </section>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Tree:</b> each circle is one call; the number inside is its input size and the small number under it is the non-recursive work that call does itself (its f(size)). Green circles are base cases: their number is the initial condition.</li>
+        <li><b>Right column:</b> for each level, (number of calls) × (work per call) = level sum. The total cost T(n) is the sum of that column.</li>
+        <li><b>Backward substitution panel:</b> the highlighted row is the algebra matching the current level. Row i of the algebra "opens up" level i of the tree.</li>
+        <li><b>Pseudocode:</b> the highlighted lines are the ones responsible for the cost you are looking at: the recursive calls when a new level appears, the local work when a level is costed, the base case at the leaves.</li>
+        <li>For divide recurrences the size slider picks k, with n = bᵏ, so every division is exact (the "smoothness rule" lets us do this).</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Midterm 1, Q4.</b> Load T(n) = T(n/2) + log₂ n. Before playing, write the first two substitutions yourself. Then check: T(n) = 1 + log₂n·(log₂n + 1)/2, so Θ(log² n). For n = 16: 1 + 4·5/2 = 11.</li>
+        <li>Load mergesort and watch the level sums: every level costs exactly n. How many levels have work? (log₂ n.) That is n log₂ n in one picture.</li>
+        <li>Load Hanoi: each level has twice the cost of the level above, so the bottom level alone is about half the total. Predict the total for n = 6 (63).</li>
+        <li>Custom: a = 4, b = 2, d = 1. Predict the Master Theorem case before classifying. Then watch the tree: the level sums grow ×2 per level, so the leaves dominate: Θ(n²).</li>
+        <li>Custom: a = 2, b = 2, d = 2. Now the sums shrink by half each level: the root dominates, Θ(n²).</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/02-analysis-framework/README.md">📖 Lesson: Chapter 2</a>
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/05-divide-and-conquer/README.md">📖 Lesson: Chapter 5 (Master Theorem)</a>
+      <a class="btn" href="../arena/index.html?chapter=2">🏟️ Arena: Chapter 2</a>
+      <a class="btn sm" href="../arena/problem.html?id=midterm-recurrence-log">midterm-recurrence-log</a>
+      <a class="btn sm" href="../arena/problem.html?id=q-of-n">q-of-n</a>
+      <a class="btn sm" href="../arena/problem.html?id=hanoi-moves">hanoi-moves</a>
+      <a class="btn sm" href="../arena/problem.html?id=binary-digits-recursive">binary-digits-recursive</a>
+      <a class="btn sm" href="../arena/problem.html?id=merge-sort">merge-sort</a>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted small">Related sims:</span>
+      <a href="hanoi.html">Tower of Hanoi</a> ·
+      <a href="fibonacci.html">Fibonacci call tree</a> ·
+      <a href="growth-rates.html">Growth rates</a> ·
+      <a href="sorting-studio.html">Sorting studio (mergesort)</a>
+    </div>
+  </section>
+</main>
+<script src="js/recurrence-lab.js"></script>
+</body>
+</html>

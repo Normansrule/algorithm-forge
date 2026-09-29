@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interview Patterns · Algorithm Forge</title>
+<meta name="description" content="Mini-animations with your own input: two pointers, sliding window, monotonic stack, prefix sums with a hash map, and binary search on the answer.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  .pat-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pat-tabs .btn.on { border-color: var(--ember); background: var(--ember-soft); color: var(--ink); }
+  .signal { font-size: 0.85rem; color: var(--ink-2); margin-top: 8px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 15 · Dynamic Programming and Interview Patterns</div>
+    <h1>Interview Patterns in Motion</h1>
+    <p class="lead muted">Five templates that turn an O(n²) or "try every answer" problem into a linear scan or a logarithmic search. Pick one, type your own input, and predict each move before it happens.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="pat-tabs" id="tabs" role="tablist"></div>
+    <div class="signal" id="signal"></div>
+    <div class="row" style="margin-top:10px">
+      <label class="field" style="flex:1;min-width:0"><span id="inLabel">Array</span>
+        <input type="text" id="inp" style="width:100%">
+      </label>
+      <label class="field" id="kWrap"><span id="kLabel">target</span>
+        <input type="number" id="k" style="width:90px">
+      </label>
+      <button class="btn primary" id="run">Run</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn" id="lessonEx">Lesson example</button>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Pattern animation"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li>The top row is your input with indices underneath. Arrows mark the pointers (<code>l</code>, <code>r</code>, <code>i</code>); the orange bracket is the current window or range.</li>
+      <li><b>Colors:</b> blue = the pointer's current element, yellow = being compared or inside the window, red = just changed / popped / written, green = part of the answer, gray = ruled out forever.</li>
+      <li>The lower half is the pattern's helper: the running sum, the hash map of last positions, the stack, the prefix-sum table with its counts, or the lo/mid/hi number line with the day-by-day packing.</li>
+      <li>Every counter panel shows the pattern's work next to the brute-force cost it replaces. The pointers only move forward, which is the amortized argument for O(n).</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Two pointers</b> on <code>1 3 4 6 8 11</code>, target 10: five sum checks find (2, 3) = 4 + 6. Brute force would test up to 15 pairs. Try target 100: l and r meet after 5 checks with no pair.</li>
+      <li><b>Longest substring</b> on <code>abacdbe</code>: l jumps from 0 to 1 at the second "a", then past the first "b" to 2; the answer is 5 ("acdbe"). Try <code>aaaa</code> (answer 1) and <code>abcdef</code> (answer 6, l never moves).</li>
+      <li><b>Shortest window ≥ S</b> on <code>4 1 1 3 2 5</code>, S = 8: best becomes 4, then 3 (<code>3 2 5</code>). Count pointer moves: never more than 2n = 12.</li>
+      <li><b>Next greater</b> on <code>3 7 1 4 2 6</code> → <code>7 −1 4 6 6 −1</code>. When 6 arrives it pops two indices at once. Try a decreasing array: nothing is popped until the end, and every answer is −1.</li>
+      <li><b>Prefix sums</b> on <code>1 2 1 −1 2 1</code>, k = 3: count 5. <b>Binary search on the answer</b> for <code>4 8 2 5 3 7 1</code>, D = 3: mids 19, 13, 10, 12, 11 and the answer is 12 after only 5 checks; the range [8, 30] holds 23 candidates, and doubling the weights barely adds a check.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/15-dp-and-interview-patterns/README.md#part-a--array-and-search-patterns">📖 Lesson 15 · Part A</a>
+      <a class="btn" href="../arena/index.html?chapter=15">🏟️ Chapter 15 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=two-sum-sorted">🧩 two-sum-sorted</a>
+      <a class="btn" href="../arena/problem.html?id=longest-unique-substring">🧩 longest-unique-substring</a>
+      <a class="btn" href="../arena/problem.html?id=min-subarray-len">🧩 min-subarray-len</a>
+      <a class="btn" href="../arena/problem.html?id=next-greater-element">🧩 next-greater-element</a>
+      <a class="btn" href="../arena/problem.html?id=subarray-sum-k">🧩 subarray-sum-k</a>
+      <a class="btn" href="../arena/problem.html?id=ship-within-days">🧩 ship-within-days</a>
+      <a class="btn" href="../arena/problem.html?id=sliding-window-max">🧩 sliding-window-max</a>
+      <a class="btn" href="search-lab.html">🎮 Binary search (search-lab)</a>
+      <a class="btn" href="segment-tree.html">🎮 Segment tree &amp; Fenwick</a>
+      <a class="btn" href="amortized.html">🎮 Amortized analysis</a>
+      <a class="btn" href="dp-studio.html">🎮 Dynamic Programming (DP) Studio</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Interview Patterns", chapter: "Ch 15 · Dynamic Programming & Patterns" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to see it.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+const around = (ans, lo, hi) => { const s = new Set([ans]); for (let d = 1; s.size < 4 && d < 50; d++) { if (ans - d >= lo) s.add(ans - d); if (s.size < 4 && ans + d <= hi) s.add(ans + d); } return [...s].sort((a, b) => a - b); };
+
+/* =========================================================
+   Pattern definitions: {label, signal, input, kLabel, lesson, rand(), lines, record(input, k)}
+   ========================================================= */
+const P = {};
+
+P.two = {
+  label: "Two pointers", signal: "Signal words: <i>sorted array</i>, <i>pair that sums to</i>. Two indices walk toward each other; each step rules out a whole row of pairs.",
+  inLabel: "Sorted array (sorted for you if not)", kLabel: "target", lesson: ["1, 3, 4, 6, 8, 11", 10], isStr: false,
+  rand() { const a = Forge.randArray(6 + Math.floor(Math.random() * 5), 1, 30).sort((x, y) => x - y); const i = Math.floor(Math.random() * a.length); let j = Math.floor(Math.random() * a.length); if (j === i) j = (i + 1) % a.length; return [a.join(", "), Math.random() < 0.8 ? a[i] + a[j] : 200]; },
+  lines: ["ALGORITHM PairWithSum(A[0..n-1], target)", "    // A is sorted in nondecreasing order", "    l ← 0", "    r ← n - 1", "    while l < r do", "        s ← A[l] + A[r]", "        if s = target then", "            return (l, r)", "        else if s < target then", "            l ← l + 1", "        else", "            r ← r - 1", "    return null"],
+  counters: (n) => ({ "sum checks": 0, "pointer moves": 0, "brute-force pairs": n * (n - 1) / 2 }),
+  record(A, target) {
+    A.sort((x, y) => x - y);
+    const n = A.length, F = [];
+    let l = 0, r = n - 1, checks = 0, moves = 0, asks = 2;
+    const cells = () => { const o = {}; for (let j = 0; j < n; j++) if (j < l || j > r) o[j] = "dim"; o[l] = "active"; o[r] = "active"; return o; };
+    const push = (line, text, x) => F.push(Object.assign({ vals: A, cells: cells(), ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], line, text, c: { "sum checks": checks, "pointer moves": moves, "brute-force pairs": n * (n - 1) / 2 } }, x || {}));
+    push(2, `Sorted: [${A.join(", ")}]. Put l at the smallest value and r at the largest.`);
+    while (l < r) {
+      const s = A[l] + A[r];
+      checks++;
+      const verdict = s === target ? "found" : s < target ? "l moves right" : "r moves left";
+      if (asks-- > 0) push(5, `A[${l}] + A[${r}] = ${A[l]} + ${A[r]} = ${s}; the target is ${target}. What happens next?`, { ask: { id: `two-${l}-${r}-${target}`, q: `${A[l]} + ${A[r]} = ${s}, target ${target}. What's the move?`, options: ["l moves right", "r moves left", "found"], answer: verdict, why: s === target ? "Exact match." : s < target ? `Too small: A[l] paired with anything ≤ A[r] is also too small, so A[l] is useless. Drop it.` : `Too big: A[r] paired with anything ≥ A[l] is also too big, so A[r] is useless. Drop it.` } });
+      if (s === target) {
+        const c = cells(); c[l] = "done"; c[r] = "done";
+        F.push({ vals: A, cells: c, ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], line: 7, text: `${A[l]} + ${A[r]} = ${target}: <b>found (${l}, ${r})</b> after ${checks} check${checks > 1 ? "s" : ""}.`, c: { "sum checks": checks, "pointer moves": moves, "brute-force pairs": n * (n - 1) / 2 } });
+        return F;
+      }
+      if (s < target) { const c = cells(); c[l] = "swap"; F.push({ vals: A, cells: c, ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], line: 9, text: `${s} &lt; ${target}: too small. Every pair using A[${l}] = ${A[l]} is at most ${s}, so rule A[${l}] out: l ← ${l + 1}.`, c: { "sum checks": checks, "pointer moves": moves + 1, "brute-force pairs": n * (n - 1) / 2 } }); l++; }
+      else { const c = cells(); c[r] = "swap"; F.push({ vals: A, cells: c, ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], line: 11, text: `${s} &gt; ${target}: too big. Every pair using A[${r}] = ${A[r]} is at least ${s}, so rule A[${r}] out: r ← ${r - 1}.`, c: { "sum checks": checks, "pointer moves": moves + 1, "brute-force pairs": n * (n - 1) / 2 } }); r--; }
+      moves++;
+    }
+    push(12, `l and r met: <b>no pair</b> sums to ${target}. Only ${checks} checks instead of ${n * (n - 1) / 2}.`);
+    return F;
+  },
+};
+
+P.norepeat = {
+  label: "Sliding window: longest substring without repeats", signal: "Signal words: <i>longest substring</i>, <i>without repeating characters</i>. Grow the right edge; when a letter repeats, jump the left edge past its previous copy.",
+  inLabel: "String (letters)", kLabel: null, lesson: ["abacdbe", null], isStr: true,
+  rand() { const al = "abcdef".slice(0, 3 + Math.floor(Math.random() * 3)); let s = ""; const n = 8 + Math.floor(Math.random() * 6); for (let i = 0; i < n; i++) s += al[Math.floor(Math.random() * al.length)]; return [s, null]; },
+  lines: ["ALGORITHM LongestNoRepeat(s[0..n-1])", "    // last is a hash map: character → latest index", "    l ← 0", "    best ← 0", "    for r ← 0 to n - 1 do", "        if s[r] in last and last[s[r]] ≥ l then", "            l ← last[s[r]] + 1       // jump past the old copy", "        last[s[r]] ← r", "        best ← max(best, r - l + 1)", "    return best"],
+  record(s) {
+    const n = s.length, F = [], last = {};
+    let l = 0, best = 0, bl = 0, br = -1, jumps = 0, asks = 1;
+    const c = (r) => ({ "r steps": r + 1, "l jumps": jumps, best, "brute-force substrings": n * (n + 1) / 2 });
+    const cells = (r) => { const o = {}; for (let j = 0; j < l; j++) o[j] = "dim"; for (let j = l; j <= r; j++) o[j] = "compare"; if (r >= 0) o[r] = "active"; return o; };
+    F.push({ vals: [...s], cells: {}, ptr: [], win: null, best: null, map: {}, line: 2, text: `Scan "${s}" once with a window [l..r] that never contains a repeated letter.`, c: c(-1) });
+    for (let r = 0; r < n; r++) {
+      const ch = s[r];
+      if (last[ch] != null && last[ch] >= l) {
+        const nl = last[ch] + 1;
+        if (asks-- > 0) F.push({ vals: [...s], cells: cells(r), ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], best: br >= 0 ? [bl, br] : null, map: Object.assign({}, last), line: 5, text: `s[${r}] = "${ch}" is already inside the window (last seen at ${last[ch]}).`, c: c(r), ask: { id: `nr-${s}-${r}`, q: `"${ch}" repeats (last seen at index ${last[ch]}). Where does l jump to?`, options: around(nl, 0, n - 1), answer: nl, why: `Any window containing both copies is invalid, so the left edge must pass the old copy: l ← ${last[ch]} + 1.` } });
+        const cc = cells(r); cc[last[ch]] = "swap";
+        F.push({ vals: [...s], cells: cc, ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], best: br >= 0 ? [bl, br] : null, map: Object.assign({}, last), line: 6, text: `"${ch}" was last seen at index ${last[ch]} ≥ l = ${l}: jump l to ${nl}. Everything left of it is out for good.`, c: c(r) });
+        l = nl; jumps++;
+      }
+      last[ch] = r;
+      const len = r - l + 1, improved = len > best;
+      if (improved) { best = len; bl = l; br = r; }
+      F.push({ vals: [...s], cells: cells(r), ptr: [{ i: l, label: "l" }, { i: r, label: "r" }], win: [l, r], best: [bl, br], map: Object.assign({}, last), line: improved ? 8 : 7, text: `Window "${s.slice(l, r + 1)}" (length ${len}) has no repeats.${improved ? ` New best = ${best}.` : ` Best stays ${best}.`}`, c: c(r) });
+    }
+    const fc = {}; for (let j = bl; j <= br; j++) fc[j] = "done";
+    F.push({ vals: [...s], cells: fc, ptr: [], win: null, best: [bl, br], map: Object.assign({}, last), line: 9, text: `Answer: <b>${best}</b> ("${s.slice(bl, br + 1)}"). r moved ${n} times and l only jumped forward (${jumps} jump${jumps === 1 ? "" : "s"}): O(n) total.`, c: c(n - 1) });
+    return F;
+  },
+};
+
+P.minwin = {
+  label: "Sliding window: shortest subarray with sum ≥ S", signal: "Signal words: <i>shortest / smallest subarray</i>, <i>sum at least</i>, nonnegative numbers. Expand right until valid, then shrink left while still valid.",
+  inLabel: "Array of nonnegative numbers", kLabel: "S", lesson: ["4, 1, 1, 3, 2, 5", 8], isStr: false,
+  rand() { const a = Forge.randArray(7 + Math.floor(Math.random() * 5), 1, 9); return [a.join(", "), 8 + Math.floor(Math.random() * 12)]; },
+  lines: ["ALGORITHM ShortestSubarrayAtLeast(A[0..n-1], S)", "    // A has nonnegative values", "    best ← ∞", "    l ← 0", "    sum ← 0", "    for r ← 0 to n - 1 do", "        sum ← sum + A[r]               // expand", "        while sum ≥ S do               // valid: try to shrink", "            best ← min(best, r - l + 1)", "            sum ← sum - A[l]", "            l ← l + 1", "    if best = ∞ then", "        return 0", "    return best"],
+  record(A, Sv) {
+    if (A.some((x) => x < 0)) A = A.map((x) => Math.abs(x));
+    const n = A.length, F = [];
+    let l = 0, sum = 0, best = Infinity, bl = -1, br = -1, lm = 0, asks = 2;
+    const c = (r) => ({ "r steps": r + 1, "l moves": lm, "total moves": r + 1 + lm, "bound 2n": 2 * n, best: best === Infinity ? "∞" : best });
+    const cells = (r) => { const o = {}; for (let j = 0; j < l; j++) o[j] = "dim"; for (let j = l; j <= r; j++) o[j] = "compare"; if (r >= 0 && r >= l) o[r] = "active"; return o; };
+    const fr = (r, line, text, x) => F.push(Object.assign({ vals: A, cells: cells(r), ptr: r >= 0 ? [{ i: Math.min(l, n - 1), label: "l" }, { i: r, label: "r" }] : [], win: r >= l ? [l, r] : null, best: bl >= 0 ? [bl, br] : null, sum, S: Sv, line, text, c: c(r) }, x || {}));
+    fr(-1, 2, `Find the shortest stretch with sum ≥ ${Sv}. The window [l..r] starts empty.`);
+    for (let r = 0; r < n; r++) {
+      sum += A[r];
+      if (asks > 0 && (r === 0 || sum >= Sv)) { asks = r === 0 ? asks - 1 : 0; fr(r, 6, `Add A[${r}] = ${A[r]}: sum = ${sum}.`, { ask: { id: `mw-${A}-${Sv}-${r}`, q: `The window sum is now ${sum} and S = ${Sv}. Will the left edge move?`, options: ["yes", "no"], answer: sum >= Sv ? "yes" : "no", why: sum >= Sv ? "The window is valid, so record it and try to make it shorter from the left." : "The window isn't valid yet, so keep expanding to the right." } }); }
+      else fr(r, 6, `Add A[${r}] = ${A[r]}: sum = ${sum}${sum >= Sv ? ` ≥ ${Sv}, valid!` : ` &lt; ${Sv}, keep expanding.`}`);
+      while (sum >= Sv) {
+        const len = r - l + 1;
+        if (len < best) { best = len; bl = l; br = r; }
+        fr(r, 8, `[${l}..${r}] has sum ${sum} ≥ ${Sv}, length ${len}. best = ${best}. Now drop A[${l}] = ${A[l]} to try a shorter one.`, { cells: Object.assign(cells(r), { [l]: "swap" }) });
+        sum -= A[l]; l++; lm++;
+        fr(r, 10, `l ← ${l}, sum = ${sum}${sum >= Sv ? ": still valid, shrink again." : `: below ${Sv}, stop shrinking.`}`);
+      }
+    }
+    const fc = {}; for (let j = bl; j <= br && bl >= 0; j++) fc[j] = "done";
+    F.push({ vals: A, cells: fc, ptr: [], win: null, best: bl >= 0 ? [bl, br] : null, sum, S: Sv, line: best === Infinity ? 12 : 13, text: best === Infinity ? `No window reaches ${Sv}: return 0.` : `Answer: <b>${best}</b> (A[${bl}..${br}] = ${A.slice(bl, br + 1).join(" + ")}). ${n + lm} pointer moves in total, never more than 2n = ${2 * n}.`, c: c(n - 1) });
+    return F;
+  },
+};
+
+P.nge = {
+  label: "Monotonic stack: next greater element", signal: "Signal words: <i>next greater / smaller</i>, <i>daily temperatures</i>, <i>stock span</i>. Keep a stack of indices still waiting for an answer; their values decrease from bottom to top.",
+  inLabel: "Array", kLabel: null, lesson: ["3, 7, 1, 4, 2, 6", null], isStr: false,
+  rand() { return [Forge.randArray(7 + Math.floor(Math.random() * 5), 1, 20).join(", "), null]; },
+  lines: ["ALGORITHM NextGreater(A[0..n-1])", "    res ← array(n, -1)", "    S ← empty stack          // indices waiting; values decrease", "    for i ← 0 to n - 1 do", "        while not isEmpty(S) and A[top(S)] < A[i] do", "            res[pop(S)] ← A[i]", "        push(S, i)", "    return res"],
+  record(A) {
+    const n = A.length, F = [], St = [], res = Array(n).fill(null);
+    let pushes = 0, pops = 0, cmps = 0, asks = 2;
+    const c = () => ({ comparisons: cmps, pushes, pops, "pushes + pops ≤ 2n": `${pushes + pops} ≤ ${2 * n}` });
+    const fr = (i, line, text, x) => F.push(Object.assign({ vals: A, cells: i >= 0 ? { [i]: "active" } : {}, ptr: i >= 0 && i < n ? [{ i, label: "i" }] : [], win: null, res: res.slice(), stack: St.slice(), line, text, c: c() }, x || {}));
+    fr(-1, 1, "Scan left to right. The stack holds indices whose next greater element hasn't appeared yet.");
+    for (let i = 0; i < n; i++) {
+      let k = 0; for (let j = St.length - 1; j >= 0 && A[St[j]] < A[i]; j--) k++;
+      if (asks > 0 && St.length) { asks--; fr(i, 4, `A[${i}] = ${A[i]} arrives. The stack holds values ${St.map((j) => A[j]).join(", ")} (top last).`, { ask: { id: `nge-${A}-${i}`, q: `A[${i}] = ${A[i]} arrives. How many indices will it pop off the stack?`, options: around(k, 0, St.length), answer: k, why: k ? `It pops every waiting value smaller than ${A[i]} (from the top down) and becomes their answer.` : `The top value ${A[St[St.length - 1]]} is not smaller than ${A[i]}, so the loop stops immediately.` } }); }
+      while (St.length && (cmps++, A[St[St.length - 1]] < A[i])) {
+        const j = St.pop(); pops++;
+        res[j] = A[i];
+        fr(i, 5, `A[top] = A[${j}] = ${A[j]} &lt; ${A[i]}: ${A[i]} is the first greater value to the right of index ${j}. Pop it: res[${j}] = ${A[i]}.`, { cells: { [i]: "active", [j]: "swap" }, popped: j });
+      }
+      if (St.length) fr(i, 4, `A[top] = ${A[St[St.length - 1]]} ≥ ${A[i]}: stop popping.`, { cells: { [i]: "active", [St[St.length - 1]]: "compare" } });
+      St.push(i); pushes++;
+      fr(i, 6, `Push index ${i} (value ${A[i]}): it now waits for something bigger.`);
+    }
+    St.forEach((j) => (res[j] = -1));
+    const fc = {}; for (let j = 0; j < n; j++) fc[j] = "done";
+    F.push({ vals: A, cells: fc, ptr: [], win: null, res: res.slice(), stack: St.slice(), leftover: true, line: 7, text: `Done. Indices still on the stack (${St.join(", ") || "none"}) never met a bigger value: their answer stays −1. Result: [${res.join(", ")}]. Each index was pushed once and popped at most once: O(n).`, c: c() });
+    return F;
+  },
+};
+
+P.prefix = {
+  label: "Prefix sums + hash map: subarrays with sum k", signal: "Signal words: <i>number of subarrays with sum k</i>, <i>range sum</i> asked many times, negative numbers allowed. A subarray sum is a difference of two prefix sums.",
+  inLabel: "Array (negatives OK)", kLabel: "k", lesson: ["1, 2, 1, -1, 2, 1", 3], isStr: false,
+  rand() { return [Forge.randArray(7 + Math.floor(Math.random() * 4), -2, 4).join(", "), 2 + Math.floor(Math.random() * 3)]; },
+  lines: ["ALGORITHM CountSubarraysWithSum(A[0..n-1], k)", "    // seen is a hash map: prefix value → times seen so far", "    seen[0] ← 1", "    p ← 0", "    count ← 0", "    for i ← 0 to n - 1 do", "        p ← p + A[i]", "        count ← count + seen[p - k]    // earlier prefixes q with p - q = k", "        seen[p] ← seen[p] + 1", "    return count"],
+  record(A, k) {
+    const n = A.length, F = [], seen = new Map([[0, 1]]), pre = [0];
+    let p = 0, count = 0, looks = 0, asks = 2;
+    const c = () => ({ "hash lookups": looks, count, "brute-force subarrays": n * (n + 1) / 2 });
+    const fr = (i, line, text, x) => F.push(Object.assign({ vals: A, cells: i >= 0 ? { [i]: "active" } : {}, ptr: i >= 0 ? [{ i, label: "i" }] : [], win: null, pre: pre.slice(), seen: [...seen.entries()], hl: null, spans: [], line, text, c: c() }, x || {}));
+    fr(-1, 2, `Prefix P[0] = 0 is "seen" once, so subarrays starting at index 0 are counted too. Target k = ${k}.`);
+    for (let i = 0; i < n; i++) {
+      p += A[i]; pre.push(p);
+      const need = p - k, got = seen.get(need) || 0;
+      if (asks > 0) { asks--; fr(i, 6, `P[${i + 1}] = ${p}. We need earlier prefixes equal to ${p} − ${k} = ${need}.`, { hl: need, ask: { id: `pre-${A}-${k}-${i}`, q: `P[${i + 1}] = ${p}, so we look up seen[${p} − ${k}] = seen[${need}]. How much does count go up?`, options: around(got, 0, i + 2), answer: got, why: got ? `${need} has been seen ${got} time${got > 1 ? "s" : ""}; each earlier prefix with that value starts a subarray ending at ${i} with sum ${k}.` : `No earlier prefix equals ${need}, so no subarray ending at ${i} sums to ${k}.` } }); }
+      looks++;
+      const spans = [];
+      pre.slice(0, i + 1).forEach((q, j) => { if (q === need) spans.push([j, i]); });
+      count += got;
+      fr(i, 7, `P[${i + 1}] = ${p}; seen[${need}] = ${got} → count = ${count}.${spans.length ? " New subarrays: " + spans.map(([a, b]) => `A[${a}..${b}]`).join(", ") + "." : ""}`, { hl: need, spans });
+      seen.set(p, (seen.get(p) || 0) + 1);
+      fr(i, 8, `Record prefix ${p}: seen[${p}] = ${seen.get(p)}.`, { hl: p, hlNew: true });
+    }
+    F.push({ vals: A, cells: {}, ptr: [], win: null, pre: pre.slice(), seen: [...seen.entries()], hl: null, spans: [], line: 9, text: `Answer: <b>${count}</b> subarrays sum to ${k}, found with ${looks} hash lookups instead of checking all ${n * (n + 1) / 2} subarrays.`, c: c() });
+    return F;
+  },
+};
+
+P.ship = {
+  label: "Binary search on the answer: ship within D days", signal: "Signal words: <i>minimum capacity / speed such that</i>, and a yes/no check that is monotone (a bigger truck never hurts). Binary-search the answer, not the array.",
+  inLabel: "Package weights, in order", kLabel: "D (days)", lesson: ["4, 8, 2, 5, 3, 7, 1", 3], isStr: false,
+  rand() { const a = Forge.randArray(6 + Math.floor(Math.random() * 5), 1, 12); return [a.join(", "), 2 + Math.floor(Math.random() * 3)]; },
+  lines: ["ALGORITHM MinShipCapacity(W[0..n-1], D)", "    lo ← max(W)                  // must fit the heaviest package", "    hi ← sum of W                // ships everything in one day", "    while lo < hi do", "        mid ← (lo + hi) div 2", "        if DaysNeeded(W, mid) ≤ D then", "            hi ← mid             // mid works: answer ≤ mid", "        else", "            lo ← mid + 1         // mid fails: answer > mid", "    return lo", "ALGORITHM DaysNeeded(W[0..n-1], cap)", "    days ← 1", "    load ← 0", "    for i ← 0 to n - 1 do", "        if load + W[i] > cap then", "            days ← days + 1", "            load ← 0", "        load ← load + W[i]", "    return days"],
+  record(W, D) {
+    W = W.map((x) => Math.max(1, Math.abs(x)));
+    D = Math.max(1, D | 0);
+    const n = W.length, F = [];
+    const lo0 = Math.max(...W), hi0 = W.reduce((s, x) => s + x, 0);
+    let lo = lo0, hi = hi0, checks = 0, scans = 0, asks = 2;
+    const pack = (cap) => { const day = []; let d = 0, load = 0; W.forEach((w) => { if (load + w > cap) { d++; load = 0; } load += w; day.push(d); }); return { day, days: d + 1 }; };
+    let answer = lo0; { let a = lo0, b = hi0; while (a < b) { const m = (a + b) >> 1; if (pack(m).days <= D) b = m; else a = m + 1; } answer = a; }
+    const c = () => ({ "checks (DaysNeeded calls)": checks, "packages scanned": scans, "range left": hi - lo + 1, "whole range": hi0 - lo0 + 1 });
+    const fr = (line, text, x) => F.push(Object.assign({ vals: W, cells: {}, ptr: [], win: null, bs: { lo0, hi0, lo, hi, mid: null }, day: null, line, text, c: c() }, x || {}));
+    fr(1, `Every answer lies in [max(W), sum(W)] = [${lo0}, ${hi0}]: smaller can't fit the ${lo0}, larger is pointless. "Can ship in ${D} days?" is ✘ … ✘ ✔ … ✔ across that range; find the first ✔.`);
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      const { day, days } = pack(mid);
+      checks++; scans += n;
+      const ok = days <= D;
+      if (asks > 0) { asks--; fr(4, `mid = (${lo} + ${hi}) div 2 = ${mid}.`, { bs: { lo0, hi0, lo, hi, mid }, ask: { id: `ship-${W}-${D}-${mid}`, q: `With a truck of capacity <b>${mid}</b>, can all packages ship within ${D} days?`, options: ["yes", "no"], answer: ok ? "yes" : "no", why: `Packing greedily in order gives ${days} day${days > 1 ? "s" : ""}${ok ? ` ≤ ${D}` : ` &gt; ${D}`}.` } }); }
+      fr(5, `Check mid = ${mid}: pack greedily in order → ${days} day${days > 1 ? "s" : ""} (${[...Array(days).keys()].map((d) => W.filter((_, i) => day[i] === d).reduce((s, x) => s + x, 0)).join(", ")} per day). ${ok ? `${days} ≤ ${D}: feasible.` : `${days} &gt; ${D}: too small.`}`, { bs: { lo0, hi0, lo, hi, mid }, day });
+      if (ok) hi = mid; else lo = mid + 1;
+      fr(ok ? 6 : 8, ok ? `mid works, so the answer is ${mid} or smaller: hi ← ${mid}. Range now [${lo}, ${hi}].` : `mid fails, and so does everything below it: lo ← ${mid + 1}. Range now [${lo}, ${hi}].`, { bs: { lo0, hi0, lo, hi, mid }, day });
+    }
+    const { day, days } = pack(lo);
+    fr(9, `lo = hi = <b>${lo}</b>: the smallest capacity that ships in ${D} days (${days} day${days > 1 ? "s" : ""}). ${checks} checks ≈ log₂(${hi0 - lo0 + 1}) = ${Math.log2(hi0 - lo0 + 1).toFixed(1)}. Trying capacities one by one could need up to ${hi0 - lo0 + 1} checks (${answer - lo0 + 1} on this input, counting up from ${lo0}).`, { bs: { lo0, hi0, lo, hi, mid: null, done: true }, day });
+    return F;
+  },
+};
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const stage = $("stage");
+let cur = "two", code, ctr;
+const say = Forge.narrate($("say"));
+const DAYC = ["var(--c-active)", "var(--c-done)", "var(--c-pivot)", "var(--c-compare)", "var(--ember)", "#2ec4b6", "#f78fb3", "#9ccc65"];
+function drawCells(vals, y, cw, x0, states, opts) {
+  opts = opts || {};
+  vals.forEach((v, j) => {
+    const x = x0 + j * cw, st = states[j];
+    const fill = opts.fillFn ? opts.fillFn(j) : st ? COL[st] : "var(--panel)";
+    stage.appendChild(S("rect", { x: x + 2, y, width: cw - 4, height: 38, rx: 6, fill, stroke: st && st !== "dim" ? COL[st] : "var(--line-2)", "stroke-width": st === "active" ? 3 : 1.2 }));
+    stage.appendChild(S("text", { x: x + cw / 2, y: y + 25, "text-anchor": "middle", "font-size": Math.min(16, cw * 0.38), "font-weight": 700, fill: (st && st !== "dim") || opts.fillFn ? "#0d1117" : "var(--ink)" }, String(v)));
+    if (opts.index !== false) stage.appendChild(S("text", { x: x + cw / 2, y: y + 52, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, String(j)));
+  });
+}
+function bracket(a, b, y, x0, cw, color, label, up) {
+  const x1 = x0 + a * cw + 3, x2 = x0 + (b + 1) * cw - 3, d = up ? -7 : 7;
+  stage.appendChild(S("path", { d: `M${x1} ${y + d} V${y} H${x2} V${y + d}`, fill: "none", stroke: color, "stroke-width": 2.5 }));
+  if (label) stage.appendChild(S("text", { x: (x1 + x2) / 2, y: y - (up ? 5 : -16), "text-anchor": "middle", "font-size": 11, "font-weight": 700, fill: color }, label));
+}
+function pointers(ptrs, y, x0, cw) {
+  const seen = {};
+  ptrs.forEach((p) => {
+    const k = seen[p.i] = (seen[p.i] || 0) + 1;
+    const x = x0 + p.i * cw + cw / 2 + (k > 1 ? 12 : ptrs.filter((q) => q.i === p.i).length > 1 ? -12 : 0);
+    stage.appendChild(S("path", { d: `M${x} ${y} l-6 10 h12 z`, fill: "var(--ember)" }));
+    stage.appendChild(S("text", { x, y: y + 24, "text-anchor": "middle", "font-size": 13, "font-weight": 800, fill: "var(--ember)" }, p.label));
+  });
+}
+function render(f, i) {
+  const n = f.vals.length, W = Math.min(760, Math.max(stage.clientWidth && stage.clientWidth < 560 ? 400 : 560, n * 60 + 60));
+  const cw = Math.min(58, (W - 60) / n), x0 = (W - cw * n) / 2;
+  let H = 330;
+  stage.innerHTML = "";
+  const top = 34;
+  if (f.win) bracket(f.win[0], f.win[1], top - 8, x0, cw, "var(--ember)", cur === "two" ? "still possible" : "window", true);
+  const states = Object.assign({}, f.cells);
+  const fillFn = f.day ? (j) => DAYC[f.day[j] % DAYC.length] : null;
+  drawCells(f.vals, top, cw, x0, states, { fillFn });
+  pointers(f.ptr || [], top + 56, x0, cw);
+  const y2 = top + 128;
+  const txt = (x, y, s, o) => stage.appendChild(S("text", Object.assign({ x, y, "font-size": 13, fill: "var(--ink-2)" }, o || {}), s));
+  if (cur === "two") {
+    const l = f.ptr[0] && f.ptr[0].i, r = f.ptr[1] && f.ptr[1].i;
+    if (f.ptr.length) txt(W / 2, y2 + 20, `A[l] + A[r] = ${f.vals[l]} + ${f.vals[r]} = ${f.vals[l] + f.vals[r]}`, { "text-anchor": "middle", "font-size": 16, "font-weight": 700, fill: "var(--ink)" });
+    txt(W / 2, y2 + 46, `target = ${$("k").value}`, { "text-anchor": "middle" });
+    H = y2 + 70;
+  } else if (cur === "norepeat") {
+    if (f.best) bracket(f.best[0], f.best[1], top + 96, x0, cw, "var(--c-done)", `best = ${f.best[1] - f.best[0] + 1}`, false);
+    txt(20, y2 + 30, "last seen:", { fill: "var(--muted)", "font-size": 12 });
+    const perM = Math.max(1, Math.floor((W - 110) / 62)), keys = Object.keys(f.map).sort();
+    keys.forEach((ch, k) => {
+      const x = 100 + (k % perM) * 62, y = y2 + 12 + Math.floor(k / perM) * 32;
+      stage.appendChild(S("rect", { x, y, width: 56, height: 26, rx: 6, fill: "var(--panel-2)", stroke: "var(--line-2)" }));
+      txt(x + 28, y + 18, `${ch} → ${f.map[ch]}`, { "text-anchor": "middle", "font-weight": 700, fill: "var(--ink)" });
+    });
+    H = y2 + 56 + Math.max(0, Math.ceil(keys.length / perM) - 1) * 32;
+  } else if (cur === "minwin") {
+    if (f.best) bracket(f.best[0], f.best[1], top + 96, x0, cw, "var(--c-done)", `best = ${f.best[1] - f.best[0] + 1}`, false);
+    const frac = Math.min(1, f.sum / Math.max(1, f.S * 1.5)), bw = W - 200;
+    txt(20, y2 + 36, `sum = ${f.sum}`, { "font-weight": 700, fill: "var(--ink)" });
+    stage.appendChild(S("rect", { x: 120, y: y2 + 22, width: bw, height: 20, rx: 5, fill: "var(--bg)", stroke: "var(--line)" }));
+    stage.appendChild(S("rect", { x: 120, y: y2 + 22, width: Math.max(2, bw * frac), height: 20, rx: 5, fill: f.sum >= f.S ? COL.done : COL.compare }));
+    const sx = 120 + bw * Math.min(1, f.S / (f.S * 1.5));
+    stage.appendChild(S("line", { x1: sx, y1: y2 + 16, x2: sx, y2: y2 + 48, stroke: "var(--c-swap)", "stroke-width": 2 }));
+    txt(sx, y2 + 62, `S = ${f.S}`, { "text-anchor": "middle", fill: "var(--c-swap)", "font-size": 12, "font-weight": 700 });
+    H = y2 + 72;
+  } else if (cur === "nge") {
+    txt(x0 - 6, y2 + 25, "res", { "text-anchor": "end", fill: "var(--muted)", "font-size": 12 });
+    f.res.forEach((v, j) => {
+      const x = x0 + j * cw;
+      stage.appendChild(S("rect", { x: x + 2, y: y2, width: cw - 4, height: 36, rx: 6, fill: v == null ? "var(--bg-2)" : j === f.popped ? COL.swap : "var(--panel-2)", stroke: "var(--line-2)", "stroke-dasharray": v == null ? "4 3" : null }));
+      txt(x + cw / 2, y2 + 24, v == null ? "?" : String(v), { "text-anchor": "middle", "font-weight": 700, fill: j === f.popped ? "#0d1117" : v == null ? "var(--muted)" : "var(--ink)" });
+    });
+    const sy = y2 + 60;
+    txt(20, sy + 24, "stack:", { fill: "var(--muted)", "font-size": 12 });
+    txt(20, sy + 40, "bottom → top", { fill: "var(--muted)", "font-size": 10 });
+    const perS = Math.max(1, Math.floor((W - 120) / 66));
+    f.stack.forEach((j, k) => {
+      const x = 110 + (k % perS) * 66, y = sy + 6 + Math.floor(k / perS) * 40;
+      stage.appendChild(S("rect", { x, y, width: 60, height: 34, rx: 6, fill: f.leftover ? "var(--c-dim)" : "var(--steel-soft)", stroke: "var(--steel)" }));
+      txt(x + 30, y + 22, `[${j}] ${f.vals[j]}`, { "text-anchor": "middle", "font-weight": 700, fill: "var(--ink)" });
+    });
+    if (!f.stack.length) txt(110, sy + 28, "(empty)", { fill: "var(--muted)" });
+    H = sy + 56 + Math.max(0, Math.ceil(f.stack.length / perS) - 1) * 40;
+  } else if (cur === "prefix") {
+    const pw = Math.min(58, (W - 60) / (n + 1)), px0 = (W - pw * (n + 1)) / 2;
+    txt(px0 - 6, y2 + 24, "P", { "text-anchor": "end", fill: "var(--muted)", "font-size": 12 });
+    for (let j = 0; j <= n; j++) {
+      const x = px0 + j * pw, known = j < f.pre.length;
+      const isHl = known && f.hl != null && f.pre[j] === f.hl && j < f.pre.length - (f.hlNew ? 0 : 1);
+      stage.appendChild(S("rect", { x: x + 2, y: y2 + 4, width: pw - 4, height: 30, rx: 6, fill: isHl ? COL.compare : known ? "var(--panel-2)" : "var(--bg-2)", stroke: "var(--line-2)", "stroke-dasharray": known ? null : "4 3" }));
+      txt(x + pw / 2, y2 + 24, known ? String(f.pre[j]) : "", { "text-anchor": "middle", "font-weight": 700, fill: isHl ? "#0d1117" : "var(--ink)" });
+      txt(x + pw / 2, y2 + 46, "P" + j, { "text-anchor": "middle", fill: "var(--muted)", "font-size": 9 });
+    }
+    (f.spans || []).forEach(([a, b], k) => bracket(a, b, top + 96 + 0 * k, x0, cw, "var(--c-done)", k === 0 ? `sum = ${$("k").value}` : null, false));
+    const sy = y2 + 66;
+    txt(20, sy + 20, "seen:", { fill: "var(--muted)", "font-size": 12 });
+    f.seen.sort((a, b) => a[0] - b[0]).forEach(([val, cnt], k) => {
+      const perRow = Math.max(1, Math.floor((W - 90) / 70));
+      const x = 80 + (k % perRow) * 70, y = sy + Math.floor(k / perRow) * 34;
+      const isHl = f.hl === val;
+      stage.appendChild(S("rect", { x, y, width: 64, height: 28, rx: 6, fill: isHl ? (f.hlNew ? COL.swap : COL.compare) : "var(--panel-2)", stroke: "var(--line-2)" }));
+      txt(x + 32, y + 19, `${val} ×${cnt}`, { "text-anchor": "middle", "font-weight": 700, fill: isHl ? "#0d1117" : "var(--ink)" });
+    });
+    H = sy + 34 * Math.ceil(f.seen.length / Math.max(1, Math.floor((W - 90) / 70))) + 10;
+  } else if (cur === "ship") {
+    if (f.day) {
+      const days = Math.max(...f.day) + 1;
+      for (let d = 0; d < days; d++) {
+        const idx = f.day.map((x, j) => (x === d ? j : -1)).filter((j) => j >= 0);
+        const load = idx.reduce((s, j) => s + f.vals[j], 0);
+        bracket(idx[0], idx[idx.length - 1], top + 96, x0, cw, DAYC[d % DAYC.length], `day ${d + 1}: ${load}`, false);
+      }
+    }
+    const b = f.bs, ly = y2 + 50, lx0 = 50, lx1 = W - 50;
+    const X = (v) => lx0 + ((v - b.lo0) / Math.max(1, b.hi0 - b.lo0)) * (lx1 - lx0);
+    stage.appendChild(S("line", { x1: lx0, y1: ly, x2: lx1, y2: ly, stroke: "var(--line-2)", "stroke-width": 2 }));
+    if (b.lo > b.lo0) stage.appendChild(S("rect", { x: lx0, y: ly - 8, width: X(b.lo) - lx0, height: 16, fill: COL.swap, opacity: 0.35 }));
+    if (b.hi < b.hi0) stage.appendChild(S("rect", { x: X(b.hi), y: ly - 8, width: lx1 - X(b.hi), height: 16, fill: COL.done, opacity: 0.25 }));
+    stage.appendChild(S("rect", { x: X(b.lo), y: ly - 8, width: Math.max(3, X(b.hi) - X(b.lo)), height: 16, fill: "var(--ember-soft)", stroke: "var(--ember)" }));
+    txt(lx0, ly + 30, String(b.lo0), { "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 });
+    txt(lx1, ly + 30, String(b.hi0), { "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 });
+    const mark = (v, label, col, dy) => { stage.appendChild(S("path", { d: `M${X(v)} ${ly - 10} l-6 -10 h12 z`, fill: col })); txt(X(v), ly - 24 - dy, `${label} ${v}`, { "text-anchor": "middle", fill: col, "font-size": 12, "font-weight": 700 }); };
+    mark(b.lo, "lo", "var(--c-swap)", 0);
+    if (b.hi !== b.lo) mark(b.hi, "hi", "var(--c-done)", X(b.hi) - X(b.lo) < 60 ? 14 : 0);
+    if (b.mid != null) { stage.appendChild(S("line", { x1: X(b.mid), y1: ly - 12, x2: X(b.mid), y2: ly + 12, stroke: "var(--steel)", "stroke-width": 3 })); txt(X(b.mid), ly + 30, `mid ${b.mid}`, { "text-anchor": "middle", fill: "var(--steel)", "font-size": 12, "font-weight": 700 }); }
+    txt(W / 2, ly + 54, "red = proven too small · green = proven feasible", { "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 });
+    txt(W / 2, ly + 70, "orange = still unknown", { "text-anchor": "middle", fill: "var(--muted)", "font-size": 11 });
+    H = ly + 82;
+  }
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  code.highlight(f.line);
+  ctr.set(f.c);
+  say.say(f.text);
+  predict.show(f, i);
+}
+player = Forge.player($("player"), { frames: [], render });
+
+/* ---------------- controls ---------------- */
+const ORDER = ["two", "norepeat", "minwin", "nge", "prefix", "ship"];
+const SHORT = { two: "Two pointers", norepeat: "Window: no repeats", minwin: "Window: sum ≥ S", nge: "Monotonic stack", prefix: "Prefix sums + hash map", ship: "Binary search on answer" };
+const LEG = {
+  two: `<span><i style="background:var(--c-active)"></i>l and r</span><span><i style="background:var(--c-swap)"></i>ruled out now</span><span><i style="background:var(--c-dim)"></i>ruled out earlier</span><span><i style="background:var(--c-done)"></i>the pair</span>`,
+  norepeat: `<span><i style="background:var(--c-compare)"></i>inside the window</span><span><i style="background:var(--c-active)"></i>r (new letter)</span><span><i style="background:var(--c-swap)"></i>earlier copy of a repeat</span><span><i style="background:var(--c-dim)"></i>left behind</span><span><i style="background:var(--c-done)"></i>best window</span>`,
+  minwin: `<span><i style="background:var(--c-compare)"></i>inside the window</span><span><i style="background:var(--c-active)"></i>r</span><span><i style="background:var(--c-swap)"></i>dropped from the left</span><span><i style="background:var(--c-done)"></i>best window / sum ≥ S</span>`,
+  nge: `<span><i style="background:var(--c-active)"></i>new element i</span><span><i style="background:var(--c-swap)"></i>popped (answer found)</span><span><i style="background:var(--c-compare)"></i>stack top that stops the popping</span><span><i style="background:var(--steel-soft);border:1px solid var(--steel)"></i>waiting on the stack</span>`,
+  prefix: `<span><i style="background:var(--c-active)"></i>element i</span><span><i style="background:var(--c-compare)"></i>looked-up prefix p − k</span><span><i style="background:var(--c-swap)"></i>just recorded</span><span><i style="background:var(--c-done)"></i>subarray with sum k</span>`,
+  ship: `<span>🎨 each color = one day's packages</span><span><i style="background:var(--c-swap);opacity:.5"></i>capacities proven too small</span><span><i style="background:var(--c-done);opacity:.4"></i>proven feasible</span><span><i style="background:var(--ember-soft);border:1px solid var(--ember)"></i>still unknown</span>`,
+};
+const store = {};
+ORDER.forEach((k) => (store[k] = P[k].lesson.slice()));
+function buildTabs() {
+  const box = $("tabs");
+  ORDER.forEach((k) => box.appendChild(el("button", { class: "btn sm", role: "tab", "data-k": k, onclick: () => select(k) }, SHORT[k])));
+}
+function select(k) {
+  store[cur] = [$("inp").value, $("k").value];
+  cur = k;
+  [...$("tabs").children].forEach((b) => b.classList.toggle("on", b.dataset.k === k));
+  const p = P[k];
+  $("signal").innerHTML = `<b>${p.label}.</b> ${p.signal}`;
+  $("inLabel").textContent = p.inLabel;
+  $("kWrap").hidden = !p.kLabel;
+  if (p.kLabel) $("kLabel").textContent = p.kLabel;
+  $("inp").value = store[k][0]; $("k").value = store[k][1] == null ? "" : store[k][1];
+  $("legend").innerHTML = LEG[k];
+  $("code").innerHTML = "";
+  code = Forge.code($("code"), p.lines);
+  run();
+}
+function run() {
+  const p = P[cur];
+  let input;
+  if (p.isStr) { input = $("inp").value.toLowerCase().replace(/[^a-z]/g, "").slice(0, 16) || "abacdbe"; $("inp").value = input; }
+  else { input = $("inp").value.split(/[\s,;]+/).filter(Boolean).map(Number).filter((x) => Number.isFinite(x)).map(Math.round).slice(0, 14); if (input.length < 2) input = P[cur].lesson[0].split(",").map(Number); }
+  const k = Math.round(+$("k").value || 0);
+  const frames = p.record(input.slice ? input.slice() : input, k);
+  if (!p.isStr) $("inp").value = frames[0].vals.join(", ");
+  $("ctr").innerHTML = "";
+  ctr = Forge.counters($("ctr"), frames[0].c);
+  predict.reset();
+  player.load(frames);
+}
+$("run").onclick = run;
+$("inp").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+$("k").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+$("rand").onclick = () => { const [a, k] = P[cur].rand(); $("inp").value = a; $("k").value = k == null ? "" : k; run(); };
+$("lessonEx").onclick = () => { const [a, k] = P[cur].lesson; $("inp").value = a; $("k").value = k == null ? "" : k; run(); };
+buildTabs();
+$("inp").value = store.two[0]; $("k").value = store.two[1];
+select("two");
+</script>
+</body>
+</html>

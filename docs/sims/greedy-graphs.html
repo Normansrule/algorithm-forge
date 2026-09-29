@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greedy Graph Algorithms · Algorithm Forge</title>
+<meta name="description" content="Prim's and Kruskal's minimum spanning tree algorithms and Dijkstra's shortest paths on an editable weighted graph: fringe labels, priority queue, sorted edges, union-find forest and shortest-path tree.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  label.field { max-width: 100%; }
+  label.field[hidden] { display: none; }
+  select { max-width: 100%; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  .gg-inputs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .gg-inputs input[type="text"] { width: 100%; max-width: 420px; }
+  .ttl { font-size: 0.75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  table.t { width: 100%; }
+  table.t td.l { text-align: left; }
+  table.t tr.cur td { background: var(--steel-soft); }
+  table.t tr.acc td { color: var(--c-done); font-weight: 700; }
+  table.t tr.rej td { color: var(--muted); text-decoration: line-through; }
+  table.t td.upd { color: var(--c-swap); font-weight: 700; }
+  .ask[hidden] { display: none; }
+  .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .go-deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  #svgG.editing { cursor: crosshair; outline: 2px dashed var(--ember); outline-offset: -2px; }
+  .cmp b { font-family: var(--mono); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 9 · Greedy Technique</div>
+    <h1>Prim, Kruskal &amp; Dijkstra</h1>
+    <p class="lead muted">Three greedy algorithms on the same weighted graph. Prim and Kruskal build a Minimum Spanning Tree (MST) — the cheapest set of edges that connects everything. Dijkstra builds a Shortest-Path Tree (SPT) from one source. Each step grabs the locally best option and never takes it back.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="gg-inputs">
+      <label class="field">Algorithm
+        <select id="algo"><option value="prim">Prim (MST, grow one tree)</option><option value="kruskal">Kruskal (MST, merge forests)</option><option value="dijkstra">Dijkstra (shortest paths)</option></select>
+      </label>
+      <label class="field">Preset graph
+        <select id="preset">
+          <option value="prim">Levitin §9.1 graph (a–f)</option>
+          <option value="dijk">Levitin §9.3 / Lecture 9 graph (a–e)</option>
+          <option value="diff">⚖️ Prim vs Dijkstra differ here</option>
+          <option value="ties">Many equal weights (ties)</option>
+        </select>
+      </label>
+      <label class="field">Start vertex <select id="start"></select></label>
+      <button class="btn" id="rand">Random graph</button>
+    </div>
+    <div class="gg-inputs" style="margin-top:12px">
+      <label class="field">Edges (u-v weight), editable<input type="text" id="edges" spellcheck="false"></label>
+      <button class="btn primary" id="load">Load &amp; run</button>
+      <label class="row small" style="gap:6px"><input type="checkbox" id="edit"> ✏️ Edit by clicking the graph</label>
+      <label class="field">New edge weight<input type="number" id="ew" value="5" min="1" max="99" style="width:80px"></label>
+      <button class="btn sm" id="delV" disabled>Delete selected vertex</button>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Edit mode: click empty space to add a vertex; click a vertex, then another, to add that edge (or remove it if it exists).</p>
+    <div class="row" style="margin-top:8px">
+      <label class="row small" style="gap:6px"><input type="checkbox" id="predictMode"> 🤔 Predict each greedy choice</label>
+      <span class="chip" id="score">predictions: 0 / 0</span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage-wrap"><svg class="stage" id="svgG" role="img" aria-label="Weighted graph"></svg></div>
+      <div class="callout ask" id="ask" hidden><b>🤔 Predict:</b> <span id="askQ"></span> <span id="askBtns" class="row"></span> <span id="askFb" class="small"></span></div>
+      <div class="legend">
+        <span><i style="background:var(--c-done)"></i>tree vertex</span>
+        <span><i style="background:var(--c-compare)"></i>fringe vertex (has a finite label)</span>
+        <span><i style="background:var(--c-active)"></i>vertex / edge being examined</span>
+        <span><i style="background:var(--ember)"></i>tree edge</span>
+        <span><i style="background:var(--c-pivot)"></i>cycle that would form / other algorithm's pick</span>
+        <span><i style="background:var(--c-dim)"></i>rejected edge</span>
+      </div>
+      <div id="player"></div>
+      <div class="grid cols-2">
+        <div class="panel"><div class="panel-title" id="t1">Labels</div><div id="side1" class="scroll-x"></div></div>
+        <div class="panel"><div class="panel-title" id="t2">Priority queue</div><div id="side2" class="scroll-x"></div></div>
+      </div>
+      <div class="panel cmp"><div class="panel-title">MST vs shortest-path tree on this graph</div><div id="cmp" class="small"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Labels under vertices</b> follow Levitin's notation. Prim: <code>b(a, 3)</code> = the nearest tree vertex is a, by an edge of weight 3. Dijkstra: <code>b(a, 3)</code> = best path found so far arrives from a and has total length 3. <code>(−, ∞)</code> means “not reachable yet”.</li>
+        <li>The <b>Tree vertices / Remaining vertices</b> table grows one row per step, just like the textbook's trace tables. Red entries were just updated.</li>
+        <li>The <b>priority queue</b> lists fringe vertices by key; the greedy step always removes the top one.</li>
+        <li><b>Kruskal</b> scans edges from lightest to heaviest. The union-find forest shows which vertices are already connected: two vertices with the same root are in the same tree, so an edge between them would close a cycle (drawn in purple) and is rejected.</li>
+        <li>At the end, dashed purple edges belong to the <i>other</i> tree (MST vs SPT) — handy for the “Prim vs Dijkstra” preset.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Run Prim on the Levitin §9.1 graph from a. The picks should be b(a,3), c(b,1), f(b,4), e(f,2), d(f,5): total weight 15.</li>
+        <li>Switch to Kruskal on the same graph. It accepts bc 1, ef 2, ab 3, bf 4, then rejects cf 4 (b and c are already joined through the tree) and af 5, and finishes with df 5. Same total, 15.</li>
+        <li>Pick the Levitin §9.3 graph and Dijkstra from a: b(a,3), d(b,5), c(b,7), e(d,9). Check each path length yourself.</li>
+        <li>Load “⚖️ Prim vs Dijkstra differ here”. Prim takes b–c (weight 2), Dijkstra takes a–c (weight 5). Why is each right for its own goal?</li>
+        <li>Turn on 🤔 Predict and call every greedy choice before it happens. Then edit a weight so the answer changes and try again.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="go-deeper">
+      <a class="btn sm" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/09-greedy/README.md">📖 Lesson 9: Greedy Technique</a>
+      <a class="btn sm" href="../arena/index.html?chapter=9">🏟️ Arena: Chapter 9 problems</a>
+      <a class="btn sm" href="../arena/problem.html?id=prim-mst-weight">prim-mst-weight</a>
+      <a class="btn sm" href="../arena/problem.html?id=kruskal-mst-edges">kruskal-mst-edges</a>
+      <a class="btn sm" href="../arena/problem.html?id=quick-union-find">quick-union-find</a>
+      <a class="btn sm" href="../arena/problem.html?id=dijkstra-distances">dijkstra-distances</a>
+      <a class="btn sm" href="../arena/problem.html?id=dijkstra-path">dijkstra-path</a>
+      <a class="btn sm" href="union-find.html">Sim: union-find in depth</a>
+      <a class="btn sm" href="heap-lab.html">Sim: heaps (priority queues)</a>
+      <a class="btn sm" href="warshall-floyd.html">Sim: Floyd (all-pairs shortest paths)</a>
+      <a class="btn sm" href="huffman.html">Sim: Huffman codes</a>
+      <a class="btn sm" href="shortest-paths-plus.html">Sim: Bellman–Ford and A*</a>
+    </div>
+  </section>
+</main>
+<script src="js/greedy-graphs.js"></script>
+</body>
+</html>

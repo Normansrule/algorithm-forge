@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Template · Algorithm Forge</title>
+<meta name="description" content="Template showing the Algorithm Forge simulation pattern (record frames, then play).">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 3 · Brute Force</div>
+    <h1>Selection Sort (template)</h1>
+    <p class="lead muted">Find the smallest remaining element, swap it into place, repeat. Watch the comparisons pile up: n(n−1)/2 of them, no matter what the input looks like.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Your array <input id="inp" type="text" value="89, 45, 68, 90, 29, 34, 17" style="min-width:260px"></label>
+      <button class="btn primary" id="load">Load</button>
+      <button class="btn" id="rand">Random</button>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Bars representing the array"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>being compared</span>
+        <span><i style="background:var(--c-active)"></i>current minimum</span>
+        <span><i style="background:var(--c-swap)"></i>swapped</span>
+        <span><i style="background:var(--c-done)"></i>in final position</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Load an already-sorted array. Does the number of comparisons change? (It shouldn't — why?)</li>
+      <li>Predict the comparison count for n = 7 before pressing play: n(n−1)/2 = 21.</li>
+    </ol>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Selection Sort (template)", chapter: "Ch 3 · Brute Force" });
+
+const LINES = [
+  "ALGORITHM SelectionSort(A[0..n-1])",
+  "    for i ← 0 to n − 2 do",
+  "        min ← i",
+  "        for j ← i + 1 to n − 1 do",
+  "            if A[j] < A[min] then min ← j",
+  "        swap A[i] and A[min]",
+];
+const code = Forge.code(document.getElementById("code"), LINES);
+const ctr = Forge.counters(document.getElementById("ctr"), { comparisons: 0, swaps: 0 });
+const say = Forge.narrate(document.getElementById("say"));
+const stage = document.getElementById("stage");
+
+/** 1. RECORD: run the algorithm once, capturing a snapshot at every interesting moment. */
+function record(input) {
+  const A = input.slice(), frames = [];
+  let cmp = 0, swaps = 0;
+  const done = new Set();
+  const push = (line, state, text, ptr) => frames.push({ A: A.slice(), line, state, text, cmp, swaps, ptr, done: [...done] });
+  push(0, {}, `Start: n = ${A.length}. We'll fill positions 0, 1, 2, … with the smallest remaining element.`);
+  for (let i = 0; i < A.length - 1; i++) {
+    let min = i;
+    push(2, { [i]: "active" }, `Pass ${i + 1}: assume A[${i}] = ${A[i]} is the smallest in A[${i}..${A.length - 1}].`, [{ i, label: "i" }]);
+    for (let j = i + 1; j < A.length; j++) {
+      cmp++;
+      const st = { [min]: "active", [j]: "compare" };
+      if (A[j] < A[min]) {
+        push(4, st, `Compare A[${j}] = ${A[j]} with current min A[${min}] = ${A[min]}: smaller → new minimum is at ${j}.`, [{ i, label: "i" }, { i: j, label: "j" }]);
+        min = j;
+      } else push(4, st, `Compare A[${j}] = ${A[j]} with current min A[${min}] = ${A[min]}: not smaller, keep going.`, [{ i, label: "i" }, { i: j, label: "j" }]);
+    }
+    [A[i], A[min]] = [A[min], A[i]];
+    swaps++;
+    done.add(i);
+    push(5, { [i]: "swap", [min]: "swap" }, `Swap A[${i}] and A[${min}] — ${A[i]} is now in its final place.`, [{ i, label: "i" }]);
+  }
+  done.add(A.length - 1);
+  push(5, {}, `Done! ${cmp} comparisons = n(n−1)/2 = ${(A.length * (A.length - 1)) / 2}, and ${swaps} swaps.`);
+  return frames;
+}
+
+/** 2. RENDER one frame. */
+function render(f) {
+  const state = {};
+  f.done.forEach((k) => (state[k] = "done"));
+  Object.assign(state, f.state);
+  Forge.bars(stage, f.A, { state, pointers: f.ptr || [] });
+  code.highlight(f.line);
+  ctr.set({ comparisons: f.cmp, swaps: f.swaps });
+  say.say(f.text);
+}
+
+const player = Forge.player(document.getElementById("player"), { frames: [], render });
+function load(arr) { player.load(record(arr)); }
+document.getElementById("load").onclick = () => {
+  const arr = document.getElementById("inp").value.split(/[\s,]+/).filter(Boolean).map(Number).filter((x) => !Number.isNaN(x));
+  if (arr.length) load(arr.slice(0, 40));
+};
+document.getElementById("rand").onclick = () => {
+  const arr = Forge.randArray(8 + Math.floor(Math.random() * 6), 5, 99);
+  document.getElementById("inp").value = arr.join(", ");
+  load(arr);
+};
+load([89, 45, 68, 90, 29, 34, 17]);
+</script>
+</body>
+</html>

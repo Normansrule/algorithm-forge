@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bloom Filter · Algorithm Forge</title>
+<meta name="description" content="Interactive Bloom filter: a bit array with k hash functions, insert and query, false positives highlighted, and the measured false-positive rate compared with (1 - e^(-kn/m))^k and the optimal k = (m/n) ln 2.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips .chip { cursor: pointer; }
+  .chart { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .chart text { font-family: var(--mono); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 16 · Randomized, Amortized, Streaming</div>
+    <h1>Bloom Filter</h1>
+    <p class="lead muted">A few bits per item answer "have I seen this?" with no false negatives and a small, predictable rate of false positives (FP). Insert, query, catch a false positive in the act, then measure the rate against the formula.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Bits m: <b id="mOut">10</b> <input type="range" id="m" min="8" max="128" value="10" style="width:160px"></label>
+      <label class="field">Hash functions k: <b id="kOut">2</b> <input type="range" id="k" min="1" max="8" value="2" style="width:120px"></label>
+      <label class="field">Hash family
+        <select id="family">
+          <option value="toy">Toy (lesson): hᵢ(x) = ((2i − 1)·x + i − 1) mod m, integers</option>
+          <option value="dbl">Double hashing: h₁ + i·h₂ mod m (FNV-1a), any text</option>
+        </select>
+      </label>
+      <button class="btn" id="kopt">Set k = (m/n) ln 2</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Item <input type="text" id="item" value="22" style="width:130px"></label>
+      <button class="btn steel" id="doInsert">Insert</button>
+      <button class="btn steel" id="doQuery">Query</button>
+      <button class="btn" id="rand5">Insert 5 random</button>
+      <button class="btn" id="lesson">Lesson example</button>
+      <button class="btn" id="reset">Empty filter</button>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="small muted">Inserted (click to query):</span>
+      <div class="chips" id="inserted"></div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Bloom filter bit array with hash probes"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-bar)"></i>bit = 1</span>
+        <span><i style="background:var(--bg);border:1px solid var(--line-2)"></i>bit = 0</span>
+        <span><i style="background:var(--c-swap)"></i>bit set just now / false positive</span>
+        <span><i style="background:var(--c-compare)"></i>probed, already 1</span>
+        <span><i style="background:var(--c-active)"></i>probed, 0 → definitely not</span>
+        <span><i style="background:var(--c-done)"></i>true "maybe" (really inserted)</span>
+      </div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+      <div class="panel">
+        <div class="panel-title">Query history</div>
+        <div class="chips" id="history"><span class="small muted">No queries yet.</span></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Measured false-positive rate vs the formula</h2>
+    <p class="muted small" style="margin-top:0">For the current m, k and hash family: insert n random items (n = 0 … 1.5m), and after each step ask 2,000 items that were never inserted. Dots = measured fraction of false "maybe"s; line = (1 − e<sup>−kn/m</sup>)<sup>k</sup>.</p>
+    <div class="row"><button class="btn steel" id="measure">Measure</button><span class="small muted" id="measureNote"></span></div>
+    <svg class="chart" id="chartN" role="img" aria-label="False positive rate versus number of inserted items" style="margin-top:12px"></svg>
+    <h3 style="margin-top:16px">Which k is best? (formula, at the current n)</h3>
+    <svg class="chart" id="chartK" role="img" aria-label="Predicted false positive rate versus k"></svg>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li>The row of boxes is the bit array B[0..m−1]. Inserting an item computes k hash values and turns those k bits on (lines show which bits an item maps to).</li>
+      <li>A query checks the same k bits. One 0 is proof the item was <b>never</b> inserted (bits never turn off). If all k are 1, the answer is only <b>"maybe"</b>: other items might have switched those bits on. A red result is a <b>false positive</b>.</li>
+      <li>After n inserts, a bit is still 0 with probability about e<sup>−kn/m</sup>, so a non-member passes all k probes with probability about (1 − e<sup>−kn/m</sup>)<sup>k</sup>. That's the "predicted FP" counter; "measured FP" is what your own queries of non-members produced.</li>
+      <li>The k chart shows the tradeoff: more hash functions check more bits (good) but fill the array faster (bad). The minimum sits at k = (m/n) ln 2, where about half the bits are 1.</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Press <b>Lesson example</b> (m = 10, k = 2, toy hashes). 12 → bits 2, 7; 37 → bits 7, 2; 41 → bits 1, 4. Query 45 (bit 5 is 0: definitely not), 14 (bit 3 is 0), then 22: bits 2 and 7 are both on, so the filter says "maybe", a <b>false positive</b>.</li>
+      <li>Insert a few items and query each one again: every inserted item always gets "maybe". There are no false negatives.</li>
+      <li>Switch to double hashing, m = 64, k = 3, and press <b>Insert 5 random</b> twice (n = 10). The formula predicts about 5.2%. Press <b>Measure</b>: the dots should hug the line.</li>
+      <li>Keep n = 10, m = 64 and press <b>Set k = (m/n) ln 2</b> (6.4 × 0.693 ≈ 4.4 → k = 4, about 4.7%). In the k chart, k = 1 gives about 14% and k = 8 about 6.7%: too few hashes check too little, too many fill the array.</li>
+      <li>Keep inserting past n = m. The rate climbs toward 100%: a Bloom filter must be sized for the number of items you expect (about 9.6 bits per item for a 1% rate).</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/16-randomized-amortized-streaming/README.md#build-card-8--bloom-filters">📖 Lesson 16 · Bloom filters</a>
+      <a class="btn" href="../arena/index.html?chapter=16">🏟️ Chapter 16 Arena</a>
+      <a class="btn" href="hashing.html">🎮 Hashing</a>
+      <a class="btn" href="amortized.html">🎮 Amortized analysis</a>
+      <a class="btn" href="trie.html">🎮 Trie</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Bloom Filter", chapter: "Ch 16 · Randomized, Amortized, Streaming" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to check the bits.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+/* ---------------- hashing ---------------- */
+function fnv1a(str) { let h = 0x811c9dc5; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0; }
+function mix(h) { h ^= h >>> 16; h = Math.imul(h, 0x7feb352d); h ^= h >>> 15; h = Math.imul(h, 0x846ca68b); h ^= h >>> 16; return h >>> 0; }
+const isInt = (s) => /^-?\d{1,9}$/.test(String(s).trim());
+function positions(item, m, k, family) {
+  const out = [];
+  if (family === "toy" && isInt(item)) {
+    const x = +item;
+    for (let i = 1; i <= k; i++) out.push((((2 * i - 1) * x + (i - 1)) % m + m) % m);
+    return out;
+  }
+  const h1 = fnv1a(String(item)), h2 = (mix(h1 ^ 0x9e3779b9) | 1) >>> 0;
+  for (let i = 0; i < k; i++) out.push(Number((BigInt(h1) + BigInt(i) * BigInt(h2)) % BigInt(m)));
+  return out;
+}
+const hashText = (family, i, item) => (family === "toy" && isInt(item) ? `h${i}(x) = (${2 * i - 1}·x + ${i - 1}) mod m` : `h${i}(x) = (h₁(x) + ${i - 1}·h₂(x)) mod m`);
+
+/* ---------------- state ---------------- */
+let m = 10, k = 2, family = "toy";
+let bits = new Uint8Array(m), items = [], negQ = 0, fpQ = 0, history = [];
+function rebuild() { bits = new Uint8Array(m); items.forEach((x) => positions(x, m, k, family).forEach((p) => (bits[p] = 1))); }
+const fpFormula = (n, mm = m, kk = k) => Math.pow(1 - Math.exp((-kk * n) / mm), kk);
+const LINES = [
+  "ALGORITHM BloomAdd(B[0..m-1], x, k)",
+  "    for i ← 1 to k do",
+  "        B[Hash(i, x) mod m] ← 1",
+  "ALGORITHM BloomMightContain(B[0..m-1], x, k)",
+  "    for i ← 1 to k do",
+  "        if B[Hash(i, x) mod m] = 0 then",
+  "            return false          // definitely not present",
+  "    return true                   // probably present",
+];
+
+/* ---------------- 1. RECORD ---------------- */
+function counters() {
+  const ones = bits.reduce((s, b) => s + b, 0);
+  return { "n inserted": items.length, "bits set": `${ones}/${m} (${Math.round((100 * ones) / m)}%)`, "predicted FP": (100 * fpFormula(items.length)).toFixed(1) + "%", "measured FP": negQ ? `${fpQ}/${negQ}` : "—", "optimal k": items.length ? ((m / items.length) * Math.LN2).toFixed(2) : "—" };
+}
+function recInsert(x) {
+  const F = [], pos = positions(x, m, k, family);
+  const snap = (line, text, hl, extra) => F.push(Object.assign({ bits: bits.slice(), item: x, pos, hl: hl || {}, line, text, c: counters() }, extra || {}));
+  snap(0, `Insert "${x}": compute its ${k} bit position${k > 1 ? "s" : ""}: ${pos.join(", ")}.`, Object.fromEntries(pos.map((p) => [p, "pivot"])));
+  const hl = {};
+  pos.forEach((p, i) => {
+    const was = bits[p];
+    bits[p] = 1;
+    hl[p] = was ? "compare" : "swap";
+    snap(2, `${hashText(family, i + 1, x)} = ${p}. ${was ? `B[${p}] was already 1 (shared with another item).` : `Set B[${p}] ← 1.`}`, Object.assign({}, hl));
+  });
+  if (!items.includes(x)) items.push(x);
+  const ones = bits.reduce((s, b) => s + b, 0);
+  snap(2, `"${x}" is in. ${ones} of ${m} bits are now 1. Predicted false-positive rate at n = ${items.length}: ${(100 * fpFormula(items.length)).toFixed(1)}%.`, Object.assign({}, hl), { c: counters() });
+  return F;
+}
+function recQuery(x) {
+  const F = [], pos = positions(x, m, k, family), member = items.includes(x);
+  const snap = (line, text, hl, extra) => F.push(Object.assign({ bits: bits.slice(), item: x, pos, hl: hl || {}, line, text, c: counters() }, extra || {}));
+  const zeroAt = pos.findIndex((p) => !bits[p]);
+  const says = zeroAt < 0 ? "maybe" : "definitely not";
+  snap(3, `Query "${x}": look at bits ${pos.join(", ")}. (Was it inserted? ${member ? "Yes." : "No."})`, Object.fromEntries(pos.map((p) => [p, "pivot"])), {
+    ask: { id: `q-${x}-${m}-${k}-${family}-${items.length}`, q: `"${x}" ${member ? "<b>was</b>" : "was <b>not</b>"} inserted. What will the filter answer?`, options: ["maybe", "definitely not"], answer: says, why: member ? "Inserted items always have all their bits on: Bloom filters never give false negatives." : zeroAt < 0 ? `All ${k} of its bits (${pos.join(", ")}) happen to be on because of other items: a false positive.` : `Bit ${pos[zeroAt]} is 0, and bits never turn off, so "${x}" was definitely never inserted.` },
+  });
+  const hl = {};
+  for (let i = 0; i < pos.length; i++) {
+    const p = pos[i];
+    if (!bits[p]) {
+      hl[p] = "active";
+      snap(6, `${hashText(family, i + 1, x)} = ${p}: B[${p}] = 0. Stop: "${x}" was <b>definitely never inserted</b>.`, Object.assign({}, hl), { result: "no" });
+      if (!member) negQ++;
+      history.push([x, "no"]);
+      F[F.length - 1].c = counters();
+      return F;
+    }
+    hl[p] = "compare";
+    snap(5, `${hashText(family, i + 1, x)} = ${p}: B[${p}] = 1. Keep checking.`, Object.assign({}, hl));
+  }
+  const fin = {};
+  pos.forEach((p) => (fin[p] = member ? "done" : "swap"));
+  if (!member) { negQ++; fpQ++; }
+  history.push([x, member ? "tp" : "fp"]);
+  snap(7, member ? `All ${k} bits are 1: "maybe", and correctly so, because "${x}" was inserted.` : `All ${k} bits are 1, so the filter says "maybe"... but "${x}" was never inserted. <b>False positive!</b> Other items switched those bits on.`, fin, { result: member ? "tp" : "fp", c: counters() });
+  return F;
+}
+
+/* ---------------- 2. RENDER ---------------- */
+const stage = $("stage");
+const code = Forge.code($("code"), LINES);
+const ctr = Forge.counters($("ctr"), counters());
+const say = Forge.narrate($("say"));
+function render(f, i) {
+  const W = 760, per = m <= 16 ? m : m <= 64 ? 16 : 32;
+  const cw = Math.min(44, (W - 40) / per), rows = Math.ceil(m / per), x0 = (W - cw * per) / 2;
+  const top = 96, rowH = cw + 18;
+  const H = top + rows * rowH + 16;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  const cell = (p) => ({ x: x0 + (p % per) * cw, y: top + Math.floor(p / per) * rowH });
+  // item badge
+  if (f.item != null) {
+    const res = f.result, col = res === "fp" ? COL.swap : res === "tp" ? COL.done : res === "no" ? COL.active : "var(--ember)";
+    const label = String(f.item);
+    const bw = Math.max(70, label.length * 10 + 30);
+    stage.appendChild(S("rect", { x: W / 2 - bw / 2, y: 8, width: bw, height: 32, rx: 16, fill: col }));
+    stage.appendChild(S("text", { x: W / 2, y: 29, "text-anchor": "middle", "font-size": 15, "font-weight": 800, fill: "#0d1117" }, label));
+    if (res) stage.appendChild(S("text", { x: W / 2 + bw / 2 + 10, y: 29, "font-size": 13, "font-weight": 700, fill: col }, res === "fp" ? "maybe → FALSE POSITIVE" : res === "tp" ? "maybe (correct)" : "definitely not"));
+    f.pos.forEach((p) => {
+      const c = cell(p), st = f.hl[p];
+      stage.appendChild(S("line", { x1: W / 2, y1: 40, x2: c.x + cw / 2, y2: c.y - 2, stroke: st ? COL[st] : "var(--line-2)", "stroke-width": st && st !== "pivot" ? 2.2 : 1.2, "stroke-dasharray": st && st !== "pivot" ? null : "4 4", opacity: 0.9 }));
+    });
+  }
+  for (let p = 0; p < m; p++) {
+    const c = cell(p), st = f.hl[p], on = f.bits[p];
+    const fill = st && st !== "pivot" ? COL[st] : on ? "var(--c-bar)" : "var(--bg)";
+    stage.appendChild(S("rect", { x: c.x + 1.5, y: c.y, width: cw - 3, height: cw - 3, rx: 5, fill, stroke: st ? COL[st] : "var(--line-2)", "stroke-width": st ? 2.5 : 1 }));
+    stage.appendChild(S("text", { x: c.x + cw / 2, y: c.y + cw / 2 + 3, "text-anchor": "middle", "font-size": Math.min(14, cw * 0.45), "font-weight": 700, fill: (st && st !== "pivot") || on ? "#0d1117" : "var(--muted)" }, String(on)));
+    if (cw >= 18 || p % 4 === 0) stage.appendChild(S("text", { x: c.x + cw / 2, y: c.y + cw + 9, "text-anchor": "middle", "font-size": Math.min(10, cw * 0.42), fill: "var(--muted)" }, String(p)));
+  }
+  code.highlight(f.line);
+  ctr.set(f.c);
+  say.say(f.text);
+  predict.show(f, i);
+}
+player = Forge.player($("player"), { frames: [], render });
+
+/* ---------------- controls ---------------- */
+function showLists() {
+  const ins = $("inserted"); ins.innerHTML = "";
+  if (!items.length) ins.appendChild(el("span", { class: "small muted" }, "(none)"));
+  items.slice(-40).forEach((x) => ins.appendChild(el("span", { class: "chip", title: "Query this", onclick: () => { $("item").value = x; $("doQuery").click(); } }, String(x))));
+  const h = $("history"); h.innerHTML = "";
+  if (!history.length) h.appendChild(el("span", { class: "small muted" }, "No queries yet."));
+  history.slice(-24).forEach(([x, r]) => h.appendChild(el("span", { class: "chip " + (r === "fp" ? "bad" : r === "tp" ? "ok" : "steel") }, `${x}: ${r === "no" ? "definitely not" : r === "tp" ? "maybe ✓" : "maybe ✗ (FP)"}`)));
+}
+function play(frames) { predict.reset(); player.load(frames); showLists(); drawK(); }
+function still(text) { play([{ bits: bits.slice(), item: null, pos: [], hl: {}, line: 0, text, c: counters() }]); }
+const itemVal = () => $("item").value.trim().slice(0, 20);
+$("doInsert").onclick = () => { const x = itemVal(); if (x) play(recInsert(x)); };
+$("doQuery").onclick = () => { const x = itemVal(); if (x) play(recQuery(x)); };
+$("item").addEventListener("keydown", (e) => { if (e.key === "Enter") $("doQuery").click(); });
+$("rand5").onclick = () => {
+  const F = [];
+  for (let j = 0; j < 5; j++) {
+    let x;
+    do { x = family === "toy" ? String(Math.floor(Math.random() * 1000)) : "item" + Math.floor(Math.random() * 100000); } while (items.includes(x));
+    const fr = recInsert(x);
+    F.push(...fr.slice(-1).map((f) => Object.assign(f, { text: `Inserted "${x}" at bits ${f.pos.join(", ")}. ` + f.text.split(". ").slice(1).join(". ") })));
+  }
+  play(F);
+};
+function setParams(mm, kk, fam, keep) {
+  m = mm; k = kk; family = fam;
+  $("m").value = m; $("k").value = k; $("family").value = fam; $("mOut").textContent = m; $("kOut").textContent = k;
+  if (!keep) { items = []; history = []; negQ = 0; fpQ = 0; }
+  rebuild();
+}
+$("m").oninput = () => ($("mOut").textContent = $("m").value);
+$("k").oninput = () => ($("kOut").textContent = $("k").value);
+const paramChange = () => { negQ = 0; fpQ = 0; history = []; setParams(+$("m").value, +$("k").value, $("family").value, true); still(`Parameters changed to m = ${m}, k = ${k}. The ${items.length} inserted item${items.length === 1 ? " was" : "s were"} re-hashed into a fresh bit array.`); };
+$("m").onchange = paramChange; $("k").onchange = paramChange; $("family").onchange = paramChange;
+$("kopt").onclick = () => {
+  const n = Math.max(1, items.length);
+  const kk = Math.max(1, Math.min(8, Math.round((m / n) * Math.LN2)));
+  $("k").value = kk; paramChange();
+  say.say(`k = (m/n) ln 2 = (${m}/${n}) × 0.693 = ${((m / n) * Math.LN2).toFixed(2)} → k = ${kk}${kk === 8 && (m / n) * Math.LN2 > 8 ? " (capped at 8)" : ""}. ` + say_last());
+};
+const say_last = () => `Predicted FP now ${(100 * fpFormula(items.length)).toFixed(1)}%.`;
+$("reset").onclick = () => { setParams(m, k, family, false); still("Empty filter: all bits 0."); };
+$("lesson").onclick = () => {
+  setParams(10, 2, "toy", false);
+  const F = [];
+  ["12", "37", "41"].forEach((x) => F.push(...recInsert(x)));
+  ["45", "14", "22"].forEach((x) => F.push(...recQuery(x)));
+  play(F);
+};
+
+/* ---------------- charts ---------------- */
+function axes(svg, W, H, pad, maxX, maxY, xl, yl) {
+  const X = (v) => pad.l + (v / maxX) * (W - pad.l - pad.r), Y = (v) => H - pad.b - (v / maxY) * (H - pad.t - pad.b);
+  [0, 0.25, 0.5, 0.75, 1].forEach((t) => {
+    svg.appendChild(S("line", { x1: pad.l, x2: W - pad.r, y1: Y(maxY * t), y2: Y(maxY * t), stroke: "var(--line)" }));
+    svg.appendChild(S("text", { x: pad.l - 6, y: Y(maxY * t) + 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, Math.round(100 * maxY * t) + "%"));
+  });
+  svg.appendChild(S("text", { x: (pad.l + W - pad.r) / 2, y: H - 6, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, xl));
+  svg.appendChild(S("text", { x: pad.l, y: 12, "font-size": 11, fill: "var(--muted)" }, yl));
+  return { X, Y };
+}
+function drawN(measured) {
+  const svg = $("chartN"), W = 760, H = 250, pad = { l: 56, r: 20, t: 22, b: 34 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  const maxN = Math.ceil(1.5 * m);
+  const { X, Y } = axes(svg, W, H, pad, maxN, 1, `items inserted n (0 … ${maxN}), m = ${m}, k = ${k}`, "false-positive rate");
+  for (let t = 0; t <= maxN; t += Math.max(1, Math.round(maxN / 6))) svg.appendChild(S("text", { x: X(t), y: H - pad.b + 14, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, String(t)));
+  const pts = [];
+  for (let n = 0; n <= maxN; n++) pts.push(`${X(n)},${Y(fpFormula(n))}`);
+  svg.appendChild(S("polyline", { points: pts.join(" "), fill: "none", stroke: "var(--steel)", "stroke-width": 2 }));
+  (measured || []).forEach(([n, r]) => svg.appendChild(S("circle", { cx: X(n), cy: Y(r), r: 4, fill: "var(--ember)", stroke: "var(--bg-2)", "stroke-width": 2 }, S("title", null, `n = ${n}: measured ${(100 * r).toFixed(1)}%, formula ${(100 * fpFormula(n)).toFixed(1)}%`))));
+  if (measured) svg.appendChild(S("text", { x: pad.l + 8, y: pad.t + 12, "font-size": 11, "font-weight": 700, fill: "var(--ink-2)" }, [S("tspan", { fill: "var(--ember)" }, "● "), "measured   ", S("tspan", { fill: "var(--steel)" }, "— "), "formula"]));
+  // current n marker
+  const n0 = items.length;
+  if (n0 <= maxN) { svg.appendChild(S("line", { x1: X(n0), x2: X(n0), y1: pad.t, y2: H - pad.b, stroke: "var(--c-pivot)", "stroke-dasharray": "4 4" })); svg.appendChild(S("text", { x: X(n0) + 4, y: pad.t + 26, "font-size": 10, fill: "var(--c-pivot)" }, `your n = ${n0}`)); }
+}
+function drawK() {
+  const svg = $("chartK"), W = 760, H = 220, pad = { l: 56, r: 20, t: 22, b: 34 };
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = "";
+  const n = Math.max(1, items.length), K = 12;
+  const vals = []; for (let kk = 1; kk <= K; kk++) vals.push(fpFormula(n, m, kk));
+  const maxY = Math.min(1, Math.max(0.02, ...vals) * 1.15);
+  const { X, Y } = axes(svg, W, H, pad, K + 1, maxY, `number of hash functions k (n = ${n}, m = ${m})`, "predicted FP rate");
+  const kopt = (m / n) * Math.LN2;
+  const bw = (W - pad.l - pad.r) / (K + 1) * 0.6;
+  vals.forEach((v, j) => {
+    const kk = j + 1, cur = kk === k;
+    svg.appendChild(S("rect", { x: X(kk) - bw / 2, y: Y(v), width: bw, height: Math.max(1, Y(0) - Y(v)), rx: 4, fill: cur ? "var(--ember)" : "var(--c-bar)" }, S("title", null, `k = ${kk}: ${(100 * v).toFixed(2)}%`)));
+    svg.appendChild(S("text", { x: X(kk), y: H - pad.b + 14, "text-anchor": "middle", "font-size": 10, fill: cur ? "var(--ember)" : "var(--muted)" }, String(kk)));
+  });
+  if (kopt <= K + 0.5) {
+    svg.appendChild(S("line", { x1: X(kopt), x2: X(kopt), y1: pad.t, y2: H - pad.b, stroke: "var(--c-done)", "stroke-width": 2, "stroke-dasharray": "6 4" }));
+    svg.appendChild(S("text", { x: X(kopt) + 6, y: pad.t + 12, "font-size": 11, "font-weight": 700, fill: "var(--c-done)" }, `k_opt = (m/n) ln 2 = ${kopt.toFixed(2)}`));
+  } else svg.appendChild(S("text", { x: W - pad.r, y: pad.t + 12, "text-anchor": "end", "font-size": 11, "font-weight": 700, fill: "var(--c-done)" }, `k_opt = ${kopt.toFixed(1)} (off the chart: few items for this many bits)`));
+  svg.appendChild(S("text", { x: X(k), y: Y(vals[k - 1]) - 6, "text-anchor": "middle", "font-size": 10, "font-weight": 700, fill: "var(--ember)" }, "your k"));
+}
+$("measure").onclick = () => {
+  const maxN = Math.ceil(1.5 * m), probes = 2000, rnd = Forge.rng(7 + m * 31 + k);
+  const B = new Uint8Array(m), ins = new Set(), res = [];
+  const newItem = () => (family === "toy" ? String(Math.floor(rnd() * 1e7)) : "x" + Math.floor(rnd() * 1e9));
+  const step = Math.max(1, Math.round(maxN / 24));
+  for (let n = 0; n <= maxN; n++) {
+    if (n > 0) { let x; do { x = newItem(); } while (ins.has(x)); ins.add(x); positions(x, m, k, family).forEach((p) => (B[p] = 1)); }
+    if (n % step === 0 || n === maxN) {
+      let fp = 0, tot = 0;
+      while (tot < probes) { const q = newItem(); if (ins.has(q)) continue; tot++; if (positions(q, m, k, family).every((p) => B[p])) fp++; }
+      res.push([n, fp / tot]);
+    }
+  }
+  drawN(res);
+  const at = res.reduce((b, r) => (Math.abs(r[0] - m / 2) < Math.abs(b[0] - m / 2) ? r : b), res[0]);
+  $("measureNote").textContent = `At n = ${at[0]}: measured ${(100 * at[1]).toFixed(1)}% vs formula ${(100 * fpFormula(at[0])).toFixed(1)}%.` +
+    (family === "toy" ? " The toy hashes are strongly correlated (x mod m and 3x + 1 mod m move together), so the dots stray from the formula, which assumes independent hashes. Switch to double hashing to see them agree." : "");
+};
+
+$("lesson").click();
+drawN(null);
+</script>
+</body>
+</html>

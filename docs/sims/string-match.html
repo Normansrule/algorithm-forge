@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>String Matching · Algorithm Forge</title>
+<meta name="description" content="Brute-force, Horspool, Boyer–Moore and Knuth–Morris–Pratt string matching, animated with their shift tables and comparison counts.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .seg .btn.on { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
+  .ask-q { font-weight: 600; margin-bottom: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .links a { font-weight: 600; }
+  #summary { width: 100%; }
+  #summary tr.cur td { background: var(--ember-soft); }
+  .linkish { background: none; border: 0; padding: 0; color: var(--steel); font: 700 0.82rem var(--mono); cursor: pointer; }
+  .linkish:hover { text-decoration: underline; }
+  .field input[type="text"] { max-width: 100%; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 3 · Brute Force and Chapter 7 · Space-Time Tradeoffs</div>
+    <h1>String Matching</h1>
+    <p class="lead muted">Find a pattern inside a text. Brute force tries every position; Horspool, Boyer–Moore and Knuth–Morris–Pratt (KMP) study the pattern first so they can skip ahead. Count the character comparisons and see which one wins.</p>
+  </header>
+
+  <section class="panel stack" style="margin-top:16px">
+    <div class="row">
+      <span class="small muted" style="font-weight:600">Algorithm</span>
+      <div class="seg row" id="algs" role="group" aria-label="Algorithm"></div>
+    </div>
+    <div class="row">
+      <label class="field" style="flex:3 1 260px">Text T (spaces become _, up to 48)<input id="txt" type="text"></label>
+      <label class="field" style="flex:1 1 120px">Pattern P (up to 16)<input id="pat" type="text"></label>
+      <button class="btn primary" id="load">Load</button>
+      <label class="small"><input type="checkbox" id="all"> find all matches</label>
+    </div>
+    <div class="row">
+      <button class="btn sm" data-preset="book">📖 BAOBAB</button>
+      <button class="btn sm" data-preset="barber">📖 BARBER</button>
+      <button class="btn sm" data-preset="worst">Brute-force worst case</button>
+      <button class="btn sm" data-preset="zeros">Text of zeros</button>
+      <button class="btn sm" data-preset="dna">Gene text</button>
+      <button class="btn sm" data-preset="kmp">Long borders</button>
+      <button class="btn sm" id="rand">🎲 Random</button>
+    </div>
+    <div class="small" id="msg" style="color:var(--warn);min-height:1.2em"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Text on top, pattern below at its current alignment, and the algorithm's tables"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">All four on this input</div>
+        <div class="scroll-x">
+          <table class="t" id="summary">
+            <thead><tr><th style="text-align:left">algorithm</th><th>character comparisons</th><th>alignments</th><th>preprocessing steps</th><th>match at</th></tr></thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+        </div>
+        <p class="small muted" id="summaryNote" style="margin-top:8px"></p>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="codeHost"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctrHost"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel">
+        <div class="panel-title">🤔 Predict <span class="chip" id="predictScore" style="margin-left:auto">0 / 0 right</span></div>
+        <label class="small"><input type="checkbox" id="predictOn" checked> Pause and quiz me at key moments</label>
+        <div id="predictBox" class="small" style="margin-top:8px"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p id="howAlg"></p>
+      <p>The top row is the text T with its indices; the orange arrow marks the text character being compared. The row below is the pattern P, drawn where it is currently aligned. Green cells matched, red is the mismatch. A green bar above the text marks a match already found. Under the strings are the algorithm's precomputed tables; the highlighted entry is the one being written or looked up.</p>
+      <p class="small muted"><b>Counting.</b> "Character comparisons" counts every test of a pattern character against a text character during the search. Table building is counted separately as "preprocessing steps" (for KMP these are character comparisons too). In KMP, the <code>if</code> re-tests the pair that stopped the <code>while</code>; that pair is counted once.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>The book example.</b> With BAOBAB and Boyer–Moore, the shifts are 6, then max(4, 5) = 5 (good suffix wins), then max(5, 2) = 5 (bad symbol wins), then a match at index 16, as in Levitin §7.2. Compare 12 comparisons with brute force's 24.</li>
+        <li><b>Brute force's worst case.</b> Load "Brute-force worst case" (n = 25, m = 4). Brute force makes m(n − m + 1) = 88 comparisons. Which algorithm does best here, and why?</li>
+        <li><b>Horspool can lose.</b> Load "Text of zeros" (pattern 10000). Horspool compares all 5 characters before every 1-step shift: 180 comparisons, far more than brute force's 36 (Levitin Exercise 7.2.3). Boyer–Moore's good-suffix rule brings it back down to 40.</li>
+        <li><b>Horspool's shift table by hand.</b> For BARBER, predict t(A), t(B), t(E), t(R) before stepping through preprocessing. (4, 2, 1, 3; everything else is 6.)</li>
+        <li><b>KMP never looks back.</b> Load "Long borders" with KMP. Watch i: it only moves forward, and the total never exceeds 2n comparisons. Tick "find all matches" and see the pattern overlap itself.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/03-brute-force/README.md">📘 Ch 3 lesson: Brute Force (string matching)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/07-space-time-tradeoffs/README.md">📘 Ch 7 lesson: Space-Time Tradeoffs (Horspool, Boyer–Moore)</a>
+      <a href="../arena/index.html?chapter=3">⚔️ Arena: Ch 3</a>
+      <a href="../arena/index.html?chapter=7">⚔️ Arena: Ch 7</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="../arena/problem.html?id=brute-force-string-match">brute-force-string-match</a>
+      <a href="../arena/problem.html?id=all-match-positions">all-match-positions</a>
+      <a href="../arena/problem.html?id=horspool-shift-table">horspool-shift-table</a>
+      <a href="../arena/problem.html?id=horspool-search">horspool-search</a>
+      <a href="../arena/problem.html?id=kmp-prefix-table">kmp-prefix-table</a>
+      <a href="../arena/problem.html?id=kmp-search">kmp-search</a>
+      <a href="../arena/problem.html?id=rabin-karp">rabin-karp</a>
+      <a href="../arena/problem.html?id=z-function">z-function</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="hashing.html">#️⃣ Sim: Hashing</a>
+      <a href="trie.html">🌲 Sim: Trie</a>
+      <a href="sorting-studio.html">📊 Sim: Sorting Studio (counting sorts)</a>
+      <a href="exhaustive-search.html">🔍 Sim: Exhaustive search</a>
+    </div>
+  </section>
+</main>
+<script>Forge.page({ title: "String Matching", chapter: "Ch 3 & 7 · String Matching" });</script>
+<script src="js/string-match.js"></script>
+</body>
+</html>

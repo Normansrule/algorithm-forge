@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amortized Analysis · Algorithm Forge</title>
+<meta name="description" content="Dynamic array doubling step by step: per-append cost bars against the running average, total cost under 3n, the accounting (coins) and potential-method views, and growth factors 1.5 vs 2 vs +k compared.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  .views { display: flex; flex-wrap: wrap; gap: 6px; }
+  .views .btn.on { border-color: var(--ember); background: var(--ember-soft); }
+  .racechart { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .racechart text { font-family: var(--mono); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 16 · Randomized, Amortized, Streaming</div>
+    <h1>Amortized Analysis: the Doubling Array</h1>
+    <p class="lead muted">A single append can copy the whole array, yet n appends cost less than 3n in total. See the spikes, the running average that stays flat, the coins that prepay the copies, and why growing by "+k" instead of "×2" breaks everything.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Growth policy
+        <select id="policy">
+          <option value="x2">× 2 (double)</option>
+          <option value="x15">× 1.5</option>
+          <option value="plusk">+ k (constant amount)</option>
+        </select>
+      </label>
+      <label class="field" id="kWrap">k <input type="number" id="k" min="1" max="16" value="4" style="width:70px"></label>
+      <label class="field">Appends n: <b id="nOut">17</b>
+        <input type="range" id="n" min="1" max="64" value="17" style="width:180px">
+      </label>
+      <label class="field">Charge per append (coins) <input type="number" id="charge" min="1" max="8" value="3" style="width:70px"></label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px;margin-top:16px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="small muted">View:</span>
+      <div class="views" id="views">
+        <button class="btn sm on" data-v="actual">Actual cost</button>
+        <button class="btn sm" data-v="coins">Accounting (coins)</button>
+        <button class="btn sm" data-v="potential">Potential Φ</button>
+      </div>
+      <button class="btn primary" id="run">Run</button>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Dynamic array cells with cost charts"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Compare growth policies on a big run</h2>
+    <p class="muted small" style="margin-top:0">Cost = element writes + element copies, starting from capacity 1. "Wasted" = the largest fraction of allocated slots that sat empty.</p>
+    <div class="row">
+      <label class="field">n appends <select id="raceN"><option>500</option><option selected>2000</option><option>10000</option></select></label>
+      <label class="field">k for "+k" <input type="number" id="raceK" value="16" min="1" max="1000" style="width:80px"></label>
+      <button class="btn steel" id="race">Compare</button>
+    </div>
+    <div class="scroll-x" id="raceOut" style="margin-top:12px"></div>
+    <svg class="racechart" id="raceChart" role="img" aria-label="Total cost versus number of appends for three growth policies" style="margin-top:12px"></svg>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li><b>Array (top):</b> each box is one slot of the current allocation. Filled boxes hold elements; empty ones are spare capacity. During a grow, gray boxes are elements still waiting to be copied into the new array and red ones were just copied.</li>
+      <li><b>Cost per append (middle):</b> one bar per append. Most bars are 1 (one write); a spike means a grow that copied every element. The orange line is the <b>running average</b> (total ÷ appends so far); the dashed line is the amortized bound 3.</li>
+      <li><b>Total cost (bottom):</b> the cumulative cost against the 3n line. For doubling it stays below the line forever. For "+k" it bends upward like n²/(2k).</li>
+      <li><b>Accounting view:</b> every append pays the fixed charge. One coin pays the write; copies are paid from coins already parked (or, if those run out, from this append's own charge); leftover coins are parked as gold coins on elements (one on itself, one on its "buddy" in the older half) or in the pool. A copy spends one coin. If the balance ever goes negative, the charge was too low.</li>
+      <li><b>Potential view:</b> Φ = (r·size − capacity)/(r − 1) for growth factor r (so Φ = 2·size − capacity when doubling). The purple dots are the amortized cost ĉ = actual + ΔΦ: flat at 1 + r/(r − 1), which is 3 for doubling and 4 for × 1.5 (small bumps there come from rounding ⌊1.5 · capacity⌋).</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Doubling, n = 9: grows happen at appends 2, 3, 5 and 9, copying 1, 2, 4 and 8 elements. Total = 9 writes + 15 copies = <b>24 ≤ 27 = 3·9</b>.</li>
+      <li>Slide n to 17: append 17 costs 17 by itself, yet the running average stays under 3. Amortized ≠ "every operation is cheap".</li>
+      <li>Accounting view with charge 3: the balance never goes negative for doubling. Now set the charge to 2: find the first append where the pool goes into debt.</li>
+      <li>Switch to × 1.5 with charge 3: it goes into debt. What charge keeps it solvent? Theory says 1 + r/(r − 1) = 4 for r = 1.5.</li>
+      <li>Switch to + k with k = 4 and n = 64. The spikes keep coming every 4 appends and grow taller; no fixed charge survives. In the comparison, raise n and watch "+k" cost per append grow while × 2 stays below 3.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/16-randomized-amortized-streaming/README.md#build-card-1--three-methods-on-three-classic-examples">📖 Lesson 16 · Three methods</a>
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/13-advanced-data-structures/README.md#build-card-1--dynamic-array-amortized-doubling">📖 Lesson 13 · Dynamic array</a>
+      <a class="btn" href="../arena/index.html?chapter=16">🏟️ Chapter 16 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=dynamic-array-copies">🧩 Arena: dynamic-array-copies</a>
+      <a class="btn" href="union-find.html">🎮 Union-Find (amortized α(n))</a>
+      <a class="btn" href="patterns.html">🎮 Patterns (amortized O(n) scans)</a>
+      <a class="btn" href="hashing.html">🎮 Hashing (resizing tables)</a>
+      <a class="btn" href="bloom-filter.html">🎮 Bloom filter</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Amortized Analysis", chapter: "Ch 16 · Randomized, Amortized, Streaming" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to watch.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+/* ---------------- growth policies ---------------- */
+function newCap(policy, cap, k) {
+  if (policy === "x2") return 2 * cap;
+  if (policy === "x15") return Math.max(cap + 1, Math.floor(cap * 1.5));
+  return cap + k;
+}
+const rOf = (policy) => (policy === "x2" ? 2 : policy === "x15" ? 1.5 : null);
+function phi(policy, size, cap) { const r = rOf(policy); if (!r) return 0; return Math.max(0, (r * size - cap) / (r - 1)); }
+const fmt1 = (x) => (Number.isInteger(x) ? String(x) : x.toFixed(1));
+const policyName = (p, k) => (p === "x2" ? "× 2" : p === "x15" ? "× 1.5" : `+ ${k}`);
+
+/* ---------------- pseudocode ---------------- */
+function lines(policy, k) {
+  const grow = policy === "x2" ? "2 * D.capacity" : policy === "x15" ? "max(D.capacity + 1, ⌊1.5 * D.capacity⌋)" : `D.capacity + ${k}`;
+  return [
+    "ALGORITHM Append(D, x)",
+    "    // D is a record with fields data, size, capacity",
+    "    if D.size = D.capacity then",
+    `        bigger ← array(${grow}, null)`,
+    "        for i ← 0 to D.size - 1 do",
+    "            bigger[i] ← D.data[i]          // copy: cost 1",
+    "        D.data ← bigger",
+    "        D.capacity ← length(bigger)",
+    "    D.data[D.size] ← x                    // write: cost 1",
+    "    D.size ← D.size + 1",
+  ];
+}
+
+/* ---------------- 1. RECORD ---------------- */
+function record(n, policy, k, charge) {
+  const frames = [];
+  let cap = 1, prevCap = 0, size = 0, copies = 0, writes = 0, pool = 0, asks = 2;
+  const coins = [];             // coins parked on each element
+  const costs = [], phis = [0], hats = [];
+  let firstDebt = null;
+  const snap = (line, text, x) => frames.push(Object.assign({
+    cap, size, coins: coins.slice(), pool, costs: costs.slice(), phis: phis.slice(), hats: hats.slice(), copies, writes, cellSt: {}, pending: 0, line, text, n, charge,
+  }, x || {}));
+  snap(0, `Start with capacity 1 and no elements. We'll append ${n} elements with the ${policyName(policy, k)} policy. Each write or copy costs 1.`);
+  for (let j = 1; j <= n; j++) {
+    let cost = 0, wallet = charge - 1;   // this append's own charge (1 coin is reserved for its write)
+    const phiBefore = phi(policy, size, cap);
+    if (size === cap) {
+      const nc = newCap(policy, cap, k);
+      if (asks > 0) { asks--; snap(2, `Append #${j}: the array is full (size = capacity = ${cap}).`, { cellSt: allState(size, "compare"), ask: { id: `grow-${policy}-${k}-${j}`, q: `Append #${j} finds the array full with ${size} element${size > 1 ? "s" : ""}. What does this single append cost?`, options: [...new Set([1, size, size + 1, 2 * size + 1])].sort((x, y) => x - y), answer: size + 1, why: `It copies all ${size} element${size > 1 ? "s" : ""} into the new array, then writes the new one: ${size} + 1.` } }); }
+      snap(3, `Append #${j}: full! Allocate a new array of capacity ${nc} (${policyName(policy, k)}). Now every one of the ${size} elements must be copied.`, { cap: nc, pending: size, cellSt: {} });
+      const oldCap = cap;
+      prevCap = oldCap; cap = nc;
+      const batch = size > 24;
+      for (let i = 0; i < size; i++) {
+        copies++; cost++;
+        // pay with this element's coin, else from the pool, else from the richest element; else it's debt
+        if (coins[i] > 0) coins[i]--;
+        else if (pool > 0) pool--;
+        else if (wallet > 0) wallet--;
+        else {
+          let rich = -1;
+          for (let q = 0; q < size; q++) if (coins[q] > 0 && (rich < 0 || coins[q] > coins[rich])) rich = q;
+          if (rich >= 0) coins[rich]--; else { pool--; if (firstDebt == null) firstDebt = j; }
+        }
+        if (!batch || i === size - 1) snap(5, batch ? `Copied all ${size} elements (1 coin each).` : `Copy element ${i} into the new array (cost 1${charge > 1 ? ", paid with a coin" : ""}).`, { pending: size - i - 1, copiedUpTo: i, cellSt: { [i]: "swap" }, opCost: cost });
+      }
+    }
+    // write
+    writes++; cost++;
+    const i = size;
+    size++;
+    // accounting: 1 coin pays the write; park the rest
+    let extra = wallet;
+    if (extra > 0) { coins[i] = (coins[i] || 0) + 1; extra--; } else coins[i] = coins[i] || 0;
+    const buddy = i - (cap - prevCap);
+    if (extra > 0 && buddy >= 0) { coins[buddy] = (coins[buddy] || 0) + 1; extra--; }
+    pool += extra;
+    costs.push(cost);
+    const ph = phi(policy, size, cap);
+    phis.push(ph);
+    hats.push(cost + ph - phiBefore);
+    const total = writes + copies;
+    snap(8, `Write element #${j} into slot ${i}. This append cost <b>${cost}</b>${cost > 1 ? ` (${cost - 1} copies + 1 write)` : ""}. Running total ${total} for ${j} appends: average ${(total / j).toFixed(2)}${policy === "x2" ? `, still ≤ 3` : ""}.`, { cellSt: { [i]: "active" }, opCost: cost });
+  }
+  const total = writes + copies;
+  snap(9, `Done: ${n} appends cost ${writes} writes + ${copies} copies = <b>${total}</b> (${(total / n).toFixed(2)} per append). 3n = ${3 * n}.${firstDebt ? ` With a charge of ${charge}, the bank first went into debt at append #${firstDebt}.` : ` A charge of ${charge} per append never went into debt.`}`);
+  return frames;
+}
+function allState(size, st) { const o = {}; for (let i = 0; i < size; i++) o[i] = st; return o; }
+
+/* ---------------- 2. RENDER ---------------- */
+const stage = $("stage");
+let code, ctr, view = "actual", cfg;
+const say = Forge.narrate($("say"));
+function render(f, i) {
+  const W = stage.clientWidth && stage.clientWidth < 560 ? 440 : 760, per = 16, cw = Math.min(42, (W - 40) / per), x0 = (W - cw * per) / 2;
+  const rows = Math.ceil(f.cap / per);
+  const topA = 30, rowH = cw + 10;
+  const chart1Y = topA + rows * rowH + 40, ch1 = 150;
+  const chart2Y = chart1Y + ch1 + 50, ch2 = 120;
+  const H = chart2Y + ch2 + 34;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  const T = (x, y, s, o) => stage.appendChild(S("text", Object.assign({ x, y, "font-size": 12, fill: "var(--ink-2)" }, o || {}), s));
+  T(20, 18, `capacity ${f.cap} · size ${f.size}` + (f.pending ? ` · ${f.pending} still to copy` : ""), { "font-weight": 700, fill: "var(--ink)" });
+  if (view === "coins") T(W - 20, 18, f.pool >= 0 ? `pool: ${f.pool} coin${f.pool === 1 ? "" : "s"}` : `DEBT: ${f.pool}`, { "text-anchor": "end", "font-weight": 700, fill: f.pool >= 0 ? "var(--c-compare)" : "var(--c-swap)" });
+  const copying = f.copiedUpTo != null || f.pending > 0;
+  for (let s = 0; s < f.cap; s++) {
+    const r = Math.floor(s / per), c = s % per, x = x0 + c * cw, y = topA + r * rowH;
+    let filled = s < f.size, fill = filled ? "var(--c-bar)" : "var(--bg)", stroke = "var(--line-2)";
+    if (copying) {
+      const copied = f.copiedUpTo != null ? s <= f.copiedUpTo : false;
+      const exists = s < f.size;
+      filled = exists;
+      fill = !exists ? "var(--bg)" : copied ? "var(--c-bar)" : "var(--c-dim)";
+    }
+    const st = f.cellSt[s];
+    if (st) { fill = COL[st]; stroke = COL[st]; }
+    stage.appendChild(S("rect", { x: x + 2, y, width: cw - 4, height: cw - 4, rx: 5, fill, stroke, "stroke-dasharray": filled ? null : "3 3" }));
+    if (filled) T(x + cw / 2, y + cw / 2 + 2, String(s + 1), { "text-anchor": "middle", "font-size": Math.min(12, cw * 0.32), "font-weight": 700, fill: st || fill !== "var(--c-dim)" ? "#0d1117" : "var(--ink)" });
+    if (view === "coins" && filled && f.coins[s] > 0) {
+      for (let q = 0; q < Math.min(3, f.coins[s]); q++) stage.appendChild(S("circle", { cx: x + cw - 7 - q * 5, cy: y + 4, r: 5, fill: "var(--c-compare)", stroke: "#8a6a00", "stroke-width": 1 }));
+      if (f.coins[s] > 3) T(x + cw - 4, y + 10, "+", { "font-size": 10, fill: "var(--c-compare)" });
+    }
+  }
+  // chart 1: cost per append
+  const cx0 = 50, cx1 = W - 20, N = f.n;
+  const bw = (cx1 - cx0) / N;
+  const maxCost = Math.max(4, cfg.maxCost);
+  const Y1 = (v) => chart1Y + ch1 - (v / maxCost) * ch1;
+  T(cx0, chart1Y - 12, "cost per append", { "font-weight": 700, fill: "var(--ink)" });
+  [0, Math.round(maxCost / 2), maxCost].forEach((v) => { stage.appendChild(S("line", { x1: cx0, x2: cx1, y1: Y1(v), y2: Y1(v), stroke: "var(--line)", "stroke-width": 1 })); T(cx0 - 6, Y1(v) + 4, String(v), { "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }); });
+  f.costs.forEach((c, j) => {
+    const x = cx0 + j * bw, h = Y1(0) - Y1(c);
+    stage.appendChild(S("rect", { x: x + Math.min(1, bw * 0.1), y: Y1(c), width: Math.max(1, bw - Math.min(2, bw * 0.2)), height: Math.max(1, h), rx: Math.min(3, bw / 4), fill: j === f.costs.length - 1 ? "var(--c-swap)" : c > 1 ? "var(--steel)" : "var(--c-bar)" }, S("title", null, `append #${j + 1}: cost ${c}`)));
+  });
+  if (f.opCost && f.costs.length < N) { const x = cx0 + f.costs.length * bw; stage.appendChild(S("rect", { x: x + 1, y: Y1(f.opCost), width: Math.max(1, bw - 2), height: Y1(0) - Y1(f.opCost), rx: 2, fill: "var(--c-swap)", opacity: 0.6 })); }
+  // bound line 3 (or the charge in coins view)
+  const bound = view === "coins" ? f.charge : 3;
+  stage.appendChild(S("line", { x1: cx0, x2: cx1, y1: Y1(bound), y2: Y1(bound), stroke: "var(--c-done)", "stroke-width": 2, "stroke-dasharray": "6 5" }));
+  T(cx1, Y1(bound) - 5, view === "coins" ? `charge ${bound}` : "3", { "text-anchor": "end", "font-size": 11, "font-weight": 700, fill: "var(--c-done)" });
+  // running average
+  let tot = 0;
+  const avgPts = f.costs.map((c, j) => { tot += c; return `${cx0 + (j + 0.5) * bw},${Y1(tot / (j + 1))}`; });
+  if (avgPts.length > 1) stage.appendChild(S("polyline", { points: avgPts.join(" "), fill: "none", stroke: "var(--ember)", "stroke-width": 2.5 }));
+  if (f.costs.length) T(cx0 + 130, chart1Y - 12, `running average ${(tot / f.costs.length).toFixed(2)}`, { "font-size": 12, "font-weight": 700, fill: "var(--ember)" });
+  if (view === "potential" && rOf(cfg.policy)) f.hats.forEach((h, j) => stage.appendChild(S("circle", { cx: cx0 + (j + 0.5) * bw, cy: Y1(h), r: Math.max(2.5, Math.min(4, bw / 3)), fill: "var(--c-pivot)" }, S("title", null, `append #${j + 1}: ĉ = ${fmt1(h)}`))));
+  // chart 2: cumulative
+  const maxTot = Math.max(3 * N, cfg.total);
+  const Y2 = (v) => chart2Y + ch2 - (v / maxTot) * ch2;
+  T(cx0, chart2Y - 12, "total cost so far", { "font-weight": 700, fill: "var(--ink)" });
+  [0, Math.round(maxTot / 2), maxTot].forEach((v) => { stage.appendChild(S("line", { x1: cx0, x2: cx1, y1: Y2(v), y2: Y2(v), stroke: "var(--line)" })); T(cx0 - 6, Y2(v) + 4, String(v), { "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }); });
+  stage.appendChild(S("line", { x1: cx0, y1: Y2(0), x2: cx1, y2: Y2(3 * N), stroke: "var(--c-done)", "stroke-width": 2, "stroke-dasharray": "6 5" }));
+  T(cx1, Y2(3 * N) - 6, "3n", { "text-anchor": "end", "font-size": 11, "font-weight": 700, fill: "var(--c-done)" });
+  tot = 0;
+  const totPts = [`${cx0},${Y2(0)}`].concat(f.costs.map((c, j) => { tot += c; return `${cx0 + (j + 1) * bw},${Y2(tot)}`; }));
+  stage.appendChild(S("polyline", { points: totPts.join(" "), fill: "none", stroke: "var(--ember)", "stroke-width": 2.5 }));
+  if (view === "coins") {
+    let bal = 0;
+    const balPts = [`${cx0},${Y2(0)}`].concat(f.costs.map((c, j) => { bal += f.charge - c; return `${cx0 + (j + 1) * bw},${Y2(Math.max(0, (j + 1) * f.charge))}`; }));
+    stage.appendChild(S("polyline", { points: balPts.join(" "), fill: "none", stroke: "var(--c-compare)", "stroke-width": 2, "stroke-dasharray": "2 4" }));
+  }
+  if (view === "potential" && rOf(cfg.policy)) {
+    const pp = f.phis.map((p, j) => `${cx0 + j * bw},${Y2(p)}`);
+    stage.appendChild(S("polyline", { points: pp.join(" "), fill: "none", stroke: "var(--c-pivot)", "stroke-width": 2 }));
+  }
+  T(cx0 + 140, chart2Y - 12, `= ${tot}` + (f.costs.length ? ` vs 3n = ${3 * f.costs.length}` : ""), { "font-size": 12, "font-weight": 700, fill: "var(--ember)" });
+
+  code.highlight(f.line);
+  const total = f.writes + f.copies, m = f.costs.length;
+  const base = { appends: m, copies: f.copies, "total cost": total, "3n bound": 3 * m };
+  if (view === "coins") base["bank balance"] = f.pool + f.coins.slice(0, f.size).reduce((s, x) => s + x, 0);
+  else if (view === "potential") { base["Φ now"] = rOf(cfg.policy) ? fmt1(f.phis[f.phis.length - 1]) : "—"; base["last ĉ"] = m && rOf(cfg.policy) ? fmt1(f.hats[m - 1]) : "—"; }
+  else base["avg / append"] = m ? (total / m).toFixed(2) : "—";
+  ctr.set(base);
+  say.say(f.text + (view === "potential" && !rOf(cfg.policy) ? " <i>(No constant amortized cost exists for +k, so there is no potential function to show.)</i>" : ""));
+  predict.show(f, i);
+}
+player = Forge.player($("player"), { frames: [], render });
+
+function setupPanels() {
+  $("code").innerHTML = "";
+  code = Forge.code($("code"), lines(cfg.policy, cfg.k));
+  $("ctr").innerHTML = "";
+  const init = { appends: 0, copies: 0, "total cost": 0, "3n bound": 0 };
+  if (view === "coins") init["bank balance"] = 0; else if (view === "potential") { init["Φ now"] = 0; init["last ĉ"] = "—"; } else init["avg / append"] = "—";
+  ctr = Forge.counters($("ctr"), init);
+  $("legend").innerHTML = `<span><i style="background:var(--c-bar)"></i>element / cost-1 append</span><span><i style="background:var(--steel)"></i>append that grew the array</span><span><i style="background:var(--c-swap)"></i>just copied / current append</span><span><i style="background:var(--c-dim)"></i>waiting to be copied</span><span><i style="background:var(--ember)"></i>running average / total</span><span><i style="background:var(--c-done)"></i>bound</span>` +
+    (view === "coins" ? `<span><i style="background:var(--c-compare);border-radius:50%"></i>coin (prepaid work)</span>` : "") + (view === "potential" ? `<span><i style="background:var(--c-pivot);border-radius:50%"></i>ĉ dots (chart 1), Φ line (chart 2)</span>` : "");
+}
+function load(keepIndex) {
+  const n = +$("n").value, policy = $("policy").value, k = Math.max(1, Math.min(16, Math.round(+$("k").value || 4))), charge = Math.max(1, Math.min(8, Math.round(+$("charge").value || 3)));
+  $("k").value = k; $("charge").value = charge; $("nOut").textContent = n;
+  $("kWrap").hidden = policy !== "plusk";
+  const frames = record(n, policy, k, charge);
+  const last = frames[frames.length - 1];
+  cfg = { policy, k, n, maxCost: Math.max(...last.costs, 1), total: last.writes + last.copies };
+  setupPanels();
+  const idx = player.index;
+  predict.reset();
+  player.load(frames);
+  if (keepIndex) player.go(Math.min(idx, frames.length - 1));
+}
+$("run").onclick = () => load();
+$("policy").onchange = () => load();
+$("k").onchange = () => load();
+$("charge").onchange = () => load(true);
+$("n").oninput = () => { $("nOut").textContent = $("n").value; };
+$("n").onchange = () => { load(); player.go(player.frames.length - 1); };
+[...$("views").children].forEach((b) => (b.onclick = () => {
+  view = b.dataset.v;
+  [...$("views").children].forEach((x) => x.classList.toggle("on", x === b));
+  setupPanels();
+  player.go(player.index);
+}));
+
+/* ---------------- race ---------------- */
+function simulate(n, policy, k) {
+  let cap = 1, size = 0, cost = 0, maxOne = 0, waste = 0;
+  const totals = [0];
+  for (let j = 1; j <= n; j++) {
+    let c = 1;
+    if (size === cap) { c += size; cap = newCap(policy, cap, k); }
+    size++; cost += c; maxOne = Math.max(maxOne, c);
+    waste = Math.max(waste, (cap - size) / cap);
+    totals.push(cost);
+  }
+  return { cost, maxOne, waste, totals, cap };
+}
+$("race").onclick = () => {
+  const n = +$("raceN").value, k = Math.max(1, Math.round(+$("raceK").value || 16));
+  const pols = [["× 2", "x2", "var(--steel)"], ["× 1.5", "x15", "var(--c-done)"], [`+ ${k}`, "plusk", "var(--c-swap)"]];
+  const res = pols.map(([name, p, col]) => ({ name, col, ...simulate(n, p, k) }));
+  $("raceOut").innerHTML = "";
+  $("raceOut").appendChild(el("table", { class: "t" },
+    el("tr", null, ["Policy", "Total cost", "Cost / append", "Worst single append", "Final capacity", "Max wasted"].map((h) => el("th", null, h))),
+    res.map((r) => el("tr", null, el("td", null, r.name), el("td", null, r.cost.toLocaleString()), el("td", null, (r.cost / n).toFixed(2)), el("td", null, r.maxOne.toLocaleString()), el("td", null, r.cap.toLocaleString()), el("td", null, Math.round(r.waste * 100) + "%")))));
+  // chart: total cost vs appends (one axis)
+  const svg = $("raceChart"), W = 760, H = 260, x0 = 70, x1 = W - 90, y0 = 20, y1 = H - 36;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = "";
+  const maxY = Math.max(...res.map((r) => r.cost));
+  const X = (j) => x0 + (j / n) * (x1 - x0), Y = (v) => y1 - (v / maxY) * (y1 - y0);
+  [0, 0.5, 1].forEach((t) => { svg.appendChild(S("line", { x1: x0, x2: x1, y1: Y(maxY * t), y2: Y(maxY * t), stroke: "var(--line)" })); svg.appendChild(S("text", { x: x0 - 6, y: Y(maxY * t) + 4, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, Math.round(maxY * t).toLocaleString())); });
+  svg.appendChild(S("text", { x: (x0 + x1) / 2, y: H - 8, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, `appends (0 … ${n.toLocaleString()})`));
+  svg.appendChild(S("text", { x: x0, y: 12, "font-size": 11, fill: "var(--muted)" }, "total cost"));
+  const step = Math.max(1, Math.floor(n / 400));
+  res.forEach((r) => {
+    const pts = [];
+    for (let j = 0; j <= n; j += step) pts.push(`${X(j)},${Y(r.totals[j])}`);
+    pts.push(`${X(n)},${Y(r.totals[n])}`);
+    svg.appendChild(S("polyline", { points: pts.join(" "), fill: "none", stroke: r.col, "stroke-width": 2 }, S("title", null, `${r.name}: total ${r.cost.toLocaleString()}`)));
+  });
+  // direct labels at the right end, nudged apart
+  const ends = res.map((r) => ({ r, y: Y(r.cost) })).sort((a, b) => a.y - b.y);
+  for (let j = 1; j < ends.length; j++) if (ends[j].y - ends[j - 1].y < 14) ends[j].y = ends[j - 1].y + 14;
+  ends.forEach(({ r, y }) => svg.appendChild(S("text", { x: x1 + 6, y: y + 4, "font-size": 12, "font-weight": 700, fill: "var(--ink-2)" }, [S("tspan", { fill: r.col }, "● "), r.name])));
+};
+
+load();
+player.go(player.frames.length - 1);
+$("race").click();
+</script>
+</body>
+</html>

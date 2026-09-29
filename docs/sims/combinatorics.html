@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generating Permutations and Subsets · Algorithm Forge</title>
+<meta name="description" content="Generate all permutations (minimal-change insertion, Johnson–Trotter, lexicographic order) and all subsets (binary counting, Binary Reflected Gray Code on a cube), step by step.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  #list { max-height: 260px; overflow: auto; position: relative; }
+  #list .fx-chips span { min-width: 3.2em; text-align: center; }
+  .ctl-mode { display: none; }
+  .ctl-mode.show { display: flex; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 4 · Decrease-and-Conquer</div>
+    <h1>Generating Permutations and Subsets</h1>
+    <p class="lead muted">Exhaustive search needs a way to list every candidate exactly once. Here are five generators: three for the n! permutations and two for the 2ⁿ subsets. The best ones make a <i>minimal change</i> between neighbors: one swap, or one bit.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="fx-seg" id="modes">
+        <button data-m="ins" class="on">Minimal-change insertion</button>
+        <button data-m="jt">Johnson–Trotter</button>
+        <button data-m="lex">Lexicographic</button>
+        <button data-m="bin">Subsets: binary counting</button>
+        <button data-m="gray">Subsets: Gray code</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">n <input id="n" type="number" min="1" max="6" value="3" style="width:70px"></label>
+      <button class="btn primary" id="go">Generate</button>
+      <button class="btn" id="rand">Random</button>
+      <div class="row ctl-mode" id="lexCtl"><label class="field">…or start from a permutation <input id="lexStart" type="text" value="3 6 2 5 4 1" style="width:150px"></label><button class="btn" id="lexGo">Next ones from here</button></div>
+      <div class="row ctl-mode" id="subCtl"><label class="field">Item names (optional) <input id="items" type="text" placeholder="a1, a2, a3" style="width:200px"></label></div>
+    </div>
+    <p class="fx-note" id="modeNote" style="margin:8px 0 0"></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Current combinatorial object"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel"><div class="panel-title" id="listTitle">Generated so far</div><div id="list"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Tiles.</b> Each tile is one element of the current permutation (or one bit of the current bit string). <span style="color:var(--c-compare);font-weight:700">Yellow</span> tiles are being examined (a decreasing suffix, or the mobile elements), <span style="color:var(--c-active);font-weight:700">blue</span> is the chosen element, <span style="color:var(--c-swap);font-weight:700">red</span> tiles were just swapped or flipped, <span style="color:var(--c-pivot);font-weight:700">purple</span> marks a second chosen position (lexicographic j) or arrows that were just reversed.</p>
+      <p><b>Johnson–Trotter arrows.</b> Each element points left or right. An element is <b>mobile</b> if its arrow points at a smaller neighbor. The largest mobile element moves one step; then every larger element turns around.</p>
+      <p><b>Subsets as bit strings.</b> Bit bᵢ = 1 means item aᵢ is in the subset. The cube on the right has one corner per bit string (n ≤ 4); two corners are joined when they differ in exactly one bit. Gray code walks along cube edges. Binary counting sometimes jumps across the cube (dashed red), changing many bits at once.</p>
+      <p><b>Generated so far</b> lists every object in output order. The counters compare the total count with n! or 2ⁿ.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Minimal-change insertion with n = 3 should give 123, 132, 312, 321, 231, 213 (Levitin Fig. 4.9). Now run Johnson–Trotter with n = 3: same list, no smaller lists needed.</li>
+        <li>Lexicographic: start from 3 6 2 5 4 1. The next permutation is 3 6 4 1 2 5. Watch the three moves: find i, find j, swap, reverse.</li>
+        <li>Binary counting with n = 4: how many bits flip going from 0111 to 1000? Look at the "most bits changed" counter. Gray code never flips more than one.</li>
+        <li>Gray code with n = 3: follow the walk on the cube. Does the last corner (100) connect back to the first (000)? That makes the code <i>cyclic</i>.</li>
+        <li>Set n = 6 in Johnson–Trotter and play at full speed. 720 permutations, each one swap away from the last. At n = 25 there would be about 1.55 × 10²⁵ of them.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/04-decrease-and-conquer/README.md">📘 Lesson: Ch 4 Decrease-and-Conquer</a>
+      <a href="../arena/index.html?chapter=4">⚔️ Arena: Chapter 4 problems</a>
+      <a href="../arena/problem.html?id=permutations-lexicographic">Lexicographic permutations</a>
+      <a href="../arena/problem.html?id=johnson-trotter">Johnson–Trotter</a>
+      <a href="../arena/problem.html?id=gray-code">Gray code</a>
+      <a href="../arena/problem.html?id=power-set">Power set</a>
+      <a href="exhaustive-search.html">💥 Sim: exhaustive search (uses these generators)</a>
+      <a href="hanoi.html">🗼 Sim: Tower of Hanoi (a Gray code in disguise)</a>
+      <a href="backtracking.html">🌳 Sim: backtracking</a>
+    </div>
+  </section>
+</main>
+<script src="js/combinatorics.js"></script>
+</body>
+</html>

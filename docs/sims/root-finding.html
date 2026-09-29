@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Root Finding · Algorithm Forge</title>
+<meta name="description" content="Bisection, the method of false position and Newton's method on a function you type, with iterates, error bounds and a convergence comparison.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .ask { border: 1px solid var(--ember); background: var(--ember-soft); border-radius: 10px; padding: 12px; }
+  .ask p { margin: 0 0 8px; }
+  .ask .btn.pick-ok { background: var(--c-done); border-color: var(--c-done); color: #0d1117; }
+  .ask .btn.pick-bad { background: var(--c-swap); border-color: var(--c-swap); color: #0d1117; }
+  .ask .fb { margin-top: 8px; }
+  input.num { width: 84px; }
+  #fx { min-width: 200px; font-family: var(--mono); }
+  #fx.bad { border-color: var(--bad); }
+  table.it td, table.it th { text-align: right; }
+  table.it tr.cur td { background: var(--ember-soft); }
+  table.it td.neg { color: var(--c-swap); }
+  table.it td.pos { color: var(--c-done); }
+  .ctl-group[hidden] { display: none !important; }
+  #conv { position: relative; }
+  #conv .tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 8px; font-size: .8rem; box-shadow: var(--shadow); white-space: nowrap; }
+  .key { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; font-size: .8rem; color: var(--ink-2); }
+  .key i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 12 · Coping with the Limitations of Algorithm Power</div>
+    <h1>Solving f(x) = 0: bisection, false position, Newton</h1>
+    <p class="lead muted">Most equations have no formula for their roots, so we approximate. Bisection halves a bracket (slow but sure), false position cuts it with a chord, and Newton's method rides tangent lines (blazing fast near a root, but it can run away). Type any function and watch the iterates close in.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Method
+        <select id="method">
+          <option value="bis">Bisection</option>
+          <option value="fp">False position (regula falsi)</option>
+          <option value="newt">Newton's method</option>
+          <option value="sqrt">Newton for √D</option>
+        </select>
+      </label>
+      <label class="field">Preset
+        <select id="preset">
+          <option value="book">x³ − x − 1 (book example)</option>
+          <option value="cos">cos(x) − x</option>
+          <option value="sq2">x² − 2 (√2)</option>
+          <option value="slow">x^10 − 1 (false position crawls)</option>
+          <option value="cycle">Newton trap: x³ − 2x + 2, x0 = 0</option>
+          <option value="away">Newton runs away: x·e^(−x), x0 = 2</option>
+        </select>
+      </label>
+      <label class="field">f(x) =
+        <input id="fx" type="text" value="x^3 - x - 1" spellcheck="false" aria-describedby="fxmsg">
+      </label>
+      <div class="row ctl-group" id="g-br">
+        <label class="field">a <input id="a" class="num" type="number" value="0" step="any"></label>
+        <label class="field">b <input id="b" class="num" type="number" value="2" step="any"></label>
+      </div>
+      <div class="row ctl-group" id="g-x0" hidden>
+        <label class="field">x₀ <input id="x0" class="num" type="number" value="2" step="any"></label>
+      </div>
+      <div class="row ctl-group" id="g-D" hidden>
+        <label class="field">D <input id="D" class="num" type="number" value="2" min="0" step="any"></label>
+      </div>
+      <label class="field">ε (tolerance) <input id="eps" class="num" type="number" value="0.01" min="0" step="any"></label>
+      <label class="field">max iterations N <input id="N" class="num" type="number" value="30" min="1" max="60"></label>
+      <button class="btn primary" id="go">Run</button>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predict"> 🤔 Predict mode</label>
+    </div>
+    <p class="small muted" id="fxmsg" style="margin:8px 0 0">Allowed: numbers, x, + − * / ^, parentheses, sin, cos, exp, ln, sqrt, pi, e. Example: <code>exp(-x) - x</code>, <code>x^3 - 2*x - 5</code>.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Graph of f with the iterates"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>bracket [a, b] that must contain a root</span>
+        <span><i style="background:var(--c-compare)"></i>new approximation xₙ / chord / tangent</span>
+        <span><i style="background:var(--c-swap)"></i>f &lt; 0 end · <span style="color:var(--c-done)">■</span> f &gt; 0 end</span>
+        <span><i style="background:var(--c-pivot)"></i>earlier iterates</span>
+        <span><i style="background:var(--c-done)"></i>accepted root</span>
+      </div>
+      <div id="player"></div>
+      <div id="ask" class="ask" hidden></div>
+      <div class="panel">
+        <div class="panel-title">Iterates</div>
+        <div class="scroll-x"><table class="t it" id="tbl"></table></div>
+      </div>
+      <div class="panel" id="conv">
+        <div class="panel-title">Convergence race: error |xₙ − x*| after n iterations (log scale)</div>
+        <div id="convKey"></div>
+        <div id="convOut"></div>
+        <p class="small muted" id="convNote" style="margin:6px 0 0"></p>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <p><b>Bisection</b> needs a bracket [a, b] with f(a) and f(b) of opposite signs; a continuous f must then cross zero inside. Each step tests the midpoint and keeps the half whose ends still disagree in sign. After n steps the error is at most (b − a)/2ⁿ, so the number of steps for tolerance ε is known in advance: n &gt; log₂((b − a)/ε). It is the continuous twin of binary search.</p>
+      <p><b>False position</b> keeps a bracket too, but instead of the midpoint it takes the x-intercept of the chord through (a, f(a)) and (b, f(b)): xₙ = (a·f(b) − b·f(a)) / (f(b) − f(a)). It is to bisection what interpolation search is to binary search. Usually faster; sometimes one end gets stuck and it crawls.</p>
+      <p><b>Newton's method</b> follows the tangent at xₙ down to the x-axis: xₙ₊₁ = xₙ − f(xₙ)/f′(xₙ). Near a simple root the number of correct digits roughly doubles each step. It has no bracket, so a bad x₀ can cycle or diverge, and f′(xₙ) = 0 breaks it. The derivative here is computed exactly by automatic differentiation of your formula.</p>
+      <p><b>Table columns.</b> Signs after aₙ and bₙ show the sign of f there (as in Levitin's traces); the last column is the bisection error bound or the step size |xₙ₊₁ − xₙ|.</p>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Book example, bisection on [0, 2], ε = 0.01.</b> Predict the number of iterations first: log₂(2/0.01) ≈ 7.6, so 8. The 8th midpoint is x₈ = 1.3203125, with the root pinned between 1.3125 and 1.328125.</li>
+        <li><b>Same function, Newton from x₀ = 2.</b> The iterates 1.545455, 1.359615, 1.325801, 1.324719 hit six correct digits in 4 steps. Look at the race chart: the Newton curve plunges, bisection descends in a straight line (one bit per step).</li>
+        <li><b>False position on the book example</b> creeps up from the left while b = 2 never moves. Compare its 8th iterate (≈ 1.318) with bisection's (≈ 1.320). Now try the <i>x^10 − 1</i> preset: which method wins?</li>
+        <li><b>Break Newton.</b> The trap preset bounces 0 → 1 → 0 → 1 forever; the runaway preset marches off to +∞ because the tangents keep pointing away from the root at 0. Change x₀ to 0.5 in each: does it recover?</li>
+        <li><b>Newton for √D.</b> With D = 2, x₀ = 1 and ε = 10⁻⁶: 1.5, 1.416667, 1.414216, 1.414214. This is the rule xₙ₊₁ = ½(xₙ + D/xₙ) that computers use for square roots.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <p class="row">
+      <a class="chip ember" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/12-coping-with-limitations/README.md">📖 Lesson 12: Coping with Limitations</a>
+      <a class="chip steel" href="../arena/index.html?chapter=12">🏟️ Arena · Chapter 12</a>
+      <a class="chip" href="../arena/problem.html?id=bisection-root">bisection-root</a>
+      <a class="chip" href="../arena/problem.html?id=false-position-root">false-position-root</a>
+      <a class="chip" href="../arena/problem.html?id=newton-sqrt">newton-sqrt</a>
+      <a class="chip" href="../arena/problem.html?id=integer-sqrt">integer-sqrt (Ch 1)</a>
+    </p>
+    <p class="row">
+      <span class="muted small">Related sims:</span>
+      <a class="chip" href="search-lab.html">Binary &amp; interpolation search (Ch 4)</a>
+      <a class="chip" href="horner-binexp.html">Horner's rule (Ch 6)</a>
+      <a class="chip" href="growth-rates.html">Growth rates (Ch 2)</a>
+      <a class="chip" href="tsp-approx.html">Traveling salesman approximations</a>
+    </p>
+  </section>
+</main>
+<script src="js/root-finding.js"></script>
+</body>
+</html>

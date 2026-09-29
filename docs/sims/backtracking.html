@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backtracking · Algorithm Forge</title>
+<meta name="description" content="Watch backtracking grow a state-space tree and prune nonpromising nodes: n-Queens, subset-sum, and Hamiltonian circuit.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .bt-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 12px; align-items: start; }
+  @media (max-width: 760px) { .bt-grid { grid-template-columns: minmax(0, 1fr); } }
+  .tree-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .tree-box { overflow-x: auto; border-radius: var(--radius); }
+  .tree-box.zoom svg { max-width: none; }
+  .ctl-group[hidden] { display: none !important; }
+  .ask { border: 1px solid var(--ember); background: var(--ember-soft); border-radius: 10px; padding: 12px; }
+  .ask p { margin: 0 0 8px; }
+  .ask .btn.pick-ok { background: var(--c-done); border-color: var(--c-done); color: #0d1117; }
+  .ask .btn.pick-bad { background: var(--c-swap); border-color: var(--c-swap); color: #0d1117; }
+  .ask .fb { margin-top: 8px; }
+  #view { cursor: default; }
+  #view.editable { cursor: pointer; }
+  .deeper a { margin-right: 4px; }
+  input.num { width: 80px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 12 · Coping with the Limitations of Algorithm Power</div>
+    <h1>Backtracking: grow the tree, prune the hopeless</h1>
+    <p class="lead muted">Build a solution one piece at a time and abandon a partial solution the moment it cannot possibly be finished. The state-space tree below grows as the search runs; red marks are the branches backtracking never had to explore.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Problem
+        <select id="prob">
+          <option value="queens">n-Queens</option>
+          <option value="subset">Subset-sum</option>
+          <option value="ham">Hamiltonian circuit</option>
+        </select>
+      </label>
+      <label class="field">Find
+        <select id="mode">
+          <option value="first">first solution</option>
+          <option value="all">all solutions</option>
+        </select>
+      </label>
+      <div class="row ctl-group" id="g-queens">
+        <label class="field"><span>Board size n = <b id="nval">4</b></span>
+          <input id="qn" type="range" min="4" max="8" value="4" aria-label="Board size n">
+        </label>
+      </div>
+      <div class="row ctl-group" id="g-subset" hidden>
+        <label class="field">Set A (positive integers)
+          <input id="sA" type="text" value="3, 5, 6, 7" style="min-width:170px">
+        </label>
+        <label class="field">Target d
+          <input id="sd" class="num" type="number" value="15" min="1">
+        </label>
+        <button class="btn primary" id="sLoad">Load</button>
+        <button class="btn" id="sRand">Random</button>
+      </div>
+      <div class="row ctl-group" id="g-ham" hidden>
+        <label class="field">Vertices
+          <select id="hn">
+            <option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option>
+          </select>
+        </label>
+        <label class="field">Edges (pairs of letters)
+          <input id="hE" type="text" value="ab ac ad bc bf cd ce de ef" style="min-width:200px">
+        </label>
+        <button class="btn primary" id="hLoad">Load</button>
+        <button class="btn" id="hRand">Random graph</button>
+        <button class="btn" id="hReset">Book graph</button>
+      </div>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predict"> 🤔 Predict mode</label>
+    </div>
+    <p class="small muted" id="hint" style="margin:8px 0 0"></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="bt-grid">
+        <div>
+          <div class="tree-head"><span class="panel-title" style="margin:0" id="viewTitle">Board</span></div>
+          <svg class="stage" id="view" role="img" aria-label="Problem view"></svg>
+        </div>
+        <div>
+          <div class="tree-head">
+            <span class="panel-title" style="margin:0">State-space tree</span>
+            <button class="btn sm" id="zoom" title="Toggle between fit-to-width and full-size (scrollable) tree">⤢ Full size</button>
+          </div>
+          <div class="tree-box" id="treeBox"><svg class="stage" id="tree" role="img" aria-label="State-space tree"></svg></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>current path (partial solution)</span>
+        <span><i style="background:var(--c-compare)"></i>node just generated / being tested</span>
+        <span><i style="background:var(--c-swap)"></i>nonpromising: pruned / dead end</span>
+        <span><i style="background:var(--c-done)"></i>solution</span>
+        <span><i style="background:var(--c-bar)"></i>explored, then backtracked</span>
+      </div>
+      <div id="player"></div>
+      <div id="ask" class="ask" hidden></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <p><b>State-space tree.</b> The root is the empty partial solution. Each level fixes one more component: the column of the next queen, whether the next number is in or out of the subset, or the next vertex of the circuit. Nodes appear in the order a Depth-First Search (DFS) generates them; the small number above a node is that order (as in Levitin's figures).</p>
+      <p><b>Promising vs. nonpromising.</b> A node is <i>promising</i> if the partial solution could still be completed. A red × (n-Queens) is a square that is attacked, so the node is never expanded. A red circle is a dead end: nothing below it can work, so the algorithm <b>backtracks</b> to the parent and tries the next option.</p>
+      <p><b>Counters.</b> Compare the nodes the search actually generated with the size of the brute-force space (nⁿ boards, 2ⁿ subsets, (n−1)! vertex orders). That gap is what pruning buys you; the worst case is still exponential.</p>
+      <p><b>Big trees.</b> When a tree has hundreds of nodes it is drawn as dots so the whole shape fits. Press <kbd>⤢ Full size</kbd> to see it at readable size and scroll sideways.</p>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>4-Queens, first solution.</b> Before playing, guess how many queen placements succeed before a solution appears. The search places queens in 8 squares (nodes 1–8, root is node 0) and ends with columns (2, 4, 1, 3), exactly the tree in Levitin Fig. 12.2.</li>
+        <li><b>4-Queens, all solutions.</b> You get two answers, (2, 4, 1, 3) and (3, 1, 4, 2): mirror images. Why must a solution with queen 1 in column i have a twin with queen 1 in column n − i + 1?</li>
+        <li><b>8-Queens, all solutions.</b> Jump to the last step: 92 solutions from 2,057 tree nodes, versus 8⁸ = 16,777,216 boards for brute force. Now switch to first solution: how many nodes does it take?</li>
+        <li><b>Subset-sum, A = {3, 5, 6, 7}, d = 15.</b> The complete tree has 15 nodes and one solution {3, 5, 7}. Change d to 14, then to 8: which pruning test (too big or too small) does most of the work each time?</li>
+        <li><b>Hamiltonian circuit.</b> On the book graph the search finds a, b, f, e, c, d, a after generating 12 nodes below the root. Click b then f on the graph to delete edge bf and replay: is there still a circuit?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel deeper" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <p class="row">
+      <a class="chip ember" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/12-coping-with-limitations/README.md">📖 Lesson 12: Coping with Limitations</a>
+      <a class="chip steel" href="../arena/index.html?chapter=12">🏟️ Arena · Chapter 12</a>
+      <a class="chip" href="../arena/problem.html?id=n-queens-first">n-queens-first</a>
+      <a class="chip" href="../arena/problem.html?id=n-queens-count">n-queens-count</a>
+      <a class="chip" href="../arena/problem.html?id=subset-sum-backtrack">subset-sum-backtrack</a>
+      <a class="chip" href="../arena/problem.html?id=hamiltonian-circuit">hamiltonian-circuit</a>
+      <a class="chip" href="../arena/problem.html?id=graph-coloring-m">graph-coloring-m</a>
+    </p>
+    <p class="row">
+      <span class="muted small">Related sims:</span>
+      <a class="chip" href="branch-and-bound.html">Branch-and-bound</a>
+      <a class="chip" href="exhaustive-search.html">Exhaustive search (Ch 3)</a>
+      <a class="chip" href="graph-traversal.html">Depth-first search (Ch 3)</a>
+      <a class="chip" href="combinatorics.html">Generating subsets &amp; permutations (Ch 4)</a>
+      <a class="chip" href="p-np.html">Limits of algorithm power (Ch 11)</a>
+    </p>
+  </section>
+</main>
+<script src="js/backtracking.js"></script>
+</body>
+</html>

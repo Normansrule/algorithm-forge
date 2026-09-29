@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Growth Rates · Algorithm Forge</title>
+<meta name="description" content="Plot log n, n, n log n, n², n³, 2ⁿ and n! on linear or logarithmic axes, see how long each takes at a billion operations per second, what happens when n doubles, and compare two functions with the limit rule.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/ch01-02-kit.js"></script>
+<style>
+  .fn-toggles label { display: inline-flex; align-items: center; gap: 5px; font-size: .85rem; font-weight: 600; color: var(--ink-2); margin-right: 8px; white-space: nowrap; }
+  .fn-toggles i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel-2); color: var(--ink-2); font: 600 .85rem var(--font); padding: 7px 12px; cursor: pointer; }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+  .legend button { background: none; border: 0; color: var(--ink-2); font: inherit; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+  .legend button:hover, .legend button.on { background: var(--panel-2); color: var(--ink); }
+  td.t-ok { color: var(--ok); } td.t-warn { color: var(--warn); } td.t-bad { color: var(--bad); font-weight: 700; }
+  table.t td.lft, table.t th.lft { text-align: left; }
+  .bar-cell { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+  .bar-cell span.b { height: 10px; border-radius: 3px; background: var(--c-active); display: inline-block; }
+  .verdict { font-size: 1rem; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 2 · Analysis Framework</div>
+    <h1>Orders of growth</h1>
+    <p class="lead muted">Seven functions that describe almost every algorithm you will meet. Drag n, switch to a logarithmic axis, and feel the difference between "slow" and "never finishes".</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="field" style="font-size:.8rem;color:var(--muted);font-weight:600">y-axis
+        <div class="seg" role="group" aria-label="y-axis scale"><button id="axLin" class="on">linear</button><button id="axLog">logarithmic</button></div>
+      </div>
+      <label class="field">largest n on the chart: <b id="nMaxLbl">30</b>
+        <input id="nMax" type="range" min="2" max="200" value="30" style="width:220px">
+      </label>
+      <label class="field">computer speed
+        <select id="ops">
+          <option value="6">10⁶ operations/second</option>
+          <option value="9" selected>10⁹ operations/second</option>
+          <option value="12">10¹² operations/second</option>
+          <option value="15">10¹⁵ operations/second</option>
+        </select>
+      </label>
+      <button class="btn" id="rand">Random n</button>
+    </div>
+    <div class="row fn-toggles" id="toggles" style="margin-top:10px"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Chart of the growth functions"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="row"><button class="btn" id="predictBtn">🤔 Predict a crossover</button></div>
+      <div id="predict"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Where each rate comes from</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters (operations at this n)</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>⏱️ How long at <span id="opsLbl">10⁹</span> operations per second?</h2>
+    <p class="muted small">Each cell is f(n) basic operations divided by the computer's speed. Green: under a second. Yellow: under a day. Red: longer than a day. The age of the universe is about 4.4 × 10¹⁷ seconds (≈ 1.4 × 10¹⁰ years).</p>
+    <div class="row" style="margin-bottom:8px"><label class="field">add your own n <input type="number" id="myN" value="50" min="1" max="1000000000" style="width:140px"></label></div>
+    <div class="scroll-x"><table class="t" id="timeTable"></table></div>
+  </section>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>✖️2 What happens when n doubles?</h2>
+      <p class="muted small">Pick n. Each row shows f(2n) / f(n): how many times more work the same algorithm does on an input twice as big.</p>
+      <label class="field">n = <b id="dblLbl">100</b><input type="range" id="dblN" min="2" max="1000" value="100"></label>
+      <div class="scroll-x" style="margin-top:8px"><table class="t" id="dblTable"></table></div>
+      <div id="dblPredict" style="margin-top:10px"></div>
+    </section>
+    <section class="panel">
+      <h2>🧮 Limit rule: compare f and g</h2>
+      <p class="muted small">Levitin §2.2: look at lim f(n)/g(n) as n → ∞. 0 means f grows slower (f ∈ O(g)); a positive constant means same order (f ∈ Θ(g)); ∞ means f grows faster (f ∈ Ω(g)).</p>
+      <div class="row">
+        <label class="field">f(n) <select id="fSel"></select></label>
+        <label class="field">g(n) <select id="gSel"></select></label>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label class="field">or type f(n) <input type="text" id="fCustom" placeholder="e.g. 5*n^2 + 3*n" style="width:170px"></label>
+        <label class="field">or type g(n) <input type="text" id="gCustom" placeholder="e.g. n*log2(n)^2" style="width:170px"></label>
+        <button class="btn sm primary" id="cmpGo">Compare</button>
+      </div>
+      <p class="muted small" style="margin-top:4px">Custom functions use n, + − * / ^, ( ), and log2, ln, log10, sqrt, exp, fact.</p>
+      <div id="limPredict"></div>
+      <svg class="stage" id="limPlot" role="img" aria-label="Ratio f(n)/g(n) as n grows" style="margin-top:10px"></svg>
+      <div class="scroll-x" style="margin-top:8px"><table class="t" id="limTable"></table></div>
+      <p class="verdict" id="limVerdict"></p>
+    </section>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>Each colored curve is one function of the input size n; the label at the end of a curve names it. Hover (or touch) the chart to read every value at one n.</li>
+        <li><b>Linear axis:</b> the chart is scaled to the biggest polynomial you have switched on. Exponential curves shoot off the top: that vertical escape <em>is</em> the lesson.</li>
+        <li><b>Logarithmic axis:</b> each grid line is 10 times the one below, so every curve fits. Polynomials become gentle curves; 2ⁿ becomes a straight line; n! bends upward even on this axis. The dashed line is how many operations fit in one second at the chosen speed.</li>
+        <li>Press play to sweep n from 1 upward. The pseudocode panel highlights the loop shape that produces the curve that is currently biggest; click a legend entry to jump to its loop shape.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>On the linear axis with n up to 30, find where 2ⁿ overtakes n³ (between 9 and 10) and where n! overtakes 2ⁿ (at n = 4). Use the Predict button first.</li>
+        <li>In the time table, find the largest n that a 2ⁿ algorithm can handle in under a second at 10⁹ operations/second (n ≈ 30). Switch to 10¹⁵ operations/second: it only moves to about 50. Faster hardware barely helps exponential algorithms.</li>
+        <li>Double n from 100 to 200: an n² algorithm does 4 times the work, n³ does 8 times, and 2ⁿ does 2¹⁰⁰ times.</li>
+        <li>In the limit panel, compare n(n−1)/2 with n². Predict first. (The limit is 1/2, so they are the same order: Θ(n²).)</li>
+        <li>Compare log₂ n with √n. Even though log₂ n is bigger for small n (try the plot), the ratio goes to 0: every positive power of n eventually beats every power of log n.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/02-analysis-framework/README.md">📖 Lesson: Chapter 2</a>
+      <a class="btn" href="../arena/index.html?chapter=2">🏟️ Arena: Chapter 2</a>
+      <a class="btn sm" href="../arena/problem.html?id=element-uniqueness-brute">element-uniqueness-brute</a>
+      <a class="btn sm" href="../arena/problem.html?id=matrix-multiply">matrix-multiply</a>
+      <a class="btn sm" href="../arena/problem.html?id=count-binary-ones">count-binary-ones</a>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted small">Related sims:</span>
+      <a href="recurrence-lab.html">Recurrence lab</a> ·
+      <a href="empirical-lab.html">Empirical analysis lab</a> ·
+      <a href="hanoi.html">Tower of Hanoi (2ⁿ − 1 moves)</a> ·
+      <a href="fibonacci.html">Fibonacci</a>
+    </div>
+  </section>
+</main>
+<script src="js/growth-rates.js"></script>
+</body>
+</html>

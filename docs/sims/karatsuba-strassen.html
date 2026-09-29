@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karatsuba and Strassen · Algorithm Forge</title>
+<meta name="description" content="Multiply large integers with fewer digit multiplications (grade-school n², divide-and-conquer with 4 products, Karatsuba with 3) and 2×2 matrices with Strassen's 7 products.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  .ctl-mode { display: none; }
+  .ctl-mode.show { display: flex; }
+  #detail { font-family: var(--mono); font-size: .86rem; line-height: 1.75; overflow-x: auto; }
+  #detail .big { font-size: 1.05rem; font-weight: 700; }
+  #detail .a1 { color: var(--c-active); font-weight: 700; }
+  #detail .a0 { color: var(--c-pivot); font-weight: 700; }
+  #growth table.t { width: 100%; }
+  #growth td.win { color: var(--c-done); font-weight: 700; }
+  textarea.mat { font-family: var(--mono); width: 150px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 5 · Divide-and-Conquer</div>
+    <h1>Karatsuba and Strassen: Multiply With Fewer Multiplications</h1>
+    <p class="lead muted">School taught us that multiplying two n-digit numbers takes n² digit multiplications, and two n × n matrices take n³. Divide-and-conquer with one clever algebra trick beats both: 3 half-size products instead of 4 (Karatsuba), 7 half-size products instead of 8 (Strassen).</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="fx-seg" id="modes"><button data-m="int" class="on">Large integers</button><button data-m="mat">Strassen's matrices</button></div>
+    </div>
+    <div class="row ctl-mode show" id="intCtl" style="margin-top:10px">
+      <label class="field">a <input id="A" type="text" value="4721" style="width:120px"></label>
+      <label class="field">b <input id="B" type="text" value="3895" style="width:120px"></label>
+      <div class="fx-seg" id="method"><button data-k="school">Grade-school (n²)</button><button data-k="dc4">Divide &amp; conquer, 4 products</button><button data-k="kara" class="on">Karatsuba, 3 products</button></div>
+      <button class="btn primary" id="intGo">Multiply</button>
+      <button class="btn" id="intRand">Random</button>
+    </div>
+    <div class="row ctl-mode" id="matCtl" style="margin-top:10px">
+      <div class="fx-seg" id="msize"><button data-s="2" class="on">2 × 2 numbers</button><button data-s="4">4 × 4 as 2 × 2 blocks</button></div>
+      <label class="field">A (rows on lines) <textarea id="MA" class="mat" rows="4"></textarea></label>
+      <label class="field">B <textarea id="MB" class="mat" rows="4"></textarea></label>
+      <button class="btn primary" id="matGo">Multiply</button>
+      <button class="btn" id="matRand">Random</button>
+    </div>
+    <p class="fx-note" id="note" style="margin:8px 0 0"></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Multiplication visualization"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel"><div class="panel-title" id="detailTitle">Current call</div><div id="detail"></div></div>
+      <div class="panel"><div class="panel-title">How the counts grow</div><div id="growth" class="scroll-x"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Grade-school grid.</b> Row j is one digit of b, column i is one digit of a; each cell is one digit multiplication. The grid has n × n cells, so there are n² of them.</p>
+      <p><b>Recursion tree.</b> Each box is one call "x × y" on numbers with the digit count shown on the left. A call splits both numbers into a first half (<span style="color:var(--c-active);font-weight:700">a₁</span>) and a second half (<span style="color:var(--c-pivot);font-weight:700">a₀</span>) and calls itself on half-size numbers. Divide-and-conquer with 4 products makes 4 children per call, so 4^(log₂ n) = n² leaves: no savings. Karatsuba makes 3, so 3^(log₂ n) = n^(log₂ 3) ≈ n^1.585 leaves. Each leaf is one digit multiplication. Faded boxes are calls that haven't happened yet; <span style="color:var(--c-done);font-weight:700">green</span> boxes have returned their product.</p>
+      <p><b>Karatsuba's trick.</b> c₂ = a₁·b₁ and c₀ = a₀·b₀ are needed anyway. The middle term a₁·b₀ + a₀·b₁ equals (a₁ + a₀)(b₁ + b₀) − c₂ − c₀: one multiplication instead of two. If a sum like a₁ + a₀ carries into an extra digit, that digit is 0 or 1, so multiplying by it is just a copy, not a digit multiplication.</p>
+      <p><b>Strassen.</b> Cells used as the first factor of the current product are <span style="color:var(--c-compare);font-weight:700">yellow</span> in A, second-factor cells are <span style="color:var(--c-pivot);font-weight:700">purple</span> in B, and the C cell being assembled is <span style="color:var(--c-active);font-weight:700">blue</span>.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Levitin's warm-up is 23 × 14. Try it with Karatsuba: c₂ = 2·1 = 2, c₀ = 3·4 = 12, c₁ = 5·5 − 2 − 12 = 11, so 23 × 14 = 200 + 110 + 12 = 322 with 3 digit multiplications instead of 4.</li>
+        <li>Enter two 8-digit numbers. Grade-school: 64 digit multiplications. Divide-and-conquer with 4 products: also 64. Karatsuba: 27. That's 3³ because 8 = 2³.</li>
+        <li>Try 99 × 99 in Karatsuba. The sums 9 + 9 = 18 carry into a second digit; watch how the carry is handled without extra digit multiplications.</li>
+        <li>Strassen, 2 × 2: check that each of C's four cells matches the ordinary row-times-column answer. 7 multiplications, but 18 additions instead of 4.</li>
+        <li>Strassen, 4 × 4 as blocks: the seven block products are 2 × 2 matrix products, each done with Strassen again, for 7 × 7 = 49 multiplications instead of 4³ = 64.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/05-divide-and-conquer/README.md">📘 Lesson: Ch 5 Divide-and-Conquer</a>
+      <a href="../arena/index.html?chapter=5">⚔️ Arena: Chapter 5 problems</a>
+      <a href="../arena/problem.html?id=karatsuba-multiply">Karatsuba multiply</a>
+      <a href="../arena/problem.html?id=matrix-multiply">Matrix multiply (brute force)</a>
+      <a href="recurrence-lab.html">📐 Sim: recurrences and the Master Theorem</a>
+      <a href="growth-rates.html">📈 Sim: growth rates</a>
+      <a href="sorting-studio.html">🔀 Sim: merge sort and quicksort</a>
+      <a href="horner-binexp.html">⚡ Sim: Horner's rule and fast exponentiation</a>
+    </div>
+  </section>
+</main>
+<script src="js/karatsuba-strassen.js"></script>
+</body>
+</html>

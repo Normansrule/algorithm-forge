@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DFS and BFS · Algorithm Forge</title>
+<meta name="description" content="Depth-First Search and Breadth-First Search on a graph you draw: stack and queue, DFS/BFS forest, tree, back and cross edges, adjacency matrix vs lists.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  .ds-stack { display: flex; flex-direction: column-reverse; gap: 4px; min-height: 60px; align-items: flex-start; }
+  .ds-box { font-family: var(--mono); font-weight: 700; padding: 3px 10px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--bg-2); }
+  .ds-box.top { border-color: var(--c-active); background: var(--steel-soft); }
+  .ds-box sub { font-weight: 500; color: var(--ember-2); margin-left: 2px; }
+  .ds-queue { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 34px; }
+  .ds-row { margin-top: 10px; }
+  .ds-row .k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+  #adj { overflow-x: auto; }
+  #adj table.t td.one { color: var(--ink); font-weight: 700; }
+  #adj table.t td.zero { color: var(--muted); }
+  .adjl { font-family: var(--mono); font-size: .85rem; line-height: 1.9; }
+  .adjl div { padding: 0 6px; border-radius: 6px; }
+  .adjl div.cur { background: var(--steel-soft); }
+  .adjl span.hl { background: var(--c-compare); color: #0d1117; border-radius: 4px; padding: 0 3px; }
+  #forest { min-height: 120px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 3 · Brute Force and Exhaustive Search</div>
+    <h1>Graph Traversal: DFS and BFS</h1>
+    <p class="lead muted">Depth-First Search (DFS) dives as deep as it can and backs up at dead ends, using a stack. Breadth-First Search (BFS) spreads out level by level, using a queue. Draw your own graph and watch both visit every vertex and every edge.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="fx-seg" id="algo"><button data-a="dfs" class="on">DFS (stack)</button><button data-a="bfs">BFS (queue)</button></div>
+      <label class="field">Start vertex <select id="start"></select></label>
+      <div class="fx-seg" id="rep"><button data-r="matrix">Adjacency matrix</button><button data-r="list" class="on">Adjacency lists</button></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Preset <select id="preset">
+        <option value="levitin">Two components, 10 vertices (like Levitin Fig. 3.10)</option>
+        <option value="three">Disconnected: three pieces + a loner</option>
+        <option value="tail">Triangle with a tail</option>
+        <option value="tree">A tree (no cycles)</option>
+        <option value="grid">3 × 3 grid</option>
+        <option value="empty">Empty: draw your own</option>
+      </select></label>
+      <button class="btn primary" id="loadPreset">Load preset</button>
+      <button class="btn" id="rand">Random graph</button>
+      <div class="fx-seg" id="tool"><button data-t="add" class="on">✚ Add / connect</button><button data-t="delete">✖ Delete</button></div>
+    </div>
+    <p class="fx-note" style="margin:8px 0 0">Editing: click empty space to add a vertex · click one vertex, then another, to add (or remove) the edge between them · drag a vertex to move it · in ✖ mode click a vertex or an edge to delete it. Ties are broken alphabetically, like the textbook.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Editable graph"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="grid cols-2">
+        <div class="panel"><div class="panel-title" id="dsTitle">Stack</div><div id="ds"></div></div>
+        <div class="panel"><div class="panel-title" id="forestTitle">DFS forest</div><svg class="stage" id="forest" role="img" aria-label="Traversal forest"></svg></div>
+      </div>
+      <div class="panel"><div class="panel-title" id="adjTitle">Adjacency lists</div><div id="adj"></div><p class="fx-note" id="adjNote" style="margin:8px 0 0"></p></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Vertex colors.</b> <span style="color:var(--c-active);font-weight:700">Blue</span> is the vertex being processed (DFS: the top of the stack; BFS: the front of the queue). <span style="color:var(--c-compare);font-weight:700">Yellow</span> is the neighbor being checked. <span style="color:var(--c-pivot);font-weight:700">Purple</span> vertices are waiting on the stack or in the queue. <span style="color:var(--c-done);font-weight:700">Green</span> vertices are finished (popped or dequeued).</p>
+      <p><b>Numbers under vertices.</b> DFS shows two numbers like Levitin's Figure 3.10: the order the vertex was pushed (first reached), then the order it was popped (became a dead end). BFS shows the visit order and the level (distance in edges from the root).</p>
+      <p><b>Edges.</b> Solid orange edges are <b>tree edges</b> (they discovered a new vertex). Dashed purple edges are DFS <b>back edges</b> (to an ancestor that is still on the stack). Dashed yellow edges are BFS <b>cross edges</b> (to a vertex already seen, on the same or the next level). Any back or cross edge means the graph has a cycle.</p>
+      <p><b>Matrix vs lists.</b> With an adjacency matrix, finding the neighbors of a vertex means reading its whole row of |V| entries, so a traversal costs Θ(|V|²). With adjacency lists you only read the real neighbors, for Θ(|V| + |E|) in total. The "entries read" counter shows the difference.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Load the two-component preset and run DFS from <b>a</b>. Check the push order a, c, d, f, b, e and the pop order d, e, b, f, c, a. Then g, h, i, j pushed and j, i, h, g popped: the outer loop restarts once, so the forest has 2 trees.</li>
+        <li>Switch to BFS on the same graph. The visit order becomes a, c, d, e, f, b, then g, h, j, i. Every non-tree edge is a cross edge between the same or neighboring levels.</li>
+        <li>Load the tree preset. Neither traversal finds a single back or cross edge: that's how DFS and BFS prove a graph is acyclic.</li>
+        <li>Toggle adjacency matrix vs lists on the 3 × 3 grid. Entries read: |V|² = 81 vs 2|E| = 24. Same traversal, very different work.</li>
+        <li>In ✖ mode, delete the edge a–d from the two-component preset. Which back edge disappears from the DFS forest?</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/03-brute-force/README.md">📘 Lesson: Ch 3 Brute Force</a>
+      <a href="../arena/index.html?chapter=3">⚔️ Arena: Chapter 3 problems</a>
+      <a href="../arena/problem.html?id=dfs-order">DFS order</a>
+      <a href="../arena/problem.html?id=bfs-order">BFS order</a>
+      <a href="../arena/problem.html?id=connected-components">Connected components</a>
+      <a href="../arena/problem.html?id=has-cycle-undirected">Has a cycle?</a>
+      <a href="../arena/problem.html?id=is-bipartite">Is it bipartite?</a>
+      <a href="topo-sort.html">🧭 Sim: topological sorting (DFS on digraphs)</a>
+      <a href="exhaustive-search.html">💥 Sim: exhaustive search</a>
+      <a href="greedy-graphs.html">🌲 Sim: Prim, Kruskal, Dijkstra</a>
+    </div>
+  </section>
+</main>
+<script src="js/graph-traversal.js"></script>
+</body>
+</html>

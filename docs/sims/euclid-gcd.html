@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GCD Three Ways + Sieve · Algorithm Forge</title>
+<meta name="description" content="Race Euclid's algorithm, consecutive integer checking and the middle-school prime-factor method for the greatest common divisor, and watch the sieve of Eratosthenes cross out composites.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/ch01-02-kit.js"></script>
+<style>
+  .mode-tabs { margin-bottom: 0; }
+  .ctl-group { display: none; }
+  .ctl-group.on { display: flex; }
+  #stage .cell { cursor: default; }
+  #stage.picking .cell { cursor: pointer; }
+  #stage.picking .cell:hover rect { stroke: var(--ember); stroke-width: 2.5; }
+  .lanes-note { font-size: .8rem; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 1 · Introduction</div>
+    <h1>Greatest common divisor (gcd) three ways + the Sieve of Eratosthenes</h1>
+    <p class="lead muted">Three correct gcd algorithms race each other, one basic operation per tick. Then watch an ancient algorithm list every prime up to n by crossing out multiples.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="tabs mode-tabs" role="tablist" id="modeTabs">
+      <button role="tab" class="on" data-mode="gcd" id="tabGcd">gcd race</button>
+      <button role="tab" data-mode="sieve" id="tabSieve">Sieve of Eratosthenes</button>
+    </div>
+    <div class="row ctl-group on" id="ctlGcd">
+      <label class="field">m <input id="inM" type="number" min="1" max="9999" value="60" style="width:100px"></label>
+      <label class="field">n <input id="inN" type="number" min="1" max="9999" value="24" style="width:100px"></label>
+      <button class="btn primary" id="loadGcd">Race</button>
+      <button class="btn" id="randGcd">Random</button>
+      <label class="field">Presets
+        <select id="preset" style="max-width:calc(100vw - 72px)">
+          <option value="">— pick —</option>
+          <option value="60,24">60, 24 (the classic)</option>
+          <option value="89,55">89, 55 (consecutive Fibonacci numbers)</option>
+          <option value="1000,999">1000, 999 (no common factor)</option>
+          <option value="4096,1024">4096, 1024 (one divides the other)</option>
+          <option value="9973,9967">9973, 9967 (two primes)</option>
+        </select>
+      </label>
+      <label class="field">Pseudocode for
+        <select id="focus">
+          <option value="E">Euclid</option>
+          <option value="C">Consecutive integer checking</option>
+          <option value="M">Middle-school (prime factors)</option>
+        </select>
+      </label>
+    </div>
+    <div class="row ctl-group" id="ctlSieve">
+      <label class="field">n (2 – 200) <input id="inSieve" type="number" min="2" max="200" value="30" style="width:100px"></label>
+      <button class="btn primary" id="loadSieve">Sieve</button>
+      <button class="btn" id="randSieve">Random</button>
+      <span class="muted small">Try n = 30, then n = 100: which cells get crossed out twice?</span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Simulation stage"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="row"><button class="btn" id="predictBtn">🤔 Predict the next step</button><span class="muted small" id="predictHint"></span></div>
+      <div id="predict"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>gcd race.</b> Each lane is one algorithm. One <em>tick</em> of the player = one basic operation for every algorithm still running: a division with remainder (<code>mod</code>) for Euclid and for consecutive integer checking; a trial division or a factor comparison for the middle-school method. The marker's distance along its track is how much work that algorithm has done; the lane that runs longest sets the track length.</p>
+      <ul class="small">
+        <li><b>Euclid</b>: the chain of pairs (m, n) → (n, m mod n). It stops when n becomes 0; the answer is m.</li>
+        <li><b>Consecutive integer checking</b>: every t tried, counting down from min(m, n). Top mark = "does t divide m?", bottom mark = "does t divide n?" (only asked when the top one is ✓).</li>
+        <li><b>Middle-school</b>: the prime factor lists Fm and Fn, then a merge-like walk that multiplies the common factors into g.</li>
+      </ul>
+      <p><b>Sieve.</b> Numbers are laid out in rows of ten so multiples line up in columns. The steel cell is the current p. Red is the cell being crossed out now; yellow means "this cell was <em>already</em> crossed out" (wasted work); green cells are confirmed primes. The small label under a crossed cell says which p crossed it first.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Race <b>60, 24</b>. Euclid needs 2 divisions; consecutive integer checking needs 16 (13 values of t, plus 3 extra tests on n). Scrub to the end and check the counters.</li>
+        <li>Race <b>89, 55</b>. These are consecutive Fibonacci numbers, the slowest possible inputs for Euclid at this size: every quotient is 1. Count the divisions (9) and compare with log base φ of 55.</li>
+        <li>Race <b>9973, 9967</b> (two primes). Consecutive integer checking has to walk t all the way down to 1: almost 10,000 divisions. Euclid still needs only a handful.</li>
+        <li>Switch to the sieve with <b>n = 30</b>. Predict which cells p = 3 will cross out that p = 2 already crossed (12, 18, 24, 30), then press play and check the "repeats" counter.</li>
+        <li>Sieve <b>n = 100</b>. Why does the outer loop stop at p = 10? (Any composite ≤ 100 has a factor ≤ √100.)</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/01-introduction/README.md">📖 Lesson: Chapter 1</a>
+      <a class="btn" href="../arena/index.html?chapter=1">🏟️ Arena: Chapter 1</a>
+      <a class="btn sm" href="../arena/problem.html?id=euclid-gcd">euclid-gcd</a>
+      <a class="btn sm" href="../arena/problem.html?id=consecutive-integer-gcd">consecutive-integer-gcd</a>
+      <a class="btn sm" href="../arena/problem.html?id=sieve-primes">sieve-primes</a>
+      <a class="btn sm" href="../arena/problem.html?id=lcm-via-gcd">lcm-via-gcd</a>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted small">Related sims:</span>
+      <a href="growth-rates.html">Growth rates</a> ·
+      <a href="fibonacci.html">Fibonacci (why 89, 55 is Euclid's worst case)</a> ·
+      <a href="recurrence-lab.html">Recurrence lab</a>
+    </div>
+  </section>
+</main>
+<script src="js/euclid-gcd.js"></script>
+</body>
+</html>

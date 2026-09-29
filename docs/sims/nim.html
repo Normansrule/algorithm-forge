@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Game of Nim · Algorithm Forge</title>
+<meta name="description" content="Play Nim against the computer, see winning and losing positions (n mod (m+1)) for one pile, and the binary nim-sum rule for many piles.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  .ctl-mode { display: none; }
+  .ctl-mode.show { display: flex; }
+  #board { width: 100%; display: block; }
+  #board .chip-hit { cursor: pointer; }
+  #board .chip-hit:hover circle { stroke: var(--ember); stroke-width: 3; }
+  #log { font-family: var(--mono); font-size: .82rem; max-height: 150px; overflow: auto; line-height: 1.7; }
+  #status { font-weight: 700; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 4 · Decrease-and-Conquer</div>
+    <h1>The Game of Nim</h1>
+    <p class="lead muted">Two players take turns removing chips; whoever takes the last chip wins. Every position is either winning or losing for the player about to move, and a tiny formula tells you which. Learn it, then try to beat the computer.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="fx-seg" id="modes"><button data-m="one" class="on">One pile (take 1…m)</button><button data-m="many">Many piles (take any number from one pile)</button></div>
+    </div>
+    <div class="row ctl-mode show" id="oneCtl" style="margin-top:10px">
+      <label class="field">Chips n <input id="N" type="number" min="1" max="30" value="10" style="width:70px"></label>
+      <label class="field">Max take m <input id="M" type="number" min="1" max="6" value="4" style="width:70px"></label>
+      <button class="btn primary" id="oneGo">Analyze &amp; new game</button>
+      <button class="btn" id="oneRand">Random</button>
+    </div>
+    <div class="row ctl-mode" id="manyCtl" style="margin-top:10px">
+      <label class="field">Pile sizes (up to 5 piles, ≤ 15 each) <input id="piles" type="text" value="3 4 5" style="width:160px"></label>
+      <button class="btn primary" id="manyGo">Analyze &amp; new game</button>
+      <button class="btn" id="manyRand">Random</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Who moves first <select id="first"><option value="you">You</option><option value="cpu">Computer</option></select></label>
+      <label class="field">Computer plays <select id="level"><option value="perfect">perfectly</option><option value="random">randomly</option></select></label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Analysis of positions"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">🎮 Play</div>
+        <svg id="board" role="img" aria-label="Nim board"></svg>
+        <div class="row" id="moves" style="margin-top:8px"></div>
+        <p id="status" style="margin:10px 0 4px"></p>
+        <div class="row"><button class="btn sm ghost" id="hint">💡 Show the winning move</button><span class="fx-note" id="hintText"></span></div>
+        <div id="log" style="margin-top:8px"></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Winning (W) and losing (L) positions.</b> A position is <b>W</b> for the player about to move if some move leaves the opponent in an <b>L</b> position. It is <b>L</b> if every move hands the opponent a W position. With 0 chips you can't move, so 0 is L. The analysis builds the table from 0 upward: that's decrease-and-conquer.</p>
+      <p><b>One pile strip.</b> Each cell is a pile size n with its label (<span style="color:var(--c-done);font-weight:700">W</span> green, <span style="color:var(--c-swap);font-weight:700">L</span> red) and n mod (m + 1) underneath. Arcs above show the moves being checked from the current n; arcs below show the winning move from every W position (like Levitin Fig. 4.16). L sits exactly where n mod (m + 1) = 0, and the winning move is to take n mod (m + 1) chips.</p>
+      <p><b>Many piles.</b> Write each pile size in binary. The <b>nim sum</b> adds each column without carrying (odd number of 1s gives 1). The position is L exactly when the nim sum is all zeros. A winning move changes one pile so the nim sum becomes zero: find a pile with n ⊕ s &lt; n and shrink it to n ⊕ s.</p>
+      <p><b>Playing.</b> One pile: press a "take" button. Many piles: click a chip to remove it and every chip above it. The blue ring on the strip marks the game's current position.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>One pile, n = 10, m = 4, you move first, computer perfect. Can you win? (10 mod 5 = 0: you start in an L position, so a perfect opponent always wins.) Now let the computer move first.</li>
+        <li>Predict the L positions for m = 3 before pressing play: 0, 4, 8, 12, … Check them on the strip.</li>
+        <li>Levitin's many-pile example is 3, 4, 5. Its nim sum is 011 ⊕ 100 ⊕ 101 = 010, so the first player wins by taking 2 chips from the pile of 3. Verify with the hint button.</li>
+        <li>Two equal piles (e.g. 6 6): the nim sum is 0. Play second and just copy your opponent's move on the other pile. Why does that always work?</li>
+        <li>Set the computer to "randomly" and play from an L position. How quickly can you steer the game back to nim sum 0?</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/04-decrease-and-conquer/README.md">📘 Lesson: Ch 4 Decrease-and-Conquer</a>
+      <a href="../arena/index.html?chapter=4">⚔️ Arena: Chapter 4 problems</a>
+      <a href="../arena/problem.html?id=nim-winning-move">Nim winning move</a>
+      <a href="../arena/problem.html?id=josephus">Josephus problem</a>
+      <a href="search-lab.html">🔎 Sim: decrease-and-conquer search lab</a>
+      <a href="combinatorics.html">🔀 Sim: Gray codes and bit strings</a>
+      <a href="dp-studio.html">🧮 Sim: dynamic programming (same bottom-up table idea)</a>
+    </div>
+  </section>
+</main>
+<script src="js/nim.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topological Sorting · Algorithm Forge</title>
+<meta name="description" content="Topological sorting of a directed graph you draw: the DFS-based algorithm (reverse pop order, back edge means a cycle) and the source-removal algorithm (in-degree table).">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  .ds-stack { display: flex; flex-direction: column-reverse; gap: 4px; align-items: flex-start; min-height: 40px; }
+  .ds-box { font-family: var(--mono); font-weight: 700; padding: 3px 10px; border-radius: 7px; border: 1px solid var(--line-2); background: var(--bg-2); }
+  .ds-box.top { border-color: var(--c-active); background: var(--steel-soft); }
+  .ds-row { margin-top: 10px; }
+  .ds-row .k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+  #ds table.t td.gone { color: var(--muted); text-decoration: line-through; }
+  #ds table.t td.zero { color: var(--c-done); font-weight: 700; }
+  #ds table.t td.dec { background: color-mix(in srgb, var(--c-swap) 22%, transparent); }
+  #ds table.t td.pick { outline: 2px solid var(--c-active); outline-offset: -2px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 4 · Decrease-and-Conquer</div>
+    <h1>Topological Sorting</h1>
+    <p class="lead muted">List the vertices of a directed graph so that every edge points forward, like scheduling courses after their prerequisites. It's possible exactly when the graph is a Directed Acyclic Graph (DAG). Two ways to do it: reverse the pop order of a Depth-First Search (DFS), or keep removing sources.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <div class="fx-seg" id="algo"><button data-a="dfs" class="on">DFS-based</button><button data-a="src">Source removal</button></div>
+      <label class="field">Preset <select id="preset">
+        <option value="courses">Course prerequisites C1…C5</option>
+        <option value="food">Food chain ("is eaten by")</option>
+        <option value="cyclic">A graph with a cycle</option>
+        <option value="wide">Many sources, many orders</option>
+        <option value="empty">Empty: draw your own</option>
+      </select></label>
+      <button class="btn primary" id="loadPreset">Load preset</button>
+      <button class="btn" id="rand">Random DAG</button>
+      <div class="fx-seg" id="tool"><button data-t="add" class="on">✚ Add / connect</button><button data-t="delete">✖ Delete</button></div>
+    </div>
+    <p class="fx-note" style="margin:8px 0 0">Editing: click empty space to add a vertex · click vertex A, then vertex B, to add the edge A → B (click again to remove it; B then A reverses it) · drag to move · ✖ mode deletes a vertex or an edge. Ties are broken alphabetically.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Editable directed graph"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel"><div class="panel-title" id="lineTitle">The answer, drawn in a line: every arrow must point right</div><svg class="stage" id="line" role="img" aria-label="Topological order drawn left to right"></svg></div>
+      <div class="panel"><div class="panel-title" id="dsTitle">Stack</div><div id="ds"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>DFS-based.</b> <span style="color:var(--c-active);font-weight:700">Blue</span> is the vertex on top of the stack, <span style="color:var(--c-compare);font-weight:700">yellow</span> is the out-neighbor being checked, <span style="color:var(--c-pivot);font-weight:700">purple</span> vertices are still on the stack, <span style="color:var(--c-done);font-weight:700">green</span> ones have been popped. The small numbers are push, pop order. When a vertex is popped it takes the rightmost free slot in the line below, so the reversed pop order builds itself from right to left. A dashed purple edge is a <b>back edge</b>: it points to a vertex still on the stack, which closes a directed cycle (its vertices turn red).</p>
+      <p><b>Source removal.</b> A <b>source</b> is a vertex with no incoming edges (in-degree 0, green in the table). Each step deletes one source and its outgoing edges, which lowers the in-degree of its neighbors (red cells). Deleted vertices fill the line from left to right. If vertices remain but none is a source, every one of them has an incoming edge, so there must be a cycle.</p>
+      <p><b>The line.</b> The final order is drawn left to right with every edge as an arc. If the order is correct, every arrow points right.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Courses preset, DFS-based: the pop order is C5, C4, C3, C1, C2, so the answer is C2, C1, C3, C4, C5. Switch to source removal: C1, C2, C3, C4, C5. Both are correct: a DAG can have several topological orders.</li>
+        <li>Load the cyclic preset. DFS finds a back edge; source removal gets stuck with no source. Delete one edge of the highlighted cycle and run again.</li>
+        <li>In the courses preset, add the edge C5 → C1. Predict which algorithm notices the cycle first (in steps). Try it.</li>
+        <li>"Many sources" preset: how many vertices have in-degree 0 at the start? Source removal can pick any of them, which is why this graph has many valid orders.</li>
+        <li>Levitin Exercise 4.2.4 asks if the <i>push</i> order would work too. Compare the push order with the answer on the courses preset to find a counterexample.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/04-decrease-and-conquer/README.md">📘 Lesson: Ch 4 Decrease-and-Conquer</a>
+      <a href="../arena/index.html?chapter=4">⚔️ Arena: Chapter 4 problems</a>
+      <a href="../arena/problem.html?id=topological-sort-dfs">Topological sort (DFS)</a>
+      <a href="../arena/problem.html?id=topological-sort-source-removal">Topological sort (source removal)</a>
+      <a href="../arena/problem.html?id=course-schedule">Course schedule</a>
+      <a href="graph-traversal.html">🕸️ Sim: DFS &amp; Breadth-First Search (BFS)</a>
+      <a href="scc.html">🔗 Sim: strongly connected components</a>
+      <a href="combinatorics.html">🔀 Sim: generating combinatorial objects</a>
+    </div>
+  </section>
+</main>
+<script src="js/topo-sort.js"></script>
+</body>
+</html>

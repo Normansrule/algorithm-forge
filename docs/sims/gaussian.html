@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gaussian Elimination · Algorithm Forge</title>
+<meta name="description" content="Step through Gaussian elimination on your own augmented matrix: row operations, optional partial pivoting, back substitution, LU decomposition, determinant, and the n³/3 multiplication count.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 420px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .mgrid { display: grid; gap: 4px; align-items: center; overflow-x: auto; padding-bottom: 2px; }
+  .mgrid input { width: 58px; text-align: center; padding: 5px 4px; font-family: var(--mono); }
+  .mgrid .bar { border-left: 2px solid var(--line-2); padding-left: 4px; }
+  .mgrid .hdr { font-size: .72rem; color: var(--muted); text-align: center; font-weight: 700; }
+  @media (max-width: 640px) { .mgrid input { width: 46px; font-size: .8rem; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 6 · Transform-and-Conquer</div>
+    <h1>Gaussian Elimination</h1>
+    <p class="lead muted">Transform the system into an equivalent one that is easy to solve: zero out everything below the diagonal with row operations, then read the answer from the bottom up. Along the way you get an LU (Lower–Upper) decomposition and the determinant for free.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row" style="align-items:flex-end">
+      <label class="field">Size n
+        <select id="n"><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
+      </label>
+      <label class="small row" style="gap:6px"><input type="checkbox" id="piv"> partial pivoting</label>
+      <label class="small row" style="gap:6px"><input type="checkbox" id="dec"> show decimals</label>
+      <button class="btn primary" id="solve">Solve</button>
+      <button class="btn" id="rand">Random (integer answer)</button>
+      <button class="btn" id="book">Book example</button>
+      <button class="btn" id="zero" title="A system whose first pivot is 0">Zero-pivot system</button>
+    </div>
+    <p class="small muted" style="margin:10px 0 6px">Augmented matrix [A | b]. Type integers, decimals or fractions like 2/3. Press Solve.</p>
+    <div id="grid" class="mgrid"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="The augmented matrix during elimination, with L, U and the solution below"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-pivot)"></i>pivot A[i, i]</span>
+        <span><i style="background:var(--c-active)"></i>pivot row</span>
+        <span><i style="background:var(--c-compare)"></i>being compared / used</span>
+        <span><i style="background:var(--c-swap)"></i>just changed</span>
+        <span><i style="background:var(--c-done)"></i>solved value</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>The big matrix</dt>
+      <dd>Rows R1..Rn are the equations; the column after the vertical bar is the right-hand side b. The orange note to the right of a row names the operation applied to it, e.g. “R2 − (2)·R1”.</dd>
+      <dt>Three legal moves</dt>
+      <dd>Swap two rows, scale a row by a nonzero number, or subtract a multiple of one row from another. None of them changes the solution set, which is why the transformed system is “equivalent”.</dd>
+      <dt>L and U</dt>
+      <dd>U is the upper-triangular matrix left in place of A. L has 1s on its diagonal and, under it, the multipliers used to create each zero. Multiplying L·U gives back A (or the row-swapped P·A when pivoting moved rows).</dd>
+      <dt>Counters</dt>
+      <dd>“Elimination mults” counts executions of the innermost line A[j, k] ← A[j, k] − A[i, k] * temp. Levitin §6.2 sums this to exactly n(n − 1)(2n + 5)/6 ≈ n³/3. Back substitution adds only about n²/2 more.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Book check.</b> Solve the default system. The multipliers are 2, ½ and ½, the upper-triangular result has diagonal 2, 3, 2, and the answer is x = (1, 0, −1). The determinant is 2·3·2 = 12.</li>
+      <li><b>Count.</b> For n = 3 the elimination multiplication counter must end at 3·2·11/6 = 11. Switch to n = 5 and predict before pressing Solve: 5·4·15/6 = 50.</li>
+      <li><b>Zero pivot.</b> Press “Zero-pivot system”. Without pivoting the algorithm must still swap rows (it cannot divide by 0). Turn on partial pivoting and compare: it swaps whenever a lower row has a bigger |A[j, i]|, so every multiplier has |temp| ≤ 1.</li>
+      <li><b>Determinant sign.</b> With pivoting on, watch the row-swap counter. Each swap flips the determinant's sign; the final value is (−1)<sup>swaps</sup> × the product of the pivots, and it matches the no-pivoting run.</li>
+      <li><b>Singular system.</b> Make row 3 equal to row 1 + row 2 and solve. Elimination produces a zero row, the determinant is 0, and there is no unique solution.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/06-transform-and-conquer/README.md">📖 Lesson: Chapter 6 Transform-and-Conquer</a>
+      <a href="../arena/index.html?chapter=6">🏟️ Arena: Chapter 6 problems</a>
+      <a href="../arena/problem.html?id=gaussian-solve">Arena: gaussian-solve</a>
+      <a href="../arena/problem.html?id=determinant">Arena: determinant</a>
+      <a href="horner-binexp.html">🎮 Horner &amp; Binary Exponentiation</a>
+      <a href="simplex.html">🎮 Simplex (more row operations, Ch 10)</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Gaussian Elimination", chapter: "Ch 6 · Transform-and-Conquer" });
+const $ = (id) => document.getElementById(id);
+
+/* ---------------------------------------------------- exact fractions (BigInt) */
+const babs = (a) => (a < 0n ? -a : a);
+function bgcd(a, b) { a = babs(a); b = babs(b); while (b) [a, b] = [b, a % b]; return a; }
+function F(n, d) {
+  n = BigInt(n); d = d == null ? 1n : BigInt(d);
+  if (d === 0n) throw new Error("zero denominator");
+  if (d < 0n) { n = -n; d = -d; }
+  const g = bgcd(n, d) || 1n;
+  return { n: n / g, d: d / g };
+}
+const fadd = (a, b) => F(a.n * b.d + b.n * a.d, a.d * b.d);
+const fsub = (a, b) => F(a.n * b.d - b.n * a.d, a.d * b.d);
+const fmul = (a, b) => F(a.n * b.n, a.d * b.d);
+const fdiv = (a, b) => F(a.n * b.d, a.d * b.n);
+const fzero = (a) => a.n === 0n;
+const fabsGt = (a, b) => babs(a.n) * b.d > babs(b.n) * a.d;
+const fstr = (a) => (a.d === 1n ? String(a.n) : `${a.n}/${a.d}`);
+function parseF(s) {
+  s = String(s).trim().replace("−", "-");
+  if (!s) return F(0);
+  if (s.includes("/")) { const [p, q] = s.split("/"); return F(BigInt(Math.round(Number(p))), BigInt(Math.round(Number(q)) || 1)); }
+  if (!/^-?\d*\.?\d+(e-?\d+)?$/i.test(s)) throw new Error("bad number");
+  const x = Number(s);
+  if (Number.isInteger(x)) return F(BigInt(x));
+  const [ip, fp = ""] = s.replace("-", "").split(".");
+  const den = 10n ** BigInt(fp.length);
+  const num = BigInt(ip || "0") * den + BigInt(fp || "0");
+  return F(s.startsWith("-") ? -num : num, den);
+}
+let DEC = false;
+function show(str) {
+  if (str == null) return "";
+  if (!DEC || !str.includes("/")) return str;
+  const [p, q] = str.split("/").map(Number);
+  return String(+(p / q).toFixed(3));
+}
+
+/* ---------------------------------------------------------------- listings */
+const LISTS = {
+  piv: [
+    "ALGORITHM GaussElimination(A[1..n, 1..n+1])",
+    "    for i ← 1 to n − 1 do",
+    "        pivotRow ← i",
+    "        for j ← i + 1 to n do",
+    "            if |A[j, i]| > |A[pivotRow, i]| then pivotRow ← j",
+    "        swap rows i and pivotRow",
+    "        for j ← i + 1 to n do",
+    "            temp ← A[j, i] / A[i, i]",
+    "            for k ← i to n + 1 do",
+    "                A[j, k] ← A[j, k] − A[i, k] * temp",
+    "ALGORITHM BackSubstitution(A[1..n, 1..n+1])",
+    "    for j ← n downto 1 do",
+    "        t ← 0",
+    "        for k ← j + 1 to n do t ← t + A[j, k] * x[k]",
+    "        x[j] ← (A[j, n + 1] − t) / A[j, j]",
+    "    return x",
+  ],
+  nopiv: [
+    "ALGORITHM GaussElimination(A[1..n, 1..n+1])",
+    "    for i ← 1 to n − 1 do",
+    "        if A[i, i] = 0 then",
+    "            swap row i with a lower row j with A[j, i] ≠ 0",
+    "        for j ← i + 1 to n do",
+    "            temp ← A[j, i] / A[i, i]",
+    "            for k ← i to n + 1 do",
+    "                A[j, k] ← A[j, k] − A[i, k] * temp",
+    "ALGORITHM BackSubstitution(A[1..n, 1..n+1])",
+    "    for j ← n downto 1 do",
+    "        t ← 0",
+    "        for k ← j + 1 to n do t ← t + A[j, k] * x[k]",
+    "        x[j] ← (A[j, n + 1] − t) / A[j, j]",
+    "    return x",
+  ],
+};
+const LN = {
+  piv: { loop: 1, scan: [2, 3, 4], swap: 5, temp: [6, 7], row: [8, 9], back: [11, 12, 13, 14], ret: 15 },
+  nopiv: { loop: 1, scan: [2], swap: [2, 3], temp: [4, 5], row: [6, 7], back: [9, 10, 11, 12], ret: 13 },
+};
+
+/* ------------------------------------------------------------------ record */
+function record(A0, pivoting) {
+  const n = A0.length;
+  const key = pivoting ? "piv" : "nopiv", ln = LN[key];
+  const A = A0.map((r) => r.slice());
+  const L = Array.from({ length: n }, (_, r) => Array.from({ length: n }, (_, c) => (r === c ? F(1) : null)));
+  const perm = Array.from({ length: n }, (_, i) => i + 1);
+  const x = Array(n).fill(null);
+  let mults = 0, divs = 0, swaps = 0, bmults = 0, asks = 0, singular = false, phase = "fwd";
+  const frames = [];
+  const exact = (n * (n - 1) * (2 * n + 5)) / 6;
+  const det = () => {
+    if (singular) return "0";
+    let p = F(swaps % 2 ? -1 : 1);
+    for (let i = 0; i < n; i++) p = fmul(p, A[i][i]);
+    return fstr(p);
+  };
+  function push(line, cells, rows, notes, text, ask) {
+    frames.push({
+      key, n, M: A.map((r) => r.map(fstr)), L: L.map((r) => r.map((v) => (v ? fstr(v) : null))), perm: perm.slice(), x: x.map((v) => (v ? fstr(v) : null)),
+      cells: cells || {}, rows: rows || {}, notes: notes || {}, line, text, ask: ask || null, phase, singular,
+      ctr: { "elimination mults": mults, "n(n−1)(2n+5)/6": exact, "≈ n³/3": (n ** 3 / 3).toFixed(1), divisions: divs, "row swaps": swaps, "back-sub mults": bmults, determinant: phase === "fwd" ? "…" : det() },
+    });
+  }
+  function swapRows(i, p) {
+    [A[i], A[p]] = [A[p], A[i]];
+    for (let c = 0; c < i; c++) [L[i][c], L[p][c]] = [L[p][c], L[i][c]];
+    [perm[i], perm[p]] = [perm[p], perm[i]];
+    swaps++;
+  }
+  push(0, {}, {}, {}, `Start with the augmented matrix [A | b] for ${n} equations in ${n} unknowns. Goal: zeros below the diagonal, using only row operations that keep the solutions the same.`);
+  for (let i = 0; i < n - 1 && !singular; i++) {
+    const col = {};
+    for (let r = i; r < n; r++) col[`${r},${i}`] = "compare";
+    if (pivoting) {
+      let p = i;
+      for (let j = i + 1; j < n; j++) if (fabsGt(A[j][i], A[p][i])) p = j;
+      let ask = null;
+      if (asks < 3 && n - i > 1) {
+        asks++;
+        ask = { q: `Column ${i + 1}: which row has the largest |A[j, ${i + 1}]| among rows ${i + 1}..${n}?`, opts: Array.from({ length: n - i }, (_, t) => "R" + (i + 1 + t)), ans: p - i,
+          why: `|${fstr(A[p][i])}| is the biggest, so R${p + 1} becomes the pivot row (ties keep the upper row).` };
+      }
+      push(ln.scan, col, {}, {}, `Pass ${i + 1}: partial pivoting scans column ${i + 1} from row ${i + 1} down for the entry with the largest absolute value.`, ask);
+      if (fzero(A[p][i])) {
+        singular = true; phase = "done";
+        push(ln.scan, col, {}, {}, `Every entry in column ${i + 1} from row ${i + 1} down is 0. There is no usable pivot: the matrix is singular (determinant 0) and the system has no unique solution.`);
+        break;
+      }
+      if (p !== i) {
+        swapRows(i, p);
+        push(ln.swap, {}, { [i]: "swap", [p]: "swap" }, { [i]: `R${i + 1} ↔ R${p + 1}`, [p]: `R${i + 1} ↔ R${p + 1}` }, `Swap R${i + 1} and R${p + 1} so the pivot is ${fstr(A[i][i])}. Now every multiplier in this pass has absolute value ≤ 1, which keeps round-off error small on real computers.`);
+      } else {
+        push(ln.swap, { [`${i},${i}`]: "pivot" }, { [i]: "active" }, {}, `R${i + 1} already has the largest entry, ${fstr(A[i][i])}: no swap needed.`);
+      }
+    } else if (fzero(A[i][i])) {
+      let p = -1;
+      for (let j = i + 1; j < n; j++) if (!fzero(A[j][i])) { p = j; break; }
+      push(ln.scan, col, {}, {}, `The pivot A[${i + 1}, ${i + 1}] is 0, and we cannot divide by 0. Look below it for a nonzero entry.`);
+      if (p < 0) {
+        singular = true; phase = "done";
+        push(ln.scan, col, {}, {}, `No row below has a nonzero entry in column ${i + 1}: the matrix is singular (determinant 0), so there is no unique solution.`);
+        break;
+      }
+      swapRows(i, p);
+      push(ln.swap, {}, { [i]: "swap", [p]: "swap" }, { [i]: `R${i + 1} ↔ R${p + 1}`, [p]: `R${i + 1} ↔ R${p + 1}` }, `Swap R${i + 1} with R${p + 1}, the first row with a nonzero entry. Swapping equations never changes the solution.`);
+    }
+    for (let j = i + 1; j < n; j++) {
+      const temp = fdiv(A[j][i], A[i][i]);
+      divs++;
+      let ask = null;
+      if (asks < 3 && !fzero(temp)) {
+        asks++;
+        const cands = [fstr(temp)];
+        [fdiv(A[i][i], A[j][i]), F(-temp.n, temp.d), fmul(A[j][i], A[i][i])].forEach((c) => { const s = fstr(c); if (!cands.includes(s)) cands.push(s); });
+        const opts = cands.slice(0, 4).sort(() => Math.random() - 0.5);
+        ask = { q: `What multiplier (temp) will clear A[${j + 1}, ${i + 1}] = ${fstr(A[j][i])} using the pivot ${fstr(A[i][i])}?`, opts, ans: opts.indexOf(fstr(temp)), why: `temp = A[${j + 1}, ${i + 1}] / A[${i + 1}, ${i + 1}] = ${fstr(A[j][i])} / ${fstr(A[i][i])} = ${fstr(temp)}.` };
+      }
+      push(ln.temp, { [`${i},${i}`]: "pivot", [`${j},${i}`]: "compare" }, { [i]: "active" }, { [j]: `R${j + 1} − (${fstr(temp)})·R${i + 1}` },
+        `Row ${j + 1}: compute the multiplier once for the whole row, temp = ${fstr(A[j][i])} / ${fstr(A[i][i])} = <b>${fstr(temp)}</b> (1 division).`, ask);
+      const changed = {};
+      for (let k = i; k <= n; k++) { A[j][k] = fsub(A[j][k], fmul(A[i][k], temp)); mults++; changed[`${j},${k}`] = "swap"; }
+      changed[`${i},${i}`] = "pivot";
+      L[j][i] = temp;
+      push(ln.row, changed, { [i]: "active" }, { [j]: `R${j + 1} − (${fstr(temp)})·R${i + 1}` },
+        `R${j + 1} ← R${j + 1} − (${fstr(temp)})·R${i + 1}. Column ${i + 1} of row ${j + 1} is now 0. The inner loop ran for k = ${i + 1}..${n + 1}: ${n + 1 - i} multiplications.` + (fzero(temp) ? " (The multiplier was 0, but the textbook loop still does the work.)" : "") + ` The multiplier is recorded in L[${j + 1}, ${i + 1}].`);
+    }
+  }
+  if (!singular && fzero(A[n - 1][n - 1])) {
+    singular = true;
+    phase = "done";
+    push(ln.loop, { [`${n - 1},${n - 1}`]: "swap" }, {}, {}, `Elimination finished, but the last pivot A[${n}, ${n}] is 0: the matrix is singular (determinant 0). The system has either no solution or infinitely many.`);
+  }
+  if (!singular) {
+    phase = "back";
+    const diag = {};
+    for (let i = 0; i < n; i++) diag[`${i},${i}`] = "pivot";
+    push(ln.back[0], diag, {}, {}, `Forward elimination done: the coefficient part is upper-triangular (that is U). ${mults} multiplications = n(n−1)(2n+5)/6 = ${exact}. Determinant = ${swaps ? `(−1)^${swaps} × ` : ""}product of the pivots = <b>${det()}</b>. Now back substitution, from the last row up.`);
+    for (let j = n - 1; j >= 0; j--) {
+      let t = F(0);
+      const cells = { [`${j},${j}`]: "pivot", [`${j},${n}`]: "compare" };
+      const terms = [];
+      for (let k = j + 1; k < n; k++) { t = fadd(t, fmul(A[j][k], x[k])); bmults++; cells[`${j},${k}`] = "compare"; terms.push(`${fstr(A[j][k])}·${fstr(x[k])}`); }
+      x[j] = fdiv(fsub(A[j][n], t), A[j][j]);
+      divs++;
+      push(ln.back, cells, { [j]: "active" }, {}, `x${j + 1} = (${fstr(A[j][n])}${terms.length ? " − (" + terms.join(" + ") + ")" : ""}) / ${fstr(A[j][j])} = <b>${fstr(x[j])}</b>.`);
+    }
+    phase = "done";
+    push(ln.ret, {}, {}, {}, `Solution x = (${x.map(fstr).join(", ")}). Elimination cost ${mults} multiplications (≈ n³/3); back substitution only ${bmults}. ${swaps ? `Because rows were swapped, L·U equals P·A, where P puts the rows of A in the order ${perm.join(", ")}.` : "L·U reproduces A exactly."}`);
+  } else {
+    push(ln.ret, {}, {}, {}, `Stopped: singular matrix, determinant 0.`);
+  }
+  return frames;
+}
+
+/* ------------------------------------------------------------------- render */
+const stage = $("stage");
+const codes = FX.codeSwitch($("code"));
+const say = Forge.narrate($("say"));
+const pred = FX.predict($("pred"), () => player);
+let ctr = null;
+const S = Forge.svg;
+
+function txt(g, x, y, s, o) { g.appendChild(S("text", Object.assign({ x, y, "text-anchor": "middle", "font-size": 13 }, o || {}), s)); }
+function cell(g, x, y, w, h, s, st) {
+  const fill = st ? FX.COL[st] : "var(--panel)";
+  g.appendChild(S("rect", { x: x + 1, y: y + 1, width: w - 2, height: h - 2, rx: 5, fill, stroke: st ? fill : "var(--line)" }));
+  const shown = show(s);
+  txt(g, x + w / 2, y + h / 2 + 4.5, shown, { "font-size": shown.length > 7 ? 10 : shown.length > 5 ? 11.5 : 13, "font-weight": st && st !== "dim" ? 700 : 500, fill: FX.ink(st) });
+}
+function render(f) {
+  const n = f.n, cw = 66, ch = 38, x0 = 50, y0 = 34;
+  const matW = (n + 1) * cw;
+  const small = 50, sh = 30;
+  const lowerW = 2 * n * small + 60 + small + 20;
+  const W = Math.max(x0 + matW + 190, lowerW + 40, 420);
+  const yL = y0 + n * ch + 50;
+  const H = yL + n * sh + 70;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  const g = S("g");
+  stage.appendChild(g);
+  txt(g, x0 + (n * cw) / 2, 22, "A", { "font-size": 12, fill: "var(--muted)" });
+  txt(g, x0 + n * cw + cw / 2, 22, "b", { "font-size": 12, fill: "var(--muted)" });
+  for (let r = 0; r < n; r++) {
+    const rs = f.rows[r];
+    if (rs) g.appendChild(S("rect", { x: x0 - 4, y: y0 + r * ch - 1, width: matW + 8, height: ch + 2, rx: 7, fill: "none", stroke: FX.COL[rs], "stroke-width": 2.5 }));
+    txt(g, x0 - 22, y0 + r * ch + ch / 2 + 4, "R" + (r + 1), { "font-size": 12, fill: rs ? FX.COL[rs] : "var(--muted)", "font-weight": 700 });
+    for (let c = 0; c <= n; c++) {
+      const below = c < n && r > c && f.M[r][c] === "0";
+      cell(g, x0 + c * cw, y0 + r * ch, cw, ch, f.M[r][c], f.cells[`${r},${c}`] || (below ? "dim" : null));
+    }
+    if (f.notes[r]) txt(g, x0 + matW + 14, y0 + r * ch + ch / 2 + 4, f.notes[r], { "text-anchor": "start", "font-size": 12, fill: "var(--ember-2)", "font-weight": 700 });
+  }
+  g.appendChild(S("line", { x1: x0 + n * cw, y1: y0 - 4, x2: x0 + n * cw, y2: y0 + n * ch + 4, stroke: "var(--ink-2)", "stroke-width": 2 }));
+  // L, U and x
+  const swapped = f.perm.some((v, i) => v !== i + 1);
+  const lx = 20, ux = lx + n * small + 40, xx = ux + n * small + 40;
+  txt(g, lx + (n * small) / 2, yL - 12, "L (multipliers)", { "font-size": 11, fill: "var(--muted)" });
+  txt(g, ux + (n * small) / 2, yL - 12, f.phase === "fwd" ? "U (so far)" : "U", { "font-size": 11, fill: "var(--muted)" });
+  txt(g, xx + small / 2, yL - 12, "x", { "font-size": 11, fill: "var(--muted)" });
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const lv = f.L[r][c];
+      if (c <= r) cell(g, lx + c * small, yL + r * sh, small, sh, lv == null ? "·" : lv, r > c && lv != null && f.cells[`${r},${c}`] === "swap" ? "swap" : null);
+      if (c >= r) cell(g, ux + c * small, yL + r * sh, small, sh, f.M[r][c], null);
+    }
+    cell(g, xx, yL + r * sh, small, sh, f.x[r] == null ? "?" : f.x[r], f.x[r] != null ? "done" : null);
+  }
+  const foot = f.singular ? "singular: det = 0, no unique solution"
+    : swapped ? `P·A = L·U   (P = rows of A in order ${f.perm.join(", ")})` : "A = L·U";
+  txt(g, 20, yL + n * sh + 26, foot, { "text-anchor": "start", "font-size": 12, fill: "var(--ink-2)" });
+  txt(g, 20, yL + n * sh + 46, `det A = ${f.ctr.determinant === "…" ? "(after elimination)" : show(f.ctr.determinant)}`, { "text-anchor": "start", "font-size": 12, fill: "var(--ink-2)" });
+
+  codes.show(f.key, LISTS[f.key]).highlight(f.line);
+  const c = Object.assign({}, f.ctr);
+  if (DEC && c.determinant !== "…") c.determinant = show(c.determinant);
+  if (!ctr) ctr = Forge.counters($("ctr"), c);
+  ctr.set(c);
+  say.say(DEC ? f.text.replace(/-?\d+\/\d+/g, (m) => show(m)) : f.text);
+}
+const player = Forge.player($("player"), { frames: [], render: (f, i) => { render(f); pred.update(f, i); } });
+
+/* ------------------------------------------------------------------ inputs */
+const BOOK = [["2", "-1", "1", "1"], ["4", "1", "-1", "5"], ["1", "1", "1", "0"]];
+let N = 3;
+function buildGrid(vals) {
+  const g = $("grid");
+  g.innerHTML = "";
+  g.style.gridTemplateColumns = `repeat(${N + 1}, auto)`;
+  g.style.justifyContent = "start";
+  for (let c = 0; c <= N; c++) g.appendChild(Forge.el("div", { class: "hdr" + (c === N ? " bar" : "") }, c === N ? "b" : "x" + (c + 1)));
+  for (let r = 0; r < N; r++) for (let c = 0; c <= N; c++) {
+    const inp = Forge.el("input", { type: "text", value: vals && vals[r] ? vals[r][c] : r === c ? "1" : "0", "aria-label": `row ${r + 1} column ${c + 1}`, inputmode: "text" });
+    inp.addEventListener("keydown", (e) => { if (e.key === "Enter") solve(); });
+    g.appendChild(c === N ? Forge.el("div", { class: "bar" }, inp) : inp);
+  }
+}
+function readGrid() {
+  const ins = [...$("grid").querySelectorAll("input")];
+  const A = [];
+  for (let r = 0; r < N; r++) { A.push([]); for (let c = 0; c <= N; c++) A[r].push(parseF(ins[r * (N + 1) + c].value)); }
+  return A;
+}
+function solve() {
+  let A;
+  try { A = readGrid(); } catch (e) { say.say("Could not read one of the entries. Use numbers like 3, -1.5 or 2/3."); return; }
+  pred.reset();
+  player.load(record(A, $("piv").checked));
+}
+function randomSystem() {
+  const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  for (;;) {
+    const A = Array.from({ length: N }, () => Array.from({ length: N }, () => r(-5, 5)));
+    const x = Array.from({ length: N }, () => r(-4, 4));
+    const aug = A.map((row) => [...row.map(String), String(row.reduce((s, a, k) => s + a * x[k], 0))]);
+    const fr = record(aug.map((row) => row.map(parseF)), true);
+    if (!fr[fr.length - 1].singular && A.every((row) => row.some((v) => v !== 0))) return aug;
+  }
+}
+$("n").onchange = (e) => { N = +e.target.value; buildGrid(N === 3 ? BOOK : randomSystem()); solve(); };
+$("solve").onclick = solve;
+$("piv").onchange = solve;
+$("dec").onchange = (e) => { DEC = e.target.checked; player.go(player.index); };
+$("rand").onclick = () => { buildGrid(randomSystem()); solve(); };
+$("book").onclick = () => { N = 3; $("n").value = "3"; buildGrid(BOOK); solve(); };
+$("zero").onclick = () => { N = 3; $("n").value = "3"; buildGrid([["0", "2", "1", "7"], ["1", "-2", "-3", "-12"], ["-3", "1", "2", "5"]]); solve(); };
+
+buildGrid(BOOK);
+solve();
+</script>
+</body>
+</html>

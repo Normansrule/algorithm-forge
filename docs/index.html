@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Algorithm Forge — build algorithms from scratch</title>
+<meta name="description" content="Learn to design and analyze algorithms from zero to senior-engineer level: lessons, step-by-step simulations, and a practice Arena that checks your pseudocode.">
+<link rel="stylesheet" href="assets/css/forge.css">
+<link rel="stylesheet" href="assets/css/forge-hub.css">
+<script src="assets/js/forge-kit.js"></script>
+<script src="assets/js/forge-hub.js"></script>
+<style>
+  /* ---------- hero ---------- */
+  .home-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 36px; align-items: center; padding: 40px 0 8px; }
+  .home-hero h1 { font-size: clamp(2rem, 4.4vw, 3.2rem); line-height: 1.07; letter-spacing: -0.03em; margin: 10px 0 16px; }
+  .home-hero h1 .hot { background: linear-gradient(90deg, var(--ember), var(--c-swap)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .home-hero .lead { font-size: 1.1rem; color: var(--ink-2); max-width: 600px; }
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 14px; }
+  .cta .btn { padding: 10px 16px; font-size: .95rem; }
+  .source-line { font-size: .84rem; color: var(--muted); }
+  .hero-art { position: relative; background: radial-gradient(120% 90% at 50% 100%, var(--ember-soft), transparent 70%), var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 12px; box-shadow: var(--shadow); }
+  .hero-art svg { display: block; width: 100%; height: auto; }
+  .hero-art .cap { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: .76rem; color: var(--muted); margin-top: 8px; }
+  .hero-art .cap b { color: var(--ember); font-weight: 700; }
+  .hb { transform-box: fill-box; }
+  @media (prefers-reduced-motion: reduce) { .hero-art * { animation: none !important; } }
+
+  /* ---------- progress strip ---------- */
+  .progress-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; margin-top: 28px; }
+  .ring { width: 64px; height: 64px; }
+  .progress-strip .levels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .progress-strip .levels .k { font-size: .68rem; color: var(--muted); font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- how it works loop ---------- */
+  .loop { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; position: relative; }
+  .loop .step { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 14px 14px; }
+  .loop .step .ico { font-size: 1.6rem; line-height: 1; }
+  .loop .step .n { position: absolute; top: 12px; right: 12px; font-family: var(--mono); font-size: .72rem; color: var(--muted); font-weight: 700; }
+  .loop .step h3 { margin: 10px 0 4px; font-size: 1.02rem; }
+  .loop .step p { color: var(--ink-2); font-size: .88rem; margin: 0 0 8px; }
+  .loop .step a { font-size: .82rem; font-weight: 700; }
+  .loop .step:not(:last-child)::after { content: "→"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); color: var(--ember); font-weight: 800; z-index: 1; background: var(--bg); border-radius: 50%; width: 16px; text-align: center; font-size: .9rem; }
+  .loop-back { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--muted); font-size: .85rem; }
+  .loop-back svg { flex: 1; height: 18px; min-width: 0; }
+
+  /* ---------- ways in ---------- */
+  .ways { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  .way { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; }
+  .way .ico { font-size: 1.5rem; }
+  .way h3 { margin: 8px 0 2px; font-size: 1rem; }
+  .way .q { color: var(--ember); font-size: .82rem; font-weight: 700; margin-bottom: 8px; }
+  .way ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: .86rem; flex: 1; }
+  .way li + li { margin-top: 5px; }
+
+  /* ---------- chapter grid ---------- */
+  .part-label { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .part-label::after { content: ""; flex: 1; border-top: 1px dashed var(--line-2); }
+  .ch-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
+  .ch-card:hover { border-color: var(--line-2); transform: translateY(-1px); }
+  .ch-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--lvc, var(--ember)); }
+  .ch-card .top { display: flex; align-items: baseline; gap: 9px; }
+  .ch-card .num { font-family: var(--mono); font-weight: 800; font-size: 1.3rem; color: var(--lvc); min-width: 2ch; }
+  .ch-card h3 { margin: 0; font-size: 1rem; }
+  .ch-card p { margin: 0; color: var(--ink-2); font-size: .87rem; flex: 1; }
+  .ch-card .links { display: flex; gap: 4px 11px; flex-wrap: wrap; font-size: .8rem; font-weight: 700; margin-top: 4px; }
+  .ch-card .meta { display: flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--muted); font-weight: 600; margin-top: -2px; }
+  .ch-card .done { margin-left: auto; font-family: var(--mono); white-space: nowrap; }
+
+  /* ---------- level stairs ---------- */
+  .stairs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: end; }
+  .stair { border-radius: 12px 12px 4px 4px; padding: 12px; border: 1px solid var(--line); background: linear-gradient(180deg, color-mix(in srgb, var(--lvc) 20%, var(--panel)), var(--panel) 70%); }
+  .stair .lv { font-family: var(--mono); font-weight: 800; color: var(--lvc); font-size: .85rem; text-transform: uppercase; }
+  .stair h3 { font-size: .95rem; margin: 4px 0; }
+  .stair p { font-size: .8rem; color: var(--ink-2); margin: 0; }
+  .stair .chs { font-size: .75rem; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+
+  /* ---------- tools + credits ---------- */
+  .tool { display: flex; gap: 12px; align-items: flex-start; }
+  .tool .ico { font-size: 1.5rem; line-height: 1.2; }
+  .credits { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+  .credits ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: .9rem; }
+
+  @media (max-width: 1100px) {
+    .ways { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .loop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .loop .step:nth-child(3)::after { display: none; }
+    .stairs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stair { min-height: 0 !important; }
+  }
+  @media (max-width: 860px) {
+    .home-hero { grid-template-columns: 1fr; gap: 22px; padding-top: 20px; }
+    .progress-strip { grid-template-columns: auto minmax(0, 1fr); }
+    .progress-strip .go { grid-column: 1 / -1; }
+    .progress-strip .levels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .credits { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .ways, .loop, .stairs { grid-template-columns: 1fr; }
+    .loop .step::after { display: none !important; }
+    .loop .step { padding: 12px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; }
+    .loop .step .ico { grid-row: 1 / span 3; font-size: 1.4rem; }
+    .loop .step h3 { margin-top: 0; }
+    .loop-back { display: none; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <!-- ======================= HERO ======================= -->
+  <section class="home-hero">
+    <div>
+      <div class="eyebrow">Algorithm Analysis &amp; Design · from zero to senior engineer</div>
+      <h1>Build algorithms <span class="hot">from scratch</span> — and prove how fast they are.</h1>
+      <p class="lead">Algorithm Forge teaches the way good engineers actually learn: see the idea move, snap it together
+        in blocks, write it yourself in pseudocode that gets <b>checked for real</b>, then push it to the version a senior
+        engineer would ship. No prior math confidence required.</p>
+      <div class="cta">
+        <a class="btn primary" href="path.html">Start the Learning Path →</a>
+        <a class="btn" href="arena/index.html">🏟️ Practice Arena</a>
+        <a class="btn" href="sims/index.html">👀 Simulations</a>
+      </div>
+      <div class="source-line">18 chapters · 48 simulations · a graded problem bank · follows A. Levitin,
+        <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed.</div>
+    </div>
+    <figure class="hero-art" style="margin:0">
+      <svg id="hero-svg" viewBox="0 0 520 300" role="img" aria-label="Animated bars sorting themselves with selection sort"></svg>
+      <figcaption class="cap"><span><b>selection sort</b> · finds the minimum, swaps it home</span><span id="hero-count"></span></figcaption>
+    </figure>
+  </section>
+
+  <!-- ======================= PROGRESS ======================= -->
+  <section class="panel progress-strip" id="progress" aria-live="polite">
+    <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="26" fill="none" stroke="var(--line)" stroke-width="7"/>
+      <circle id="ring-arc" cx="32" cy="32" r="26" fill="none" stroke="var(--ember)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 999" transform="rotate(-90 32 32)"/>
+      <text id="ring-txt" x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" fill="var(--ink)" font-family="var(--mono)">0</text>
+    </svg>
+    <div>
+      <div class="panel-title" style="margin-bottom:4px">Your progress</div>
+      <div id="prog-line" class="small" style="color:var(--ink-2)">Loading your Arena progress…</div>
+      <div class="levels" id="prog-levels" style="margin-top:10px"></div>
+    </div>
+    <div class="go"><a class="btn primary" id="prog-go" href="arena/index.html">Continue in the Arena →</a></div>
+  </section>
+
+  <!-- ======================= HOW IT WORKS ======================= -->
+  <section class="section" id="how">
+    <div class="section-head">
+      <div><div class="eyebrow">How it works</div><h2>One loop, for every algorithm</h2>
+        <p>Each algorithm is learned the same five ways, in the same order. If you get stuck at any step, go back one — usually to the picture.</p></div>
+    </div>
+    <div class="loop">
+      <div class="step"><span class="n">1</span><div class="ico">📖</div><h3>Learn</h3>
+        <p>Read the lesson's Build Card: the problem in one sentence, a real-life story, then the idea.</p><a href="#chapters">Lessons by chapter →</a></div>
+      <div class="step"><span class="n">2</span><div class="ico">👀</div><h3>See</h3>
+        <p>Run the simulation on your own input. Step forward and back; every frame explains what happened and why.</p><a href="sims/index.html">Simulations →</a></div>
+      <div class="step"><span class="n">3</span><div class="ico">🧱</div><h3>Build</h3>
+        <p>Assemble the algorithm from shuffled blocks of pseudocode — order and indentation are the whole puzzle.</p><a href="arena/index.html">Blocks mode →</a></div>
+      <div class="step"><span class="n">4</span><div class="ico">✍️</div><h3>Write</h3>
+        <p>Write it from a blank page. The Arena runs your pseudocode, checks it against hidden tests and counts its operations.</p><a href="arena/index.html">Practice Arena →</a></div>
+      <div class="step"><span class="n">5</span><div class="ico">🧑‍💻</div><h3>Senior twist</h3>
+        <p>Solved it? Every problem ends with the harder follow-up an experienced engineer would ask next.</p><a href="#levels">Levels 0–5 →</a></div>
+    </div>
+    <div class="loop-back" aria-hidden="true">
+      <span>↺ repeat</span>
+      <svg viewBox="0 0 400 18" preserveAspectRatio="none"><path d="M398 2 V10 H2 V2" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-dasharray="5 5" vector-effect="non-scaling-stroke"/></svg>
+      <span>stuck? go back to 👀 See</span>
+    </div>
+  </section>
+
+  <!-- ======================= WAYS IN ======================= -->
+  <section class="section" id="ways">
+    <div class="section-head">
+      <div><div class="eyebrow">Pick your way in</div><h2>Start with the door that suits you</h2>
+        <p>Everyone has a favorite first door. Walk in through yours — then try the others, because the understanding that lasts is the one you've seen from several sides.</p></div>
+    </div>
+    <div class="ways">
+      <div class="way"><div class="ico">👀</div><h3>Visual</h3><div class="q">“I need to see it.”</div>
+        <ul><li>Open the <a href="sims/index.html">simulation</a> before the lesson, and step slowly.</li>
+          <li>Type the exact example from the lesson into the sim and watch it match.</li>
+          <li>In the Arena, press <b>Visualize</b> to watch <i>your own</i> code run.</li></ul></div>
+      <div class="way"><div class="ico">📖</div><h3>Story &amp; analogy</h3><div class="q">“Tell me what it's like.”</div>
+        <ul><li>Read each Build Card's <b>Story</b> first — sorting cards, looking up a word, filling a backpack.</li>
+          <li>Read the sims' narration panel instead of watching the bars.</li>
+          <li>Explain the algorithm out loud in one sentence before writing anything.</li></ul></div>
+      <div class="way"><div class="ico">✋</div><h3>Hands-on</h3><div class="q">“Let me try it.”</div>
+        <ul><li>Go straight to the <a href="arena/index.html">Arena</a> and attempt the problem cold.</li>
+          <li>Use <b>Blocks</b> mode when a blank page feels like too much.</li>
+          <li>Break things on purpose: change <code>&lt;</code> to <code>≤</code> and predict what fails.</li></ul></div>
+      <div class="way"><div class="ico">∑</div><h3>Math-first</h3><div class="q">“Show me the proof.”</div>
+        <ul><li>Start from the <a href="cheatsheet.html">cheat sheet</a>: sums, recurrences, the Master Theorem.</li>
+          <li>Jump to each card's <b>Analyze it</b> block, then read the code to see why the sum looks that way.</li>
+          <li>Try the <a href="sims/recurrence-lab.html">Recurrence Lab</a>.</li></ul></div>
+      <div class="way"><div class="ico">💻</div><h3>Code-first</h3><div class="q">“Show me the code.”</div>
+        <ul><li>Solve Arena problems in JavaScript or Python as well as pseudocode.</li>
+          <li>Read the tested library in <a href="https://github.com/Normansrule/algorithm-forge/tree/main/src/python/algoforge" target="_blank" rel="noopener">src/python</a> — it counts its own operations.</li>
+          <li>Keep the <a href="cheatsheet.html#pseudocode">pseudocode reference</a> open.</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ======================= CHAPTERS ======================= -->
+  <section class="section" id="chapters">
+    <div class="section-head">
+      <div><div class="eyebrow">Chapters</div><h2>The whole course, Chapter 0 to 17</h2>
+        <p>Chapters 1–12 follow the textbook and the lecture order; 13–17 go beyond it into the tools and habits of working engineers.</p></div>
+      <a class="btn" href="path.html">See it as a map →</a>
+    </div>
+    <div id="chapter-grid"></div>
+  </section>
+
+  <!-- ======================= LEVELS ======================= -->
+  <section class="section" id="levels">
+    <div class="section-head">
+      <div><div class="eyebrow">Levels</div><h2>Six levels, from first loop to senior patterns</h2>
+        <p>Every Arena problem has a level. Climb in order, or jump to your level — each step says what you'll be able to do.</p></div>
+      <a class="btn" href="path.html#levels">What each level unlocks →</a>
+    </div>
+    <div class="stairs" id="stairs"></div>
+  </section>
+
+  <!-- ======================= TOOLS ======================= -->
+  <section class="section">
+    <div class="section-head"><div><div class="eyebrow">Tools</div><h2>Everything else you'll want open</h2></div></div>
+    <div class="grid cols-4">
+      <a class="card tool" href="cheatsheet.html"><span class="ico">🧾</span><span><h3>Cheat Sheet</h3><p>Asymptotics, sums, recurrences, design strategies, the complexity table, and the pseudocode reference — printable.</p></span></a>
+      <a class="card tool" href="quiz.html"><span class="ico">🧠</span><span><h3>Quiz</h3><p>Over 100 multiple-choice questions with explanations, by chapter, with a flashcard mode.</p></span></a>
+      <a class="card tool" href="path.html#weeks"><span class="ico">🗓️</span><span><h3>Week-by-week plan</h3><p>The course in lecture order, with what to read, watch and solve each week.</p></span></a>
+      <a class="card tool" href="https://github.com/Normansrule/algorithm-forge/tree/main/practice" target="_blank" rel="noopener"><span class="ico">📝</span><span><h3>Practice sets</h3><p>Worked assignments, midterm review with full solutions, and the empirical-analysis lab.</p></span></a>
+    </div>
+  </section>
+
+  <!-- ======================= CREDITS ======================= -->
+  <section class="section credits">
+    <div class="panel">
+      <div class="panel-title">Primary reference</div>
+      <p style="margin:0">Anany Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd edition (Pearson, 2012).
+        Lessons follow its chapters and cite sections like “Levitin §4.2”. All explanations, examples and pseudocode here are written
+        fresh for Algorithm Forge — get the book for the full treatment and exercises.</p>
+      <p class="small muted" style="margin:10px 0 0">Built alongside the CSC 501 course (Algorithm Analysis and Design) at California State University, Dominguez Hills. Source on
+        <a href="https://github.com/Normansrule/algorithm-forge" target="_blank" rel="noopener">GitHub</a>.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Great companions (all in English)</div>
+      <ul>
+        <li>Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 <i>Introduction to Algorithms</i> — lectures and problem sets</li>
+        <li><a href="https://visualgo.net/" target="_blank" rel="noopener">VisuAlgo</a> — animations of classic data structures</li>
+        <li><a href="https://algs4.cs.princeton.edu/" target="_blank" rel="noopener">Sedgewick &amp; Wayne, <i>Algorithms</i></a> — book site with code</li>
+        <li><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms.com</a> — deep dives for the Beyond chapters</li>
+        <li>Abdul Bari and William Fiset on YouTube — recurrences, sorting, graph theory</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<script>
+Forge.page({ title: "Home" });
+document.title = "Algorithm Forge — build algorithms from scratch";
+
+/* ---------- hero: bars that sort themselves (pure SVG + CSS keyframes) ---------- */
+(function hero() {
+  const svg = document.getElementById("hero-svg");
+  const START = [7, 3, 10, 1, 8, 5, 12, 2, 9, 4, 11, 6];
+  const n = START.length, W = 520, H = 300, pad = 22, base = 250, slot = (W - 2 * pad) / n, bw = slot * 0.7;
+  const PASS = 0.85, MOVE = 0.45, HOLD = 1.8, RESET = 1.2;
+  // record selection sort: pos[value] per pass
+  const arr = START.slice(), events = []; // {pass, a, b} swap slot a <-> slot b
+  let comparisons = 0;
+  for (let i = 0; i < n - 1; i++) {
+    let m = i;
+    for (let j = i + 1; j < n; j++) { comparisons++; if (arr[j] < arr[m]) m = j; }
+    events.push({ i, m, va: arr[i], vm: arr[m] });
+    [arr[i], arr[m]] = [arr[m], arr[i]];
+  }
+  const sortT = (n - 1) * PASS, total = sortT + HOLD + RESET;
+  const pct = (t) => ((t / total) * 100).toFixed(3) + "%";
+  document.getElementById("hero-count").textContent = `n = ${n} · ${comparisons} comparisons · ${events.filter((e) => e.i !== e.m).length} swaps`;
+  let css = "";
+  const max = Math.max(...START);
+  const finalX = (v) => pad + (v - 1) * slot + (slot - bw) / 2; // sorted slot of value v (values are 1..n)
+  // bars sit at their FINAL (sorted) x, so reduced-motion shows the sorted, finished state
+  START.forEach((v, k0) => {
+    let slotNow = k0;
+    const dx = (s) => +((pad + s * slot + (slot - bw) / 2) - finalX(v)).toFixed(2);
+    let cx = dx(k0), cc = "var(--c-bar)";
+    const frames = [[0, cx, cc]];
+    const go = (t, x, c, dur) => { frames.push([t, cx, cc]); cx = x; cc = c; frames.push([t + dur, cx, cc]); };
+    events.forEach((e) => {
+      const t0 = e.i * PASS;
+      const involved = e.i !== e.m && (slotNow === e.i || slotNow === e.m);
+      const placed = slotNow === e.m;
+      if (involved) {
+        go(t0, cx, "var(--c-swap)", 0.04);
+        slotNow = slotNow === e.i ? e.m : e.i;
+        go(t0 + 0.04, dx(slotNow), cc, MOVE);
+        if (!placed) go(t0 + 0.04 + MOVE, cx, "var(--c-bar)", 0.08);
+      }
+      if (placed) go(t0 + 0.04 + MOVE, cx, "var(--c-done)", 0.08);
+    });
+    if (cc !== "var(--c-done)") go(sortT, cx, "var(--c-done)", 0.08); // the last element is home once n-1 passes are done
+    go(sortT + HOLD, dx(k0), "var(--c-bar)", RESET - 0.02);
+    css += `@keyframes hb${v}{` + frames.map(([t, x, c]) => `${pct(Math.min(t, total))}{transform:translateX(${x}px);fill:${c}}`).join("") + `100%{transform:translateX(${dx(k0)}px);fill:var(--c-bar)}}`;
+    css += `.hb${v}{animation:hb${v} ${total}s cubic-bezier(.5,0,.3,1) infinite}`;
+  });
+  // scanner sweeping the unsorted region each pass
+  const scanFrames = events.map((e) => [e.i * PASS, e.i]).concat([[sortT, n - 1]]);
+  css += "@keyframes scan{" + scanFrames.map(([t, i]) => `${pct(t)}{transform:translateX(${(i * slot).toFixed(1)}px);opacity:1}`).join("") +
+    `${pct(sortT + 0.2)}{opacity:0}${pct(total - 0.3)}{opacity:0;transform:translateX(0)}100%{opacity:1;transform:translateX(0)}}` +
+    `.scan{animation:scan ${total}s steps(1,end) infinite}`;
+  css += `@keyframes glow{0%,100%{opacity:.35}50%{opacity:.8}} .spark{animation:glow 2.4s ease-in-out infinite}`;
+  const style = document.createElement("style"); style.textContent = css; document.head.appendChild(style);
+  let g = `<defs><linearGradient id="hf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--ember)" stop-opacity=".25"/><stop offset="1" stop-color="var(--ember)" stop-opacity="0"/></linearGradient></defs>`;
+  for (let k = 0; k <= 4; k++) g += `<line x1="${pad}" x2="${W - pad}" y1="${base - k * 50}" y2="${base - k * 50}" stroke="var(--line)" stroke-dasharray="${k ? "3 5" : ""}"/>`;
+  g += `<rect class="scan" x="${pad}" y="${base + 8}" width="${slot}" height="5" rx="2.5" fill="var(--ember)"/>`;
+  START.forEach((v) => {
+    const h = ((base - 30) * v) / max;
+    g += `<rect class="hb hb${v}" x="${finalX(v).toFixed(2)}" y="${(base - h).toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" rx="5" fill="var(--c-done)"/>`;
+  });
+  g += `<rect x="${pad}" y="${base + 20}" width="${W - 2 * pad}" height="22" fill="url(#hf)" class="spark"/>`;
+  svg.innerHTML = g;
+})();
+
+/* ---------- progress ---------- */
+(function progress() {
+  const H = ForgeHub, prog = H.progress();
+  const line = document.getElementById("prog-line"), lv = document.getElementById("prog-levels");
+  const setRing = (solved, total) => {
+    const C = 2 * Math.PI * 26, f = total ? solved / total : 0;
+    document.getElementById("ring-arc").setAttribute("stroke-dasharray", `${(C * f).toFixed(1)} 999`);
+    document.getElementById("ring-txt").textContent = solved;
+  };
+  function draw(FP) {
+    const t = H.tally(FP, prog);
+    const solved = FP ? t.solved : prog.solved.size;
+    setRing(solved, t.total || Math.max(solved, 1));
+    const modes = Object.entries(prog.modes).filter(([, c]) => c).map(([m, c]) => `${c} in ${{ blocks: "🧱 Blocks", pseudo: "✍️ Pseudocode", js: "JavaScript", python: "🐍 Python" }[m]}`);
+    if (!prog.solved.size && !prog.attempted.size) {
+      line.innerHTML = `Nothing solved yet${t.total ? ` — ${t.total} problems are waiting` : ""}. Your first one takes about five minutes: <a href="arena/problem.html?id=max-element">Largest Element →</a>`;
+      document.getElementById("prog-go").textContent = "Start in the Arena →";
+    } else {
+      line.innerHTML = `<b>${solved}</b> solved${t.total ? ` of ${t.total}` : ""} · ${prog.attempted.size} in progress` + (modes.length ? ` · ${modes.join(", ")}` : "") + (prog.hints ? ` · ${prog.hints} hints used` : "");
+    }
+    lv.innerHTML = "";
+    H.LEVELS.forEach((L) => {
+      const b = t.byLevel[L.n] || { total: 0, solved: 0 };
+      const w = b.total ? (100 * b.solved) / b.total : 0;
+      lv.appendChild(Forge.el("div", { title: `Level ${L.n} · ${L.name}: ${b.solved} of ${b.total}` },
+        Forge.el("div", { class: "k" }, `L${L.n} · ${b.solved}/${b.total}`),
+        Forge.el("div", { class: "bar" }, Forge.el("i", { style: { width: w + "%", background: `var(--lv${L.n})` } }))));
+    });
+  }
+  draw(null);
+  H.loadProblems().then((FP) => { if (FP) draw(FP); });
+})();
+
+/* ---------- chapter grid ---------- */
+(function chapters() {
+  const H = ForgeHub, host = document.getElementById("chapter-grid");
+  const parts = [["Start", [0]], ["The course · Chapters 1–12 (Levitin + lectures 1–12)", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]], ["Beyond the textbook · Chapters 13–17", [13, 14, 15, 16, 17]]];
+  const cards = {};
+  parts.forEach(([label, chs]) => {
+    host.appendChild(Forge.el("div", { class: "part-label" }, label));
+    const grid = Forge.el("div", { class: "auto-grid" });
+    chs.forEach((n) => {
+      const c = H.CHAPTERS[n];
+      const simsHref = c.sims.length ? `sims/index.html#ch-${n}` : "sims/index.html";
+      const practice = n === 0 ? "arena/index.html" : `arena/index.html?chapter=${n}`;
+      const done = Forge.el("span", { class: "done" });
+      const card = Forge.el("article", { class: "ch-card", style: `--lvc: var(--lv${c.level})` },
+        Forge.el("div", { class: "top" }, Forge.el("span", { class: "num" }, String(n)), Forge.el("h3", null, c.title)),
+        Forge.el("div", { class: "meta" }, Forge.el("span", { class: "lv-dot", style: `background: var(--lv${c.level})` }), ` Level ${c.level}`, done),
+        Forge.el("p", null, c.hook),
+        Forge.el("div", { class: "links" },
+          Forge.el("a", { href: H.lessonUrl(n), target: "_blank", rel: "noopener" }, "📖 Lesson"),
+          Forge.el("a", { href: simsHref }, c.sims.length ? `👀 Sims (${c.sims.length})` : "👀 Sims"),
+          Forge.el("a", { href: practice }, "🏟️ Practice"),
+          n >= 1 && n <= 12 ? Forge.el("a", { href: `quiz.html?ch=${n}` }, "🧠 Quiz") : null));
+      cards[n] = done;
+      grid.appendChild(card);
+    });
+    host.appendChild(grid);
+  });
+  ForgeHub.loadProblems().then((FP) => {
+    if (!FP) return;
+    const t = H.tally(FP, H.progress());
+    for (const n in cards) { const b = t.byCh[n]; if (b && b.total) cards[n].textContent = `${b.solved} / ${b.total} solved`; }
+  });
+})();
+
+/* ---------- level stairs ---------- */
+(function stairs() {
+  const H = ForgeHub, host = document.getElementById("stairs");
+  const short = ["Loops, arrays, counting — your first algorithms.", "The honest solution, and what it costs.", "Shrink it, split it, solve the recurrence.",
+    "Presort, heaps, hashing, smarter string search.", "Tables, greedy proofs, flows and matchings.", "NP-hardness, approximation, pro patterns."];
+  H.LEVELS.forEach((L, k) => {
+    host.appendChild(Forge.el("a", { class: "stair card", href: "arena/index.html?level=" + L.n, style: `--lvc: var(--lv${L.n}); min-height: ${120 + k * 22}px` },
+      Forge.el("div", { class: "lv" }, "Level " + L.n),
+      Forge.el("h3", null, L.name),
+      Forge.el("p", null, short[k]),
+      Forge.el("div", { class: "chs" }, "Ch " + (L.chapters.length > 3 ? L.chapters[0] + "–" + L.chapters[L.chapters.length - 1] : L.chapters.join(", ")))));
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hashing Lab · Algorithm Forge</title>
+<meta name="description" content="Open hashing (separate chaining) versus closed hashing (linear probing and double hashing) side by side, with probe counts, tombstone deletion and the load-factor formulas.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 410px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .field input[type="text"] { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .hstage { padding: 12px; }
+  .hcalc { font-family: var(--mono); font-size: .85rem; color: var(--ink-2); min-height: 2.6em; margin-bottom: 10px; }
+  .hcalc b { color: var(--ember-2); }
+  .htables { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .htables { grid-template-columns: 1fr 1fr; } .htables .tchain { grid-column: 1 / -1; } }
+  .htab h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
+  .hrow { display: flex; align-items: center; gap: 6px; min-height: 26px; margin-bottom: 3px; }
+  .hidx { font-family: var(--mono); font-size: .75rem; color: var(--muted); width: 20px; text-align: right; flex: none; }
+  .hcell { font-family: var(--mono); font-size: .8rem; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 2px 6px; min-width: 64px; min-height: 24px; display: flex; align-items: center; transition: background .15s; }
+  .hchain { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 24px; flex: 1; border-left: 2px solid var(--line); padding-left: 6px; }
+  .hchip { font-family: var(--mono); font-size: .8rem; border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 6px; padding: 1px 6px; }
+  .hchip + .hchip::before { content: "→ "; color: var(--muted); }
+  .hdel { color: var(--muted); font-style: italic; }
+  .s-compare { background: var(--c-compare) !important; color: #0d1117; border-color: var(--c-compare) !important; }
+  .s-swap { background: var(--c-swap) !important; color: #0d1117; border-color: var(--c-swap) !important; }
+  .s-done { background: var(--c-done) !important; color: #0d1117; border-color: var(--c-done) !important; }
+  .s-active { background: var(--steel-soft) !important; border-color: var(--c-active) !important; box-shadow: inset 0 0 0 1px var(--c-active); }
+  .s-dim { background: var(--c-dim) !important; }
+  .chartwrap { position: relative; }
+  #chart { width: 100%; max-width: 900px; display: block; }
+  .ctip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 9px; font-size: .78rem; box-shadow: var(--shadow); white-space: nowrap; }
+  .ctip[hidden] { display: none; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 7 · Space and Time Trade-Offs</div>
+    <h1>Hashing Lab</h1>
+    <p class="lead muted">Spend a table of m cells to find keys in about one probe. Watch the same keys go into open hashing (separate chaining) and closed hashing (linear probing and double hashing), and see how the load factor α = n/m decides the cost.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Keys to insert (words or integers)
+        <input id="inp" type="text" value="A, FOOL, AND, HIS, MONEY, ARE, SOON, PARTED" style="min-width:260px">
+      </label>
+      <label class="field">Table size m <input id="m" type="number" value="13" min="5" max="31" style="width:80px"></label>
+      <button class="btn primary" id="build">Build</button>
+      <button class="btn" id="rand">Random words</button>
+      <button class="btn" id="book">Book example</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field">One key <input id="key" type="text" value="KID" style="width:110px"></label>
+      <button class="btn steel" id="ins">Insert</button>
+      <button class="btn steel" id="find">Search</button>
+      <button class="btn steel" id="del">Delete</button>
+      <span class="small muted" id="warn"></span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage hstage" id="stage" aria-label="Three hash tables side by side">
+        <div class="hcalc" id="calc"></div>
+        <div class="htables">
+          <div class="htab tchain"><h3>Open hashing · separate chaining</h3><div id="tChain"></div></div>
+          <div class="htab"><h3>Closed · linear probing</h3><div id="tLP"></div></div>
+          <div class="htab"><h3>Closed · double hashing</h3><div id="tDH"></div></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>home cell h(K)</span>
+        <span><i style="background:var(--c-compare)"></i>probed / compared</span>
+        <span><i style="background:var(--c-swap)"></i>written / tombstoned</span>
+        <span><i style="background:var(--c-done)"></i>found</span>
+        <span><i style="background:var(--c-dim)"></i>DELETED marker (tombstone)</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">Expected probes vs load factor α</h2>
+      <div class="seg" role="group" aria-label="Which search">
+        <button class="btn sm on" id="showS" aria-pressed="true">successful search S</button>
+        <button class="btn sm" id="showU" aria-pressed="false">unsuccessful search U</button>
+      </div>
+    </div>
+    <p class="small muted" style="margin:6px 0 8px">Curves are the standard average-case estimates (Levitin §7.3; double hashing shown for idealized uniform probing). The vertical line is your table's current α; dots are the <i>measured</i> average probes of a successful search in your tables right now.</p>
+    <div class="chartwrap"><svg id="chart" role="img" aria-label="Expected number of probes as a function of the load factor for the three schemes"></svg><div class="ctip" id="ctip" hidden></div></div>
+    <div class="legend" id="chartLegend" style="margin-top:6px"></div>
+    <details style="margin-top:8px"><summary class="small">Table view of the curves</summary><div class="scroll-x"><table class="t" id="ctab" style="margin-top:8px"></table></div></details>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>The hash function</dt>
+      <dd>For a word, K is the sum of its letters' positions in the alphabet (A = 1, …, Z = 26); for an integer, K is the number itself. The home cell is h(K) = K mod m. The line above the tables shows the arithmetic for the current key.</dd>
+      <dt>Open hashing (separate chaining)</dt>
+      <dd>Each cell holds a linked list; colliding keys simply join the list. Search cost = how many list keys you compare. It keeps working even when n &gt; m.</dd>
+      <dt>Closed hashing (open addressing)</dt>
+      <dd>Every key lives in the table itself. On a collision, linear probing tries the next cell (i + 1) mod m; double hashing jumps by its own step s(K) = (m − 2) − (K mod (m − 2)), so keys that collide at home follow different paths. Probes = table cells examined.</dd>
+      <dt>Why tombstones</dt>
+      <dd>Deleting from a closed table leaves a DELETED marker instead of an empty cell. An empty cell would stop later searches too early and “lose” keys that probed past it when they were inserted.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Book check.</b> Build the default words with m = 13. The home cells are 1, 9, 6, 10, 7, 11, 11, 12. ARE and SOON collide at 11. Linear probing sends SOON to 12, which pushes PARTED around to cell 0.</li>
+      <li><b>Unsuccessful search.</b> Search for KID (h = 11). Chaining compares it with ARE and SOON; linear probing walks 11, 12, 0, 1, 2 before hitting an empty cell, 5 probes.</li>
+      <li><b>Tombstones.</b> Delete SOON, then search for PARTED. Linear probing still finds it because the DELETED marker at 12 says “keep going”.</li>
+      <li><b>Crowding.</b> Set m = 11 and press Random words a few times with 9–10 keys. With α near 0.9, watch the linear-probing clusters grow and the measured dots climb toward the curves.</li>
+      <li><b>Bad table size.</b> With double hashing, s(K) must share no factor with m. Try m = 12: some keys get a step like 4 or 6 and can cycle through only a few cells. Prime m avoids this.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/07-space-time-tradeoffs/README.md">📖 Lesson: Chapter 7 Space and Time Trade-Offs</a>
+      <a href="../arena/index.html?chapter=7">🏟️ Arena: Chapter 7 problems</a>
+      <a href="../arena/problem.html?id=open-hashing-chains">Arena: open-hashing-chains</a>
+      <a href="../arena/problem.html?id=linear-probing-table">Arena: linear-probing-table</a>
+      <a href="../arena/problem.html?id=two-sum-hash">Arena: two-sum-hash</a>
+      <a href="../arena/problem.html?id=pairs-sum-multiple-60">Arena: pairs-sum-multiple-60</a>
+      <a href="b-tree.html">🎮 B-Tree Lab</a>
+      <a href="search-trees.html">🎮 Search Trees (the balanced-tree alternative)</a>
+      <a href="bloom-filter.html">🎮 Bloom Filter</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Hashing Lab", chapter: "Ch 7 · Space and Time Trade-Offs" });
+const $ = (id) => document.getElementById(id);
+const codes = FX.codeSwitch($("code"));
+const say = Forge.narrate($("say"));
+const pred = FX.predict($("pred"), () => player);
+let ctr = null;
+const DEL = "\u0000DEL";
+const BOOK = ["A", "FOOL", "AND", "HIS", "MONEY", "ARE", "SOON", "PARTED"];
+const WORDS = ["CAT", "DOG", "BIRD", "FISH", "LION", "TIGER", "BEAR", "WOLF", "FOX", "OWL", "HAWK", "SEAL", "CRAB", "FROG", "TOAD", "MOLE", "DEER", "GOAT", "LAMB", "MULE", "PUMA", "YAK", "EMU", "ELK", "APE", "BAT", "COD", "EEL", "GNU", "HEN", "JAY", "KOI", "RAM", "RAT", "YETI", "ZEBRA", "OTTER", "HERON", "EAGLE", "SQUID"];
+
+/* ---------------------------------------------------------------- listings */
+const LISTS = {
+  chain: [
+    "ALGORITHM ChainedHashing(T[0..m-1], K, op)",
+    "    i ← h(K)        // (sum of letter positions) mod m",
+    "    for each x in list T[i] do",
+    "        if x = K then return found    // delete: unlink x",
+    "    if op = insert then append K to list T[i]",
+    "    else return not found",
+  ],
+  closed: [
+    "ALGORITHM ClosedHashing(H[0..m-1], K, op)",
+    "    i ← h(K)",
+    "    step ← 1  (linear)   or   s(K)  (double)",
+    "    for probe ← 1 to m do",
+    "        if H[i] = empty then",
+    "            if op = insert then H[i] ← K",
+    "            return not found",
+    "        if H[i] = DELETED and op = insert then",
+    "            H[i] ← K;  return",
+    "        if H[i] = K then",
+    "            if op = delete then H[i] ← DELETED",
+    "            return found",
+    "        i ← (i + step) mod m",
+    "    return table full / not found",
+  ],
+};
+
+/* ---------------------------------------------------------------- hashing */
+let M = 13;
+const isNum = (k) => /^-?\d+$/.test(k);
+function Kval(k) { if (isNum(k)) return Math.abs(parseInt(k, 10)); let s = 0; for (const ch of k.toUpperCase()) if (ch >= "A" && ch <= "Z") s += ch.charCodeAt(0) - 64; return s; }
+const h = (k) => Kval(k) % M;
+const step = (k) => (M - 2) - (Kval(k) % (M - 2));
+function calcText(k) {
+  const K = Kval(k);
+  const sum = isNum(k) ? `K = ${K}` : `K(${k}) = ${[...k.toUpperCase()].filter((c) => c >= "A" && c <= "Z").map((c) => c.charCodeAt(0) - 64).join(" + ")} = ${K}`;
+  return `${sum}<br>h(K) = ${K} mod ${M} = <b>${K % M}</b> · s(K) = ${M - 2} − (${K} mod ${M - 2}) = <b>${step(k)}</b>`;
+}
+const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+
+/* model (current tables) */
+let T = null;
+function emptyTables() { return { chain: Array.from({ length: M }, () => []), lp: Array(M).fill(null), dh: Array(M).fill(null), keys: [] }; }
+const cloneT = (t) => ({ chain: t.chain.map((c) => c.slice()), lp: t.lp.slice(), dh: t.dh.slice(), keys: t.keys.slice() });
+
+/* average probes of a successful search, measured in each table */
+function measured(t) {
+  const n = t.keys.length;
+  if (!n) return { chain: null, lp: null, dh: null };
+  let c = 0;
+  const acc = { lp: [0, 0], dh: [0, 0] };
+  for (const k of t.keys) {
+    const i = h(k);
+    c += t.chain[i].indexOf(k) + 1;
+    for (const [name, st] of [["lp", 1], ["dh", step(k)]]) {
+      const tab = t[name];
+      if (!tab.includes(k)) continue;           // did not fit in a full closed table
+      let j = i, p = 0;
+      for (let q = 0; q < M; q++) { p++; if (tab[j] === k) break; j = (j + st) % M; }
+      acc[name][0] += p; acc[name][1]++;
+    }
+  }
+  return { chain: c / n, lp: acc.lp[1] ? acc.lp[0] / acc.lp[1] : null, dh: acc.dh[1] ? acc.dh[0] / acc.dh[1] : null };
+}
+
+/* ------------------------------------------------------------- recorder */
+function record(ops) {
+  const frames = [];
+  let t = cloneT(T);
+  let pc = 0, pl = 0, pd = 0, asks = 0;
+  const push = (code, line, hl, text, calc, ask) => {
+    const nC = t.keys.length, nClosed = t.lp.filter((x) => x && x !== DEL).length;
+    frames.push({ t: cloneT(t), code, line, hl: hl || {}, text, calc: calc || "", ask: ask || null, meas: measured(t),
+      ctr: { n: nC, m: M, "load factor α": (nC / M).toFixed(2), "probes: chaining": pc, "probes: linear": pl, "probes: double": pd } });
+  };
+  for (const [op, k] of ops) {
+    pc = pl = pd = 0;
+    const i = h(k), s = step(k), calc = calcText(k);
+    const present = t.keys.includes(k);
+    const verb = { ins: "Insert", find: "Search for", del: "Delete" }[op];
+    if (op === "ins" && present) { push("chain", 1, {}, `${k} is already in the tables; dictionary keys are distinct, so nothing is inserted.`, calc); continue; }
+    // prediction: where will linear probing put it?
+    let ask = null;
+    if (op === "ins" && t.lp[i] !== null && asks < 2) {
+      let j = i, spot = -1;
+      for (let q = 0; q < M; q++) { if (t.lp[j] === null || t.lp[j] === DEL) { spot = j; break; } j = (j + 1) % M; }
+      if (spot >= 0) {
+        asks++;
+        const opts = [...new Set([spot, (spot + 1) % M, (i + 1) % M, (i + M - 1) % M, (spot + 2) % M])].slice(0, 4).sort((a, b) => a - b);
+        ask = { q: `${k} hashes to cell ${i}, which is taken in the linear-probing table. Which cell will linear probing put it in?`, opts: opts.map((x) => "cell " + x), ans: opts.indexOf(spot),
+          why: `It walks ${i}, ${(i + 1) % M}, … to the first free cell, ${spot}.` };
+      }
+    }
+    push("chain", 1, { home: i }, `${verb} <b>${k}</b>: compute the hash. Its home cell is ${i} in all three tables.`, calc, ask);
+    /* ---- chaining ---- */
+    const L = t.chain[i];
+    let found = -1;
+    for (let q = 0; q < L.length; q++) {
+      pc++;
+      if (L[q] === k) { found = q; push("chain", [2, 3], { home: i, chain: [i, q, "done"] }, `Chaining: compare ${k} with ${L[q]} in list ${i}: match.`, calc); break; }
+      push("chain", [2, 3], { home: i, chain: [i, q, "compare"] }, `Chaining: compare ${k} with ${L[q]} in list ${i}: no.`, calc);
+    }
+    if (op === "ins") { L.push(k); t.keys.push(k); push("chain", 4, { home: i, chain: [i, L.length - 1, "swap"] }, L.length > 1 ? `Chaining: append ${k} to the end of list ${i} (a collision just makes the list longer). ${pc} comparison${pc === 1 ? "" : "s"}.` : `Chaining: list ${i} was empty, so ${k} starts it with no comparisons.`, calc); }
+    else if (found < 0) push("chain", 5, { home: i }, `Chaining: list ${i} is exhausted after ${pc} comparison${pc === 1 ? "" : "s"}: ${k} is not here.`, calc);
+    else if (op === "del") { L.splice(found, 1); t.keys = t.keys.filter((x) => x !== k); push("chain", 3, { home: i }, `Chaining: unlink ${k} from list ${i}. Nothing else has to move.`, calc); }
+    else push("chain", 3, { home: i, chain: [i, found, "done"] }, `Chaining: found ${k} after ${pc} comparison${pc === 1 ? "" : "s"}.`, calc);
+    /* ---- closed hashing, twice ---- */
+    for (const [name, tab, st] of [["linear probing", "lp", 1], ["double hashing", "dh", s]]) {
+      const H = t[tab];
+      let j = i, done = false;
+      const label = name[0].toUpperCase() + name.slice(1);
+      push("closed", [1, 2], { home: i }, `${label}: start at cell ${i} with step ${st}${tab === "dh" ? " = s(K)" : ""}.`, calc);
+      for (let q = 0; q < M && !done; q++) {
+        if (tab === "lp") pl++; else pd++;
+        const probes = tab === "lp" ? pl : pd;
+        const hl = { home: i, [tab]: { [j]: "compare" } };
+        if (H[j] === null) {
+          if (op === "ins") { H[j] = k; hl[tab] = { [j]: "swap" }; push("closed", [4, 5], hl, `${label}: cell ${j} is empty, so ${k} goes here (probe ${probes}).`, calc); }
+          else push("closed", [4, 6], hl, `${label}: cell ${j} is empty, so the search stops: ${k} is not in the table (${probes} probe${probes > 1 ? "s" : ""}).`, calc);
+          done = true;
+        } else if (H[j] === DEL) {
+          if (op === "ins") { H[j] = k; hl[tab] = { [j]: "swap" }; push("closed", [7, 8], hl, `${label}: cell ${j} holds a DELETED marker, which an insertion may reuse (probe ${probes}).`, calc); done = true; }
+          else { const nj = (j + st) % M; push("closed", 12, hl, `${label}: cell ${j} is DELETED: not the key, but not the end of the probe chain either, so keep probing at cell ${nj}.`, calc); j = nj; }
+        } else if (H[j] === k) {
+          if (op === "del") { H[j] = DEL; hl[tab] = { [j]: "swap" }; push("closed", [9, 10], hl, `${label}: found ${k} in cell ${j} (probe ${probes}); leave a DELETED marker instead of emptying the cell.`, calc); }
+          else { hl[tab] = { [j]: "done" }; push("closed", [9, 11], hl, `${label}: found ${k} in cell ${j} after ${probes} probe${probes > 1 ? "s" : ""}.`, calc); }
+          done = true;
+        } else {
+          const nj = (j + st) % M;
+          push("closed", 12, hl, `${label}: cell ${j} holds ${H[j]}, a collision. Next cell (${j} + ${st}) mod ${M} = ${nj}.`, calc);
+          j = nj;
+        }
+      }
+      if (!done) push("closed", 13, { home: i }, op === "ins" ? `${label}: probed ${M} cells without finding room.` + (tab === "dh" && gcd(st, M) !== 1 ? ` Step ${st} shares a factor with m = ${M}, so the probe sequence cycles through only some cells. Use a prime m.` : ` The table is full; a real table would be resized (rehashed) long before this.`) : `${label}: gave up after ${M} probes: not found.`, calc);
+    }
+    push("chain", [], {}, `${verb} ${k} done. Cost: chaining ${pc} comparison${pc === 1 ? "" : "s"}, linear probing ${pl} probe${pl === 1 ? "" : "s"}, double hashing ${pd} probe${pd === 1 ? "" : "s"}. α = ${t.keys.length}/${M} = ${(t.keys.length / M).toFixed(2)}.`, calc);
+  }
+  T = t;
+  return frames;
+}
+
+/* ---------------------------------------------------------------- render */
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function render(f) {
+  $("calc").innerHTML = f.calc || '<span class="muted">h(K) for the current key appears here.</span>';
+  const home = f.hl.home;
+  let hc = "";
+  for (let i = 0; i < M; i++) {
+    const chips = f.t.chain[i].map((k, q) => {
+      const st = f.hl.chain && f.hl.chain[0] === i && f.hl.chain[1] === q ? f.hl.chain[2] : "";
+      return `<span class="hchip ${st ? "s-" + st : ""}">${esc(k)}</span>`;
+    }).join("");
+    hc += `<div class="hrow"><span class="hidx">${i}</span><div class="hchain ${home === i ? "s-active" : ""}">${chips}</div></div>`;
+  }
+  $("tChain").innerHTML = hc;
+  for (const [tab, id] of [["lp", "tLP"], ["dh", "tDH"]]) {
+    let s = "";
+    for (let i = 0; i < M; i++) {
+      const v = f.t[tab][i];
+      const st = f.hl[tab] && f.hl[tab][i] ? "s-" + f.hl[tab][i] : v === DEL ? "s-dim" : home === i ? "s-active" : "";
+      s += `<div class="hrow"><span class="hidx">${i}</span><div class="hcell ${st}">${v === DEL ? '<span class="hdel">DELETED</span>' : v ? esc(v) : ""}</div></div>`;
+    }
+    $(id).innerHTML = s;
+  }
+  codes.show(f.code, LISTS[f.code]).highlight(f.line);
+  if (!ctr) ctr = Forge.counters($("ctr"), f.ctr);
+  ctr.set(f.ctr);
+  say.say(f.text);
+  CUR_ALPHA = f.t.keys.length / M;
+  CUR_MEAS = f.meas;
+  drawChart();
+}
+const player = Forge.player($("player"), { frames: [], render: (f, i) => { render(f); pred.update(f, i); } });
+
+/* ----------------------------------------------------------------- chart */
+let CUR_ALPHA = 0, CUR_MEAS = {}, MODE_S = true;
+const SERIES = [
+  { id: "chain", name: "Separate chaining", color: "var(--c-active)", dash: "", S: (a) => 1 + a / 2, U: (a) => a },
+  { id: "lp", name: "Linear probing", color: "var(--ember)", dash: "7 5", S: (a) => 0.5 * (1 + 1 / (1 - a)), U: (a) => 0.5 * (1 + 1 / ((1 - a) * (1 - a))) },
+  { id: "dh", name: "Double hashing (idealized)", color: "var(--c-pivot)", dash: "2 4", S: (a) => (a === 0 ? 1 : (1 / a) * Math.log(1 / (1 - a))), U: (a) => 1 / (1 - a) },
+];
+const CW = 760, CH = 290, pl = 46, pr = 150, pt = 26, pb = 38, YMAX = 10, AMAX = 0.95;
+const xs = (a) => pl + (a / AMAX) * (CW - pl - pr);
+const ys = (v) => pt + (1 - Math.min(v, YMAX) / YMAX) * (CH - pt - pb);
+function drawChart() {
+  const svg = $("chart"), S = Forge.svg;
+  svg.setAttribute("viewBox", `0 0 ${CW} ${CH}`);
+  svg.innerHTML = "";
+  const key = MODE_S ? "S" : "U";
+  for (let v = 0; v <= YMAX; v += 2) {
+    svg.appendChild(S("line", { x1: pl, x2: CW - pr, y1: ys(v), y2: ys(v), stroke: "var(--line)", "stroke-width": 1 }));
+    svg.appendChild(S("text", { x: pl - 8, y: ys(v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" }, String(v)));
+  }
+  for (let a = 0; a <= 0.9001; a += 0.1) svg.appendChild(S("text", { x: xs(a), y: CH - pb + 16, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, a.toFixed(1)));
+  svg.appendChild(S("text", { x: (pl + CW - pr) / 2, y: CH - 4, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" }, "load factor α = n / m"));
+  svg.appendChild(S("text", { x: 12, y: 12, "font-size": 11, fill: "var(--ink-2)" }, "expected probes"));
+  const labels = [];
+  SERIES.forEach((s) => {
+    let d = "";
+    for (let t = 0; t <= 190; t++) {
+      const a = (t / 190) * AMAX, v = s[key](a);
+      d += (t ? "L" : "M") + xs(a).toFixed(1) + " " + ys(v).toFixed(1);
+      if (v > YMAX) break;
+    }
+    svg.appendChild(S("path", { d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-dasharray": s.dash, "stroke-linecap": "round" }));
+    const endA = (() => { let a = AMAX; while (a > 0 && s[key](a) > YMAX) a -= 0.005; return a; })();
+    labels.push({ y: ys(s[key](endA)), x: xs(endA), s });
+  });
+  labels.sort((p, q) => p.y - q.y);
+  for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 14) labels[i].y = labels[i - 1].y + 14;
+  labels.forEach((l) => svg.appendChild(S("text", { x: CW - pr + 8, y: l.y + 4, "font-size": 11, fill: "var(--ink-2)" }, l.s.name.replace(" (idealized)", ""))));
+  // current alpha marker
+  if (CUR_ALPHA > 0) {
+    const a = Math.min(CUR_ALPHA, AMAX), x = xs(a);
+    svg.appendChild(S("line", { x1: x, x2: x, y1: pt, y2: CH - pb, stroke: "var(--ink-2)", "stroke-width": 1.5, "stroke-dasharray": "3 3" }));
+    svg.appendChild(S("text", { x: x + 4, y: pt - 6, "font-size": 11, fill: "var(--ink)" }, `your α = ${CUR_ALPHA.toFixed(2)}${CUR_ALPHA > AMAX ? " (off scale)" : ""}`));
+    if (MODE_S) SERIES.forEach((s, k) => {
+      const v = CUR_MEAS[s.id];
+      if (v == null) return;
+      svg.appendChild(S("circle", { cx: x + (k - 1) * 7, cy: ys(v), r: 5, fill: s.color, stroke: "var(--panel)", "stroke-width": 2 }));
+    });
+  }
+  // hover layer
+  const hit = S("rect", { x: pl, y: pt, width: CW - pl - pr, height: CH - pt - pb, fill: "transparent" });
+  const cross = S("line", { x1: 0, x2: 0, y1: pt, y2: CH - pb, stroke: "var(--muted)", "stroke-width": 1, visibility: "hidden" });
+  svg.appendChild(cross);
+  svg.appendChild(hit);
+  const tip = $("ctip");
+  hit.addEventListener("mousemove", (e) => {
+    const r = svg.getBoundingClientRect(), sx = ((e.clientX - r.left) / r.width) * CW;
+    const a = Math.max(0.01, Math.min(AMAX, ((sx - pl) / (CW - pl - pr)) * AMAX));
+    cross.setAttribute("x1", xs(a)); cross.setAttribute("x2", xs(a)); cross.setAttribute("visibility", "visible");
+    tip.hidden = false;
+    tip.innerHTML = `<b>α = ${a.toFixed(2)}</b> · ${key === "S" ? "successful" : "unsuccessful"}<br>` + SERIES.map((s) => `<span style="color:${s.color}">■</span> ${s.name}: ${s[key](a).toFixed(2)}`).join("<br>");
+    const px = (xs(a) / CW) * r.width;
+    tip.style.left = Math.min(px + 12, r.width - 230) + "px";
+    tip.style.top = "8px";
+  });
+  hit.addEventListener("mouseleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+}
+function buildLegendAndTable() {
+  $("chartLegend").innerHTML = SERIES.map((s) => `<span><svg width="26" height="10" style="vertical-align:middle;margin-right:5px"><line x1="1" y1="5" x2="25" y2="5" stroke="${s.color}" stroke-width="2.5" stroke-dasharray="${s.dash}"/></svg>${s.name}</span>`).join("") +
+    `<span><svg width="12" height="12" style="vertical-align:middle;margin-right:5px"><circle cx="6" cy="6" r="4.5" fill="var(--ink-2)"/></svg>measured in your tables</span>`;
+  const al = [0.25, 0.5, 0.75, 0.9, 0.95];
+  $("ctab").innerHTML = `<tr><th>α</th>${SERIES.map((s) => `<th>${s.name} S</th><th>U</th>`).join("")}</tr>` +
+    al.map((a) => `<tr><td>${a}</td>${SERIES.map((s) => `<td>${s.S(a).toFixed(2)}</td><td>${s.U(a).toFixed(2)}</td>`).join("")}</tr>`).join("");
+}
+function setMode(s) {
+  MODE_S = s;
+  $("showS").classList.toggle("on", s); $("showU").classList.toggle("on", !s);
+  $("showS").setAttribute("aria-pressed", s); $("showU").setAttribute("aria-pressed", !s);
+  drawChart();
+}
+$("showS").onclick = () => setMode(true);
+$("showU").onclick = () => setMode(false);
+
+/* -------------------------------------------------------------- controls */
+function cleanKey(s) { s = String(s).trim().toUpperCase(); return isNum(s) ? String(parseInt(s, 10)) : s.replace(/[^A-Z]/g, "").slice(0, 10); }
+function readM() {
+  let m = Math.round(Number($("m").value));
+  if (!Number.isFinite(m)) m = 13;
+  m = Math.max(5, Math.min(31, m));
+  $("m").value = m;
+  return m;
+}
+function warnM() {
+  const bad = [];
+  for (let s = 1; s <= M - 2; s++) if (gcd(s, M) !== 1) bad.push(s);
+  $("warn").textContent = bad.length ? `m = ${M} is not prime: double-hashing steps ${bad.slice(0, 6).join(", ")}${bad.length > 6 ? "…" : ""} share a factor with m and cannot reach every cell.` : "";
+}
+function build(keys) {
+  M = readM();
+  warnM();
+  T = emptyTables();
+  pred.reset();
+  const ks = [...new Set(keys.map(cleanKey).filter(Boolean))].slice(0, 2 * M);
+  $("inp").value = ks.join(", ");
+  player.load(record(ks.map((k) => ["ins", k])));
+}
+function one(op) {
+  const k = cleanKey($("key").value);
+  if (!k) return;
+  $("key").value = k;
+  if (op === "ins" && T.keys.length >= 2 * M) { say.say("That's plenty of keys for this table. Build again or pick a larger m."); return; }
+  pred.reset();
+  player.load(record([[op, k]]));
+}
+$("build").onclick = () => build($("inp").value.split(/[\s,;]+/));
+$("inp").addEventListener("keydown", (e) => { if (e.key === "Enter") $("build").click(); });
+$("key").addEventListener("keydown", (e) => { if (e.key === "Enter") one("find"); });
+$("m").addEventListener("keydown", (e) => { if (e.key === "Enter") $("build").click(); });
+$("rand").onclick = () => {
+  const m = readM(), n = Math.max(3, Math.min(m - 1, Math.round(m * (0.5 + Math.random() * 0.4))));
+  const pool = WORDS.slice().sort(() => Math.random() - 0.5).slice(0, n);
+  build(pool);
+};
+$("book").onclick = () => { $("m").value = 13; build(BOOK); };
+$("ins").onclick = () => one("ins");
+$("find").onclick = () => one("find");
+$("del").onclick = () => one("del");
+buildLegendAndTable();
+build(BOOK);
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TSP Approximations · Algorithm Forge</title>
+<meta name="description" content="Place cities and compare exact search with nearest-neighbor, multifragment, twice-around-the-tree, Christofides-style and 2-opt tours for the Traveling Salesman Problem.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  #stage { cursor: crosshair; touch-action: manipulation; }
+  .ask { border: 1px solid var(--ember); background: var(--ember-soft); border-radius: 10px; padding: 12px; }
+  .ask p { margin: 0 0 8px; }
+  .ask .btn.pick-ok { background: var(--c-done); border-color: var(--c-done); color: #0d1117; }
+  .ask .btn.pick-bad { background: var(--c-swap); border-color: var(--c-swap); color: #0d1117; }
+  .ask .fb { margin-top: 8px; }
+  table.res { width: 100%; }
+  table.res td, table.res th { text-align: left; }
+  table.res td.n { text-align: right; }
+  table.res tr.on td { background: var(--ember-soft); }
+  table.res button { font: inherit; background: none; border: 0; color: var(--steel); cursor: pointer; padding: 0; text-align: left; }
+  table.res button:hover { text-decoration: underline; }
+  .sw { display: inline-block; width: 22px; height: 0; border-top: 3px solid; vertical-align: middle; margin-right: 5px; }
+  .sw.dash { border-top-style: dashed; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 12 · Coping with the Limitations of Algorithm Power</div>
+    <h1>Traveling Salesman Problem (TSP): fast tours that are provably not too bad</h1>
+    <p class="lead muted">Finding the shortest round trip through n cities is NP-hard (NP = Nondeterministic Polynomial time), so for big n we settle for approximation algorithms. Click to place cities, run each heuristic step by step, and compare its tour length with the true optimum through the accuracy ratio r = f(approximate) / f(optimal).</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="alg">
+          <option value="nn">Nearest neighbor</option>
+          <option value="mf">Multifragment heuristic</option>
+          <option value="tat">Twice-around-the-tree</option>
+          <option value="chr">Christofides (greedy matching)</option>
+          <option value="opt2">2-opt local search</option>
+          <option value="exact">Exact: exhaustive search (n ≤ 9)</option>
+        </select>
+      </label>
+      <label class="field">Start city
+        <select id="start"></select>
+      </label>
+      <label class="field"><span>Random: n = <b id="nval">8</b></span>
+        <input id="rn" type="range" min="4" max="12" value="8" aria-label="Number of random cities">
+      </label>
+      <button class="btn" id="rand">Random cities</button>
+      <button class="btn" id="preset">Example</button>
+      <button class="btn" id="clear">Clear</button>
+      <label class="row small" style="gap:6px"><input type="checkbox" id="ghost" checked> show optimal tour (dashed)</label>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predict"> 🤔 Predict mode</label>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Click empty space to add a city (up to 12); click a city to remove it. Distances are straight-line (Euclidean), so the triangle inequality holds.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Cities and tour"></svg>
+      <div class="legend">
+        <span><i style="background:var(--ember)"></i>tour being built</span>
+        <span><i style="background:var(--c-active)"></i>Minimum Spanning Tree (MST) edge / visited city</span>
+        <span><i style="background:var(--c-pivot)"></i>odd-degree city / matching edge</span>
+        <span><i style="background:var(--c-compare)"></i>edge or city being examined</span>
+        <span><i style="background:var(--c-swap)"></i>rejected / removed edge</span>
+        <span><i style="background:var(--c-done)"></i>edge added by a 2-change / final</span>
+      </div>
+      <div id="player"></div>
+      <div id="ask" class="ask" hidden></div>
+      <div class="panel">
+        <div class="panel-title">All algorithms on these cities</div>
+        <div class="scroll-x"><table class="t res" id="res"></table></div>
+        <p class="small muted" id="resNote" style="margin:8px 0 0"></p>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <p><b>Accuracy ratio.</b> For a tour s<sub>a</sub> built by a heuristic, r(s<sub>a</sub>) = f(s<sub>a</sub>) / f(s*), where f(s*) is the optimal length. r = 1.00 means optimal; r = 1.25 means 25% longer. The exact optimum is computed by exhaustive search, which is only feasible for n ≤ 9 here: (n − 1)!/2 = 20,160 tours at n = 9. For larger n the table shows f / w(MST) instead, an upper estimate of r, because an optimal tour is always longer than the MST.</p>
+      <p><b>Guarantees for Euclidean instances</b> (Levitin §12.3): nearest neighbor and multifragment satisfy r ≤ ½(⌈log₂ n⌉ + 1); twice-around-the-tree r &lt; 2; true Christofides (with a <i>minimum-weight</i> matching) r ≤ 1.5. This page pairs odd vertices greedily instead, which is simpler to watch but loses the 1.5 proof. 2-opt has no general guarantee, yet usually lands within a few percent.</p>
+      <p><b>Pictures.</b> Blue edges are the MST; purple dashed edges are the matching; the orange path is the tour under construction; in 2-opt, red dashed edges are removed and green ones added by a 2-change.</p>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Nearest neighbor depends on the start.</b> On the Example, change the start city and watch the length in the table. Which start gives the worst tour, and where is its long last leg?</li>
+        <li><b>Trap nearest neighbor.</b> Put cities evenly on a line and one far away off to the side; nearest neighbor walks down the line and pays for a long return edge.</li>
+        <li><b>Twice-around-the-tree.</b> Check the bound live: the walk length is exactly 2·w(MST), and the tour after shortcuts is never longer than the walk (triangle inequality).</li>
+        <li><b>2-opt as a polisher.</b> Watch each 2-change remove two crossing edges: after 2-opt no two tour edges cross. Compare its r with the nearest-neighbor tour it started from.</li>
+        <li><b>Beyond exact.</b> Make 12 random cities. Exhaustive search would need 11!/2 ≈ 20 million tours; the heuristics finish instantly. Which one wins most often on random instances?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <p class="row">
+      <a class="chip ember" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/12-coping-with-limitations/README.md">📖 Lesson 12: Coping with Limitations</a>
+      <a class="chip steel" href="../arena/index.html?chapter=12">🏟️ Arena · Chapter 12</a>
+      <a class="chip" href="../arena/problem.html?id=tsp-nearest-neighbor">tsp-nearest-neighbor</a>
+      <a class="chip" href="../arena/problem.html?id=tsp-twice-around-tree">tsp-twice-around-tree</a>
+      <a class="chip" href="../arena/problem.html?id=held-karp-tsp">held-karp-tsp (exact by dynamic programming)</a>
+    </p>
+    <p class="row">
+      <span class="muted small">Related sims:</span>
+      <a class="chip" href="exhaustive-search.html">Exhaustive search (Ch 3)</a>
+      <a class="chip" href="greedy-graphs.html">Prim &amp; Kruskal (Ch 9)</a>
+      <a class="chip" href="branch-and-bound.html">Branch-and-bound</a>
+      <a class="chip" href="bin-packing.html">Bin packing</a>
+      <a class="chip" href="p-np.html">P vs. NP (Ch 11)</a>
+    </p>
+  </section>
+</main>
+<script src="js/tsp-approx.js"></script>
+</body>
+</html>

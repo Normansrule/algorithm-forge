@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P vs NP Lab · Algorithm Forge</title>
+<meta name="description" content="Conjunctive Normal Form satisfiability (CNF-SAT): brute force over 2^n assignments vs. verifying one certificate; the P / NP / NP-complete / NP-hard map; and the Vertex Cover ⇔ Clique reduction.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 390px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .8rem; }
+  select { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .predict .q { font-weight: 700; margin-bottom: 6px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .predict .res { margin-top: 8px; font-size: .9rem; }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  #cnf { width: 100%; font-family: var(--mono); }
+  .quiz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .quiz-card { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-card svg { background: var(--bg-2); }
+  .quiz-card .fb { min-height: 1em; }
+  #growth table { width: 100%; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 11 · Limitations of Algorithm Power</div>
+    <h1>P vs NP Lab</h1>
+    <p class="lead muted">Finding a satisfying assignment for a Conjunctive Normal Form (CNF) formula may take 2ⁿ tries — but checking one proposed answer takes a single pass. That gap between <i>solving</i> and <i>verifying</i> is what P vs NP — deterministic Polynomial time (P) versus Nondeterministic Polynomial time (NP) — is about.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="stack">
+      <label class="field">CNF formula (∧ or &amp; between clauses, ∨ or | inside, ¬ or ~ for NOT)
+        <input id="cnf" type="text" value="(A | ~B | ~C) & (A | B) & (~B | ~D | E) & (~D | ~E)" spellcheck="false">
+      </label>
+      <div class="row">
+        <label class="field">Examples
+          <select id="preset">
+            <option value="">— pick one —</option>
+            <option value="(A | ~B | ~C) & (A | B) & (~B | ~D | E) & (~D | ~E)">Course example (5 variables)</option>
+            <option value="(x1 | x2) & (~x1 | x2) & (x1 | ~x2) & (~x1 | ~x2)">Unsatisfiable (2 variables)</option>
+            <option value="(~h | g | ~f) & (~g | ~h | ~b) & (c | ~d | e) & (a | ~d | e) & (a | ~d | b) & (a | ~b | h) & (c | d | f) & (~g | d | ~h) & (~c | d | f) & (f | ~c | ~b) & (~a | g | b) & (c | ~b | ~d) & (~a | b | g) & (g | ~b | h) & (~f | ~c | g) & (f | e | ~c) & (b | d | ~f) & (b | d | ~a) & (h | ~f | ~g) & (~a | ~f | b) & (d | ~c | e) & (~g | ~h | ~e) & (~h | g | f)">8 variables, 23 clauses — a needle in 256</option>
+            <option value="(A | B | C) & (~A | ~B) & (~A | ~C) & (~B | ~C)">Exactly one of A, B, C</option>
+          </select>
+        </label>
+        <label class="field">Algorithm
+          <select id="mode">
+            <option value="brute">Deterministic: brute force over all 2ⁿ</option>
+            <option value="verify">Nondeterministic idea: guess, then check</option>
+          </select>
+        </label>
+        <label class="small" id="stopRow"><input type="checkbox" id="stop"> stop at the first satisfying assignment</label>
+        <button class="btn primary" id="run">Run</button>
+        <button class="btn" id="rand">Random formula</button>
+        <label class="small muted"><input type="checkbox" id="pausePredict" checked> pause to predict</label>
+      </div>
+      <div class="row" id="certRow" style="display:none">
+        <span class="small" style="font-weight:700">Certificate (click to flip):</span>
+        <span id="cert" class="row"></span>
+        <button class="btn sm" id="certRand">Random guess</button>
+        <button class="btn sm" id="certFind">Lucky guess (a satisfying one)</button>
+      </div>
+      <div id="err" class="err"></div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Variable assignment, clauses colored true or false, and the grid of all assignments"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>variable = 1</span>
+        <span><i style="background:var(--c-done)"></i>true literal / satisfied clause / satisfying assignment</span>
+        <span><i style="background:var(--c-swap)"></i>false clause / failed assignment</span>
+        <span><i style="background:var(--c-compare)"></i>assignment being checked</span>
+      </div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">Why 2ⁿ hurts</div>
+        <div id="growth" class="scroll-x"></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div>
+        <div id="predict" class="predict callout" style="margin-top:10px"><span class="muted small">A prediction prompt appears on the first step of each run.</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>The map: P ⊆ NP, NP-complete, NP-hard</h2>
+    <p class="small muted">Click a region. This is the picture if P ≠ NP (what most researchers believe). P ⊆ NP is proven: a problem you can solve fast, you can certainly check fast.</p>
+    <div class="grid cols-2">
+      <svg class="stage" id="map" style="max-width:560px" role="img" aria-label="Venn diagram of P, NP, NP-complete and NP-hard"></svg>
+      <div id="mapText" class="callout steel"><b>Definitions.</b> <b>P</b>: solvable in polynomial time. <b>NP</b>: a proposed solution (certificate) can be checked in polynomial time. <b>NP-hard</b>: every NP problem reduces to it in polynomial time. <b>NP-complete</b> = in NP <i>and</i> NP-hard. Click a region for examples.</div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>🤔 Practice: which diagrams do not contradict current knowledge?</h2>
+    <p class="small muted">Mark each picture of P, NP and NPC (the NP-complete problems) as consistent or contradicting, then check. (Course practice; Levitin Exercise 11.3.11.)</p>
+    <div id="quiz" class="quiz-grid"></div>
+    <div class="row" style="margin-top:10px"><button class="btn primary" id="qcheck">Check my answers</button><button class="btn" id="qreset">Reset</button><span id="qscore" class="small" style="font-weight:700"></span></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>A reduction you can click: Vertex Cover ⇔ Clique</h2>
+    <p class="small muted">Click vertices in either graph to put them in W (a candidate vertex cover of G). The right graph is the complement Ḡ (edges exactly where G has none) and highlights V − W.</p>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn sm" id="vcBest">Find a minimum vertex cover (brute force)</button>
+      <button class="btn sm" id="vcClear">Clear W</button>
+      <button class="btn sm" id="vcRand">Random graph</button>
+      <label class="small"><input type="checkbox" id="vcEdit"> ✏️ edit G's edges (click two vertices on the left)</label>
+    </div>
+    <div class="grid cols-2">
+      <div>
+        <div class="panel-title">G — vertex cover W</div>
+        <svg class="stage" id="vcG" style="max-width:380px;margin:0 auto" role="img" aria-label="Graph G with the chosen vertex set W"></svg>
+        <p class="small" id="vcG-t"></p>
+      </div>
+      <div>
+        <div class="panel-title">Complement Ḡ — clique V − W</div>
+        <svg class="stage" id="vcC" style="max-width:380px;margin:0 auto" role="img" aria-label="Complement graph with V minus W highlighted"></svg>
+        <p class="small" id="vcC-t"></p>
+      </div>
+    </div>
+    <div class="callout" id="vc-sum"></div>
+    <p class="small" id="vcMin" style="margin-top:8px"></p>
+    <div class="legend">
+      <span><i style="background:var(--ember)"></i>in W (left)</span>
+      <span><i style="background:var(--steel)"></i>in V − W (right)</span>
+      <span><i style="background:var(--c-done)"></i>covered edge / clique edge</span>
+      <span><i style="background:var(--c-swap)"></i>uncovered edge / missing clique pair (the same pairs!)</span>
+    </div>
+  </section>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>A CNF formula is an AND of clauses; each clause is an OR of literals (a variable or its negation). It is <b>satisfiable</b> if some 0/1 assignment makes every clause true.</li>
+        <li>In a clause box, green literals are true under the current assignment; checking stops at the first true literal (a clause needs just one).</li>
+        <li>The grid has one cell per assignment, in binary order 00…0 to 11…1. Brute force colors them one by one; “guess then check” lights up a single cell.</li>
+        <li>Counters count <b>literal checks</b> — the basic operation. Brute force: up to 2ⁿ × (formula length). Verifying: at most the formula length.</li>
+        <li>In the reduction, red edges on the left and red pairs on the right are always the same pairs — that is the whole proof.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Course formula, brute force: 32 assignments, 12 satisfy it. Now tick “stop at the first” — assignment #9 (A=0 B=1 C=0 D=0 E=0) is the first hit.</li>
+        <li>Switch to “guess, then check” and press <b>Lucky guess</b>: 4 clause checks and done. Flip D to 1 — which clause rejects it now?</li>
+        <li>Load the unsatisfiable example. Why can a verifier never convince you of a “no” answer with one certificate, while brute force can?</li>
+        <li>Load the 8-variable example: only 2 of the 256 assignments work, and the first is #155. A verifier handed that one certificate needs just 23 clause checks. Each extra variable doubles the grid — see the table: at n = 64 brute force needs centuries.</li>
+        <li>Reduction: find a cover of size 3 in G (hint: vertex 1 plus two more). The complement then shows a clique of size 6 − 3 = 3.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/11-limitations/README.md">📖 Lesson 11: Limitations of Algorithm Power</a>
+      <a class="btn" href="../arena/index.html?chapter=11">🏟️ Arena · Chapter 11</a>
+      <a class="btn" href="../arena/problem.html?id=sat-verify">🧩 sat-verify</a>
+      <a class="btn" href="../arena/problem.html?id=sat-brute-force">🧩 sat-brute-force</a>
+      <a class="btn" href="../arena/problem.html?id=vertex-cover-verify">🧩 vertex-cover-verify</a>
+      <a class="btn" href="../arena/problem.html?id=clique-verify">🧩 clique-verify</a>
+      <a class="btn" href="../arena/problem.html?id=subset-sum-to-partition-reduction">🧩 subset-sum-to-partition-reduction</a>
+      <a class="btn" href="decision-trees.html">🎮 Decision trees &amp; lower bounds</a>
+      <a class="btn" href="backtracking.html">🎮 Backtracking (coping with NP-hardness)</a>
+    </div>
+    <p class="small muted" style="margin-top:10px">Reference: Levitin §11.3. Cook's theorem (1971): CNF satisfiability (CNF-SAT) is NP-complete. Other NP-complete problems follow by polynomial-time reductions, e.g. 3-SAT → Vertex Cover → Clique.</p>
+  </section>
+</main>
+<script src="js/p-np.js"></script>
+</body>
+</html>

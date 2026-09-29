@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 440" width="900" height="440" role="img" aria-labelledby="ttl dsc">
+<title id="ttl">Knapsack dynamic programming table</title>
+<desc id="dsc">The 0/1 knapsack table for capacity 5 and items (2, $12), (1, $10), (3, $20), (2, $15) fills cell by cell to $37, then a traceback recovers items 1, 2 and 4.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}.e{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif}@keyframes k0{0%,4.64%,18.57%,100%{opacity:0}5.71%,17.5%{opacity:1}}.k0{animation:k0 14.0s ease-in-out infinite}@keyframes k1{0%,77.5%,96.79%,100%{opacity:0}79.29%,95%{opacity:1}}.k1{animation:k1 14.0s ease-in-out infinite}@keyframes k2{0%,17.5%,31.43%,100%{opacity:0}18.57%,30.36%{opacity:1}}.k2{animation:k2 14.0s ease-in-out infinite}@keyframes k3{0%,72.14%,96.79%,100%{opacity:0}73.93%,95%{opacity:1}}.k3{animation:k3 14.0s ease-in-out infinite}@keyframes k4{0%,30.36%,44.29%,100%{opacity:0}31.43%,43.21%{opacity:1}}.k4{animation:k4 14.0s ease-in-out infinite}@keyframes k5{0%,66.79%,96.79%,100%{opacity:0}68.57%,95%{opacity:1}}.k5{animation:k5 14.0s ease-in-out infinite}@keyframes k6{0%,43.21%,57.14%,100%{opacity:0}44.29%,56.07%{opacity:1}}.k6{animation:k6 14.0s ease-in-out infinite}@keyframes k7{0%,61.43%,96.79%,100%{opacity:0}63.21%,95%{opacity:1}}.k7{animation:k7 14.0s ease-in-out infinite}@keyframes k8{0%,6.41%,96.07%,100%{opacity:0}7.49%,95%{opacity:1}}.k8{animation:k8 14.0s ease-in-out infinite}@keyframes k9{0%,8.99%,96.07%,100%{opacity:0}10.06%,95%{opacity:1}}.k9{animation:k9 14.0s ease-in-out infinite}@keyframes k10{0%,11.56%,96.07%,100%{opacity:0}12.63%,95%{opacity:1}}.k10{animation:k10 14.0s ease-in-out infinite}@keyframes k11{0%,14.13%,96.07%,100%{opacity:0}15.2%,95%{opacity:1}}.k11{animation:k11 14.0s ease-in-out infinite}@keyframes k12{0%,16.7%,96.07%,100%{opacity:0}17.77%,95%{opacity:1}}.k12{animation:k12 14.0s ease-in-out infinite}@keyframes k13{0%,19.27%,96.07%,100%{opacity:0}20.34%,95%{opacity:1}}.k13{animation:k13 14.0s ease-in-out infinite}@keyframes k14{0%,21.84%,96.07%,100%{opacity:0}22.91%,95%{opacity:1}}.k14{animation:k14 14.0s ease-in-out infinite}@keyframes k15{0%,24.41%,96.07%,100%{opacity:0}25.49%,95%{opacity:1}}.k15{animation:k15 14.0s ease-in-out infinite}@keyframes k16{0%,26.99%,96.07%,100%{opacity:0}28.06%,95%{opacity:1}}.k16{animation:k16 14.0s ease-in-out infinite}@keyframes k17{0%,29.56%,96.07%,100%{opacity:0}30.63%,95%{opacity:1}}.k17{animation:k17 14.0s ease-in-out infinite}@keyframes k18{0%,32.13%,96.07%,100%{opacity:0}33.2%,95%{opacity:1}}.k18{animation:k18 14.0s ease-in-out infinite}@keyframes k19{0%,34.7%,96.07%,100%{opacity:0}35.77%,95%{opacity:1}}.k19{animation:k19 14.0s ease-in-out infinite}@keyframes k20{0%,37.27%,96.07%,100%{opacity:0}38.34%,95%{opacity:1}}.k20{animation:k20 14.0s ease-in-out infinite}@keyframes k21{0%,39.84%,96.07%,100%{opacity:0}40.91%,95%{opacity:1}}.k21{animation:k21 14.0s ease-in-out infinite}@keyframes k22{0%,42.41%,96.07%,100%{opacity:0}43.49%,95%{opacity:1}}.k22{animation:k22 14.0s ease-in-out infinite}@keyframes k23{0%,44.99%,96.07%,100%{opacity:0}46.06%,95%{opacity:1}}.k23{animation:k23 14.0s ease-in-out infinite}@keyframes k24{0%,47.56%,96.07%,100%{opacity:0}48.63%,95%{opacity:1}}.k24{animation:k24 14.0s ease-in-out infinite}@keyframes k25{0%,50.13%,96.07%,100%{opacity:0}51.2%,95%{opacity:1}}.k25{animation:k25 14.0s ease-in-out infinite}@keyframes k26{0%,52.7%,96.07%,100%{opacity:0}53.77%,95%{opacity:1}}.k26{animation:k26 14.0s ease-in-out infinite}@keyframes k27{0%,55.27%,96.07%,100%{opacity:0}56.34%,95%{opacity:1}}.k27{animation:k27 14.0s ease-in-out infinite}@keyframes k28{0%,5%{transform:translate(382px,118px);opacity:0}6%,7.57%{transform:translate(382px,118px);opacity:1}8.57%,10.14%{transform:translate(444px,118px);opacity:1}11.14%,12.71%{transform:translate(506px,118px);opacity:1}13.71%,15.29%{transform:translate(568px,118px);opacity:1}16.29%,17.86%{transform:translate(630px,118px);opacity:1}18.86%,20.43%{transform:translate(382px,156px);opacity:1}21.43%,23%{transform:translate(444px,156px);opacity:1}24%,25.57%{transform:translate(506px,156px);opacity:1}26.57%,28.14%{transform:translate(568px,156px);opacity:1}29.14%,30.71%{transform:translate(630px,156px);opacity:1}31.71%,33.29%{transform:translate(382px,194px);opacity:1}34.29%,35.86%{transform:translate(444px,194px);opacity:1}36.86%,38.43%{transform:translate(506px,194px);opacity:1}39.43%,41%{transform:translate(568px,194px);opacity:1}42%,43.57%{transform:translate(630px,194px);opacity:1}44.57%,46.14%{transform:translate(382px,232px);opacity:1}47.14%,48.71%{transform:translate(444px,232px);opacity:1}49.71%,51.29%{transform:translate(506px,232px);opacity:1}52.29%,53.86%{transform:translate(568px,232px);opacity:1}54.86%,56.43%{transform:translate(630px,232px);opacity:1}57.86%,100%{transform:translate(630px,232px);opacity:0}}.k28{animation:k28 14.0s ease-in-out infinite}@keyframes k29{0%,7.57%{transform:translate(320px,118px);opacity:0}8.57%,10.14%{transform:translate(320px,118px);opacity:1}11.14%,12.71%{transform:translate(382px,118px);opacity:1}13.71%,15.29%{transform:translate(444px,118px);opacity:1}16.29%,17.86%{transform:translate(506px,118px);opacity:1}18.86%,20.43%{transform:translate(320px,156px);opacity:1}21.43%,23%{transform:translate(382px,156px);opacity:1}24%,25.57%{transform:translate(444px,156px);opacity:1}26.57%,28.14%{transform:translate(506px,156px);opacity:1}29.14%,30.71%{transform:translate(568px,156px);opacity:1}31.43%,35.86%{transform:translate(568px,156px);opacity:0}36.86%,38.43%{transform:translate(320px,194px);opacity:1}39.43%,41%{transform:translate(382px,194px);opacity:1}42%,43.57%{transform:translate(444px,194px);opacity:1}44.29%,46.14%{transform:translate(444px,194px);opacity:0}47.14%,48.71%{transform:translate(320px,232px);opacity:1}49.71%,51.29%{transform:translate(382px,232px);opacity:1}52.29%,53.86%{transform:translate(444px,232px);opacity:1}54.86%,56.43%{transform:translate(506px,232px);opacity:1}57.86%,100%{transform:translate(506px,232px);opacity:0}}.k29{animation:k29 14.0s ease-in-out infinite}@keyframes k30{0%,5%{transform:translate(382px,156px);opacity:0}6%,7.57%{transform:translate(382px,156px);opacity:1}8.57%,10.14%{transform:translate(444px,156px);opacity:1}11.14%,12.71%{transform:translate(506px,156px);opacity:1}13.71%,15.29%{transform:translate(568px,156px);opacity:1}16.29%,17.86%{transform:translate(630px,156px);opacity:1}18.86%,20.43%{transform:translate(382px,194px);opacity:1}21.43%,23%{transform:translate(444px,194px);opacity:1}24%,25.57%{transform:translate(506px,194px);opacity:1}26.57%,28.14%{transform:translate(568px,194px);opacity:1}29.14%,30.71%{transform:translate(630px,194px);opacity:1}31.71%,33.29%{transform:translate(382px,232px);opacity:1}34.29%,35.86%{transform:translate(444px,232px);opacity:1}36.86%,38.43%{transform:translate(506px,232px);opacity:1}39.43%,41%{transform:translate(568px,232px);opacity:1}42%,43.57%{transform:translate(630px,232px);opacity:1}44.57%,46.14%{transform:translate(382px,270px);opacity:1}47.14%,48.71%{transform:translate(444px,270px);opacity:1}49.71%,51.29%{transform:translate(506px,270px);opacity:1}52.29%,53.86%{transform:translate(568px,270px);opacity:1}54.86%,56.43%{transform:translate(630px,270px);opacity:1}57.86%,100%{transform:translate(630px,270px);opacity:0}}.k30{animation:k30 14.0s ease-in-out infinite}@keyframes k31{0%,60%,96.79%,100%{opacity:0}61.79%,95%{opacity:1}}.k31{animation:k31 14.0s ease-in-out infinite}@keyframes k32{0%,65.36%,96.79%,100%{opacity:0}67.14%,95%{opacity:1}}.k32{animation:k32 14.0s ease-in-out infinite}@keyframes k33{0%,70.71%,96.79%,100%{opacity:0}72.5%,95%{opacity:1}}.k33{animation:k33 14.0s ease-in-out infinite}@keyframes k34{0%,76.07%,96.79%,100%{opacity:0}77.86%,95%{opacity:1}}.k34{animation:k34 14.0s ease-in-out infinite}@keyframes k35{0%,79.64%,96.79%,100%{opacity:0}81.43%,95%{opacity:1}}.k35{animation:k35 14.0s ease-in-out infinite}@keyframes k36{0%,5%,7.64%,100%{opacity:0}5.36%,7.29%{opacity:1}}.k36{animation:k36 14.0s ease-in-out infinite}@keyframes k37{0%,7.57%,10.21%,100%{opacity:0}7.93%,9.86%{opacity:1}}.k37{animation:k37 14.0s ease-in-out infinite}@keyframes k38{0%,10.14%,12.79%,100%{opacity:0}10.5%,12.43%{opacity:1}}.k38{animation:k38 14.0s ease-in-out infinite}@keyframes k39{0%,12.71%,15.36%,100%{opacity:0}13.07%,15%{opacity:1}}.k39{animation:k39 14.0s ease-in-out infinite}@keyframes k40{0%,15.29%,17.93%,100%{opacity:0}15.64%,17.57%{opacity:1}}.k40{animation:k40 14.0s ease-in-out infinite}@keyframes k41{0%,17.86%,20.5%,100%{opacity:0}18.21%,20.14%{opacity:1}}.k41{animation:k41 14.0s ease-in-out infinite}@keyframes k42{0%,20.43%,23.07%,100%{opacity:0}20.79%,22.71%{opacity:1}}.k42{animation:k42 14.0s ease-in-out infinite}@keyframes k43{0%,23%,25.64%,100%{opacity:0}23.36%,25.29%{opacity:1}}.k43{animation:k43 14.0s ease-in-out infinite}@keyframes k44{0%,25.57%,28.21%,100%{opacity:0}25.93%,27.86%{opacity:1}}.k44{animation:k44 14.0s ease-in-out infinite}@keyframes k45{0%,28.14%,30.79%,100%{opacity:0}28.5%,30.43%{opacity:1}}.k45{animation:k45 14.0s ease-in-out infinite}@keyframes k46{0%,30.71%,33.36%,100%{opacity:0}31.07%,33%{opacity:1}}.k46{animation:k46 14.0s ease-in-out infinite}@keyframes k47{0%,33.29%,35.93%,100%{opacity:0}33.64%,35.57%{opacity:1}}.k47{animation:k47 14.0s ease-in-out infinite}@keyframes k48{0%,35.86%,38.5%,100%{opacity:0}36.21%,38.14%{opacity:1}}.k48{animation:k48 14.0s ease-in-out infinite}@keyframes k49{0%,38.43%,41.07%,100%{opacity:0}38.79%,40.71%{opacity:1}}.k49{animation:k49 14.0s ease-in-out infinite}@keyframes k50{0%,41%,43.64%,100%{opacity:0}41.36%,43.29%{opacity:1}}.k50{animation:k50 14.0s ease-in-out infinite}@keyframes k51{0%,43.57%,46.21%,100%{opacity:0}43.93%,45.86%{opacity:1}}.k51{animation:k51 14.0s ease-in-out infinite}@keyframes k52{0%,46.14%,48.79%,100%{opacity:0}46.5%,48.43%{opacity:1}}.k52{animation:k52 14.0s ease-in-out infinite}@keyframes k53{0%,48.71%,51.36%,100%{opacity:0}49.07%,51%{opacity:1}}.k53{animation:k53 14.0s ease-in-out infinite}@keyframes k54{0%,51.29%,53.93%,100%{opacity:0}51.64%,53.57%{opacity:1}}.k54{animation:k54 14.0s ease-in-out infinite}@keyframes k55{0%,53.86%,56.5%,100%{opacity:0}54.21%,56.14%{opacity:1}}.k55{animation:k55 14.0s ease-in-out infinite}@keyframes k56{0%,60%,65.71%,100%{opacity:0}60.71%,65%{opacity:1}}.k56{animation:k56 14.0s ease-in-out infinite}@keyframes k57{0%,65.36%,71.07%,100%{opacity:0}66.07%,70.36%{opacity:1}}.k57{animation:k57 14.0s ease-in-out infinite}@keyframes k58{0%,70.71%,76.43%,100%{opacity:0}71.43%,75.71%{opacity:1}}.k58{animation:k58 14.0s ease-in-out infinite}@keyframes k59{0%,76.07%,82.14%,100%{opacity:0}76.79%,81.43%{opacity:1}}.k59{animation:k59 14.0s ease-in-out infinite}@keyframes k60{0%,81.79%,96.79%,100%{opacity:0}83.57%,95%{opacity:1}}.k60{animation:k60 14.0s ease-in-out infinite}</style>
+<defs><linearGradient id="bgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121823"/><stop offset="1" stop-color="#0d1117"/></linearGradient><radialGradient id="glow" cx=".12" cy="0" r=".7"><stop offset="0" stop-color="#ff8a3d" stop-opacity=".10"/><stop offset="1" stop-color="#ff8a3d" stop-opacity="0"/></radialGradient></defs>
+<rect x=".5" y=".5" width="899" height="439" rx="18" fill="url(#bgG)" stroke="#2a3448"/>
+<rect x=".5" y=".5" width="899" height="439" rx="18" fill="url(#glow)"/>
+<text x="28" y="38" font-size="11" fill="#ff8a3d" font-weight="700" letter-spacing="1.4">CH 8 · DYNAMIC PROGRAMMING (DP)</text>
+<text x="28" y="63" font-size="20" fill="#e8edf5" font-weight="800">Knapsack: fill the table once, never recompute</text>
+<g transform="translate(850,14)" opacity=".8"><rect x="0" y="11" width="5" height="10" rx="1.2" fill="#5ab0ff"/><rect x="7" y="7" width="5" height="14" rx="1.2" fill="#5ab0ff" opacity=".8"/><rect x="14" y="2" width="5" height="19" rx="1.2" fill="#ff8a3d"/><text x="-7" y="17" font-size="12" font-weight="700" fill="#7f8ba3" text-anchor="end">Algorithm Forge</text></g>
+<rect x="24" y="92" width="214" height="222" rx="12" fill="#161d2a" stroke="#2a3448"/>
+<text x="40" y="116" font-size="10.5" fill="#ff8a3d" font-weight="700" letter-spacing="1.2">ITEMS</text>
+<text x="222" y="116" font-size="12" fill="#e8edf5" font-weight="700" text-anchor="end">capacity W = 5</text>
+<text x="40" y="140" font-size="11" fill="#7f8ba3" class="m">i</text>
+<text x="80" y="140" font-size="11" fill="#7f8ba3">weight</text>
+<text x="150" y="140" font-size="11" fill="#7f8ba3">value</text>
+<rect x="32" y="153" width="198" height="30" rx="7" fill="#5ab0ff" class="k0" fill-opacity=".16" stroke="#5ab0ff"/>
+<rect x="32" y="153" width="198" height="30" rx="7" fill="#3ddc97" class="k1" fill-opacity=".18" stroke="#3ddc97"/>
+<text x="40" y="174" font-size="14" fill="#e8edf5" font-weight="700" class="m">1</text>
+<text x="80" y="174" font-size="14" fill="#e8edf5" class="m">2</text>
+<text x="150" y="174" font-size="14" fill="#ffb07a" font-weight="700" class="m">$12</text>
+<text x="222" y="174" font-size="12" fill="#3ddc97" font-weight="700" text-anchor="end" class="k1">✓ take</text>
+<rect x="32" y="187" width="198" height="30" rx="7" fill="#5ab0ff" class="k2" fill-opacity=".16" stroke="#5ab0ff"/>
+<rect x="32" y="187" width="198" height="30" rx="7" fill="#3ddc97" class="k3" fill-opacity=".18" stroke="#3ddc97"/>
+<text x="40" y="208" font-size="14" fill="#e8edf5" font-weight="700" class="m">2</text>
+<text x="80" y="208" font-size="14" fill="#e8edf5" class="m">1</text>
+<text x="150" y="208" font-size="14" fill="#ffb07a" font-weight="700" class="m">$10</text>
+<text x="222" y="208" font-size="12" fill="#3ddc97" font-weight="700" text-anchor="end" class="k3">✓ take</text>
+<rect x="32" y="221" width="198" height="30" rx="7" fill="#5ab0ff" class="k4" fill-opacity=".16" stroke="#5ab0ff"/>
+<rect x="32" y="221" width="198" height="30" rx="7" fill="#3a4458" class="k5" fill-opacity=".35" stroke="none"/>
+<text x="40" y="242" font-size="14" fill="#e8edf5" font-weight="700" class="m">3</text>
+<text x="80" y="242" font-size="14" fill="#e8edf5" class="m">3</text>
+<text x="150" y="242" font-size="14" fill="#ffb07a" font-weight="700" class="m">$20</text>
+<text x="222" y="242" font-size="12" fill="#7f8ba3" font-weight="700" text-anchor="end" class="k5">✗ skip</text>
+<rect x="32" y="255" width="198" height="30" rx="7" fill="#5ab0ff" class="k6" fill-opacity=".16" stroke="#5ab0ff"/>
+<rect x="32" y="255" width="198" height="30" rx="7" fill="#3ddc97" class="k7" fill-opacity=".18" stroke="#3ddc97"/>
+<text x="40" y="276" font-size="14" fill="#e8edf5" font-weight="700" class="m">4</text>
+<text x="80" y="276" font-size="14" fill="#e8edf5" class="m">2</text>
+<text x="150" y="276" font-size="14" fill="#ffb07a" font-weight="700" class="m">$15</text>
+<text x="222" y="276" font-size="12" fill="#3ddc97" font-weight="700" text-anchor="end" class="k7">✓ take</text>
+<text x="692" y="86" font-size="11" fill="#7f8ba3" text-anchor="end">capacity j →</text>
+<text x="351" y="112" font-size="13" fill="#b4bfd1" font-weight="700" text-anchor="middle" class="m">0</text>
+<text x="413" y="112" font-size="13" fill="#b4bfd1" font-weight="700" text-anchor="middle" class="m">1</text>
+<text x="475" y="112" font-size="13" fill="#b4bfd1" font-weight="700" text-anchor="middle" class="m">2</text>
+<text x="537" y="112" font-size="13" fill="#b4bfd1" font-weight="700" text-anchor="middle" class="m">3</text>
+<text x="599" y="112" font-size="13" fill="#b4bfd1" font-weight="700" text-anchor="middle" class="m">4</text>
+<text x="661" y="112" font-size="13" fill="#b4bfd1" font-weight="700" text-anchor="middle" class="m">5</text>
+<text x="268" y="112" font-size="11" fill="#7f8ba3">i ↓</text>
+<text x="276" y="142" font-size="13" fill="#b4bfd1" font-weight="700" class="m">0</text>
+<rect x="321" y="119" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="383" y="119" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="445" y="119" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="507" y="119" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="569" y="119" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="631" y="119" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<text x="276" y="180" font-size="13" fill="#b4bfd1" font-weight="700" class="m">1</text>
+<rect x="321" y="157" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="383" y="157" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="445" y="157" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="507" y="157" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="569" y="157" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="631" y="157" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<text x="276" y="218" font-size="13" fill="#b4bfd1" font-weight="700" class="m">2</text>
+<rect x="321" y="195" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="383" y="195" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="445" y="195" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="507" y="195" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="569" y="195" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="631" y="195" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<text x="276" y="256" font-size="13" fill="#b4bfd1" font-weight="700" class="m">3</text>
+<rect x="321" y="233" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="383" y="233" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="445" y="233" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="507" y="233" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="569" y="233" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="631" y="233" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<text x="276" y="294" font-size="13" fill="#b4bfd1" font-weight="700" class="m">4</text>
+<rect x="321" y="271" width="60" height="36" rx="6" fill="#121823" stroke="#2a3448"/>
+<rect x="383" y="271" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="445" y="271" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="507" y="271" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="569" y="271" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<rect x="631" y="271" width="60" height="36" rx="6" fill="#161d2a" stroke="#2a3448"/>
+<text x="351" y="142" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="413" y="142" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="475" y="142" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="537" y="142" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="599" y="142" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="661" y="142" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="351" y="180" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="413" y="180" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k8">0</text>
+<text x="475" y="180" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k9">12</text>
+<text x="537" y="180" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k10">12</text>
+<text x="599" y="180" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k11">12</text>
+<text x="661" y="180" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k12">12</text>
+<text x="351" y="218" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="413" y="218" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k13">10</text>
+<text x="475" y="218" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k14">12</text>
+<text x="537" y="218" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k15">22</text>
+<text x="599" y="218" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k16">22</text>
+<text x="661" y="218" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k17">22</text>
+<text x="351" y="256" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="413" y="256" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k18">10</text>
+<text x="475" y="256" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k19">12</text>
+<text x="537" y="256" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k20">22</text>
+<text x="599" y="256" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k21">30</text>
+<text x="661" y="256" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k22">32</text>
+<text x="351" y="294" font-size="14" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="413" y="294" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k23">10</text>
+<text x="475" y="294" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k24">15</text>
+<text x="537" y="294" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k25">25</text>
+<text x="599" y="294" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k26">30</text>
+<text x="661" y="294" font-size="15" fill="#e8edf5" font-weight="800" text-anchor="middle" class="m k27">37</text>
+<rect x="1.5" y="1.5" width="59" height="35" rx="6" fill="#ffd24d" fill-opacity=".12" stroke="#ffd24d" stroke-width="2.5" class="k28"/>
+<rect x="1.5" y="1.5" width="59" height="35" rx="6" fill="#c38bff" fill-opacity=".14" stroke="#c38bff" stroke-width="2.5" class="k29"/>
+<rect x="1.5" y="1.5" width="59" height="35" rx="6" fill="#5ab0ff" fill-opacity=".2" stroke="#5ab0ff" stroke-width="2.5" class="k30"/>
+<rect x="632" y="272" width="58" height="34" rx="6" fill="#3ddc97" class="k31" fill-opacity=".18" stroke="#3ddc97" stroke-width="2.5"/>
+<path d="M661,274L537,266" stroke="#3ddc97" stroke-width="2" stroke-dasharray="none" class="k31"/>
+<rect x="508" y="234" width="58" height="34" rx="6" fill="none" class="k32" fill-opacity=".18" stroke="#7f8ba3" stroke-width="2.5" stroke-dasharray="4 3"/>
+<path d="M537,236L537,228" stroke="#7f8ba3" stroke-width="2" stroke-dasharray="3 3" class="k32"/>
+<rect x="508" y="196" width="58" height="34" rx="6" fill="#3ddc97" class="k33" fill-opacity=".18" stroke="#3ddc97" stroke-width="2.5"/>
+<path d="M537,198L475,190" stroke="#3ddc97" stroke-width="2" stroke-dasharray="none" class="k33"/>
+<rect x="446" y="158" width="58" height="34" rx="6" fill="#3ddc97" class="k34" fill-opacity=".18" stroke="#3ddc97" stroke-width="2.5"/>
+<path d="M475,160L351,152" stroke="#3ddc97" stroke-width="2" stroke-dasharray="none" class="k34"/>
+<rect x="322" y="120" width="58" height="34" rx="6" fill="none" class="k35" stroke="#3ddc97" stroke-width="2.5"/>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k36">F(1,1): item 1 (weight 2) does not fit  →  <tspan fill="#ffd24d">F(0,1)</tspan> = <tspan fill="#5ab0ff" font-weight="800">0</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k37">F(1,2) = max(<tspan fill="#ffd24d">F(0,2)</tspan>, 12 + <tspan fill="#c38bff">F(0,0)</tspan>) = max(0, 12) = <tspan fill="#5ab0ff" font-weight="800">12</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k38">F(1,3) = max(<tspan fill="#ffd24d">F(0,3)</tspan>, 12 + <tspan fill="#c38bff">F(0,1)</tspan>) = max(0, 12) = <tspan fill="#5ab0ff" font-weight="800">12</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k39">F(1,4) = max(<tspan fill="#ffd24d">F(0,4)</tspan>, 12 + <tspan fill="#c38bff">F(0,2)</tspan>) = max(0, 12) = <tspan fill="#5ab0ff" font-weight="800">12</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k40">F(1,5) = max(<tspan fill="#ffd24d">F(0,5)</tspan>, 12 + <tspan fill="#c38bff">F(0,3)</tspan>) = max(0, 12) = <tspan fill="#5ab0ff" font-weight="800">12</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k41">F(2,1) = max(<tspan fill="#ffd24d">F(1,1)</tspan>, 10 + <tspan fill="#c38bff">F(1,0)</tspan>) = max(0, 10) = <tspan fill="#5ab0ff" font-weight="800">10</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k42">F(2,2) = max(<tspan fill="#ffd24d">F(1,2)</tspan>, 10 + <tspan fill="#c38bff">F(1,1)</tspan>) = max(12, 10) = <tspan fill="#5ab0ff" font-weight="800">12</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k43">F(2,3) = max(<tspan fill="#ffd24d">F(1,3)</tspan>, 10 + <tspan fill="#c38bff">F(1,2)</tspan>) = max(12, 22) = <tspan fill="#5ab0ff" font-weight="800">22</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k44">F(2,4) = max(<tspan fill="#ffd24d">F(1,4)</tspan>, 10 + <tspan fill="#c38bff">F(1,3)</tspan>) = max(12, 22) = <tspan fill="#5ab0ff" font-weight="800">22</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k45">F(2,5) = max(<tspan fill="#ffd24d">F(1,5)</tspan>, 10 + <tspan fill="#c38bff">F(1,4)</tspan>) = max(12, 22) = <tspan fill="#5ab0ff" font-weight="800">22</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k46">F(3,1): item 3 (weight 3) does not fit  →  <tspan fill="#ffd24d">F(2,1)</tspan> = <tspan fill="#5ab0ff" font-weight="800">10</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k47">F(3,2): item 3 (weight 3) does not fit  →  <tspan fill="#ffd24d">F(2,2)</tspan> = <tspan fill="#5ab0ff" font-weight="800">12</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k48">F(3,3) = max(<tspan fill="#ffd24d">F(2,3)</tspan>, 20 + <tspan fill="#c38bff">F(2,0)</tspan>) = max(22, 20) = <tspan fill="#5ab0ff" font-weight="800">22</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k49">F(3,4) = max(<tspan fill="#ffd24d">F(2,4)</tspan>, 20 + <tspan fill="#c38bff">F(2,1)</tspan>) = max(22, 30) = <tspan fill="#5ab0ff" font-weight="800">30</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k50">F(3,5) = max(<tspan fill="#ffd24d">F(2,5)</tspan>, 20 + <tspan fill="#c38bff">F(2,2)</tspan>) = max(22, 32) = <tspan fill="#5ab0ff" font-weight="800">32</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k51">F(4,1): item 4 (weight 2) does not fit  →  <tspan fill="#ffd24d">F(3,1)</tspan> = <tspan fill="#5ab0ff" font-weight="800">10</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k52">F(4,2) = max(<tspan fill="#ffd24d">F(3,2)</tspan>, 15 + <tspan fill="#c38bff">F(3,0)</tspan>) = max(12, 15) = <tspan fill="#5ab0ff" font-weight="800">15</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k53">F(4,3) = max(<tspan fill="#ffd24d">F(3,3)</tspan>, 15 + <tspan fill="#c38bff">F(3,1)</tspan>) = max(22, 25) = <tspan fill="#5ab0ff" font-weight="800">25</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k54">F(4,4) = max(<tspan fill="#ffd24d">F(3,4)</tspan>, 15 + <tspan fill="#c38bff">F(3,2)</tspan>) = max(30, 27) = <tspan fill="#5ab0ff" font-weight="800">30</tspan></text>
+<text x="262" y="338" font-size="13" fill="#e8edf5" class="m k55">F(4,5) = max(<tspan fill="#ffd24d">F(3,5)</tspan>, 15 + <tspan fill="#c38bff">F(3,3)</tspan>) = max(32, 37) = <tspan fill="#5ab0ff" font-weight="800">37</tspan></text>
+<text x="262" y="338" font-size="13" fill="#3ddc97" class="m k56">F(4,5) = 37 ≠ F(3,5) = 32  →  item 4 is in; j = 5 − 2 = 3</text>
+<text x="262" y="338" font-size="13" fill="#b4bfd1" class="m k57">F(3,3) = 22 = F(2,3)  →  item 3 is not needed; stay at j = 3</text>
+<text x="262" y="338" font-size="13" fill="#3ddc97" class="m k58">F(2,3) = 22 ≠ F(1,3) = 12  →  item 2 is in; j = 3 − 1 = 2</text>
+<text x="262" y="338" font-size="13" fill="#3ddc97" class="m k59">F(1,2) = 12 ≠ F(0,2) = 0  →  item 1 is in; j = 2 − 2 = 0</text>
+<text x="262" y="338" font-size="14.5" fill="#3ddc97" font-weight="800" class="m k60">best: items {1, 2, 4}  ·  weight 5  ·  value $37</text>
+<rect x="262" y="359" width="11" height="11" rx="3" fill="#5ab0ff"/>
+<text x="278" y="368" font-size="11.5" fill="#b4bfd1">cell being filled</text>
+<rect x="399.48" y="359" width="11" height="11" rx="3" fill="#ffd24d"/>
+<text x="415.48" y="368" font-size="11.5" fill="#b4bfd1">skip item i</text>
+<rect x="498.32" y="359" width="11" height="11" rx="3" fill="#c38bff"/>
+<text x="514.32" y="368" font-size="11.5" fill="#b4bfd1">take item i</text>
+<rect x="597.16" y="359" width="11" height="11" rx="3" fill="#3ddc97"/>
+<text x="613.16" y="368" font-size="11.5" fill="#b4bfd1">traceback</text>
+<text x="262" y="394" font-size="12" fill="#7f8ba3" class="m">F(i, j) = max( F(i−1, j),  vᵢ + F(i−1, j − wᵢ) )  if j ≥ wᵢ,  else F(i−1, j)</text>
+<rect x="712" y="92" width="164" height="222" rx="12" fill="#161d2a" stroke="#2a3448"/>
+<text x="726" y="116" font-size="10.5" fill="#ff8a3d" font-weight="700" letter-spacing="1.2">WHY A TABLE?</text>
+<text x="726" y="142" font-size="12" fill="#b4bfd1">Brute force tries</text>
+<text x="726" y="161" font-size="12" fill="#b4bfd1">all 2⁴ = 16 subsets;</text>
+<text x="726" y="180" font-size="12" fill="#b4bfd1">for n items that is 2ⁿ.</text>
+<text x="726" y="199" font-size="12" fill="#7f8ba3"></text>
+<text x="726" y="218" font-size="12" fill="#b4bfd1">The table has</text>
+<text x="726" y="237" font-size="12" fill="#b4bfd1">(n+1)(W+1) = 30 cells,</text>
+<text x="726" y="256" font-size="12" fill="#b4bfd1">each filled once in</text>
+<text x="726" y="275" font-size="12" fill="#b4bfd1">O(1): Θ(nW) total.</text>
+</svg>

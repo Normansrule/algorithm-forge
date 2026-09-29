@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huffman Codes · Algorithm Forge</title>
+<meta name="description" content="Build a Huffman coding tree from typed text or a frequency table: animated priority-queue merges, codewords, average bits per symbol, compression ratio, bit-by-bit decoding and tie-breaking variants.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  label.field { max-width: 100%; }
+  label.field[hidden] { display: none; }
+  select { max-width: 100%; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  .hf-inputs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .hf-inputs input[type="text"] { width: 100%; max-width: 360px; }
+  .formula { font-family: var(--mono); font-size: 0.86rem; min-height: 1.6em; overflow-wrap: anywhere; }
+  .bits { font-family: var(--mono); overflow-wrap: anywhere; line-height: 1.7; }
+  .bits .cur { background: var(--c-active); color: #0d1117; border-radius: 3px; padding: 0 2px; }
+  .bits .used { color: var(--muted); }
+  table.t { width: 100%; }
+  table.t tr.pick td { background: color-mix(in srgb, var(--c-compare) 22%, transparent); }
+  table.t tr.new td { background: color-mix(in srgb, var(--c-swap) 18%, transparent); }
+  table.t tr.cur td { background: var(--steel-soft); }
+  .ask[hidden] { display: none; }
+  .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .go-deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .stats div { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: .85rem; color: var(--ink-2); }
+  .stats b { display: block; font-family: var(--mono); font-size: 1.1rem; color: var(--ink); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 9 · Greedy Technique</div>
+    <h1>Huffman Codes</h1>
+    <p class="lead muted">Frequent symbols deserve short codewords. Huffman's greedy rule: keep merging the two lightest trees. The finished tree gives every symbol a prefix-free codeword with the smallest possible average length.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="hf-inputs">
+      <label class="field">Input type
+        <select id="mode"><option value="table">Frequency table</option><option value="text">Typed text (count letters)</option></select>
+      </label>
+      <label class="field" id="tableField">Symbol frequency pairs<input type="text" id="freq" value="A 0.35, B 0.1, C 0.2, D 0.2, _ 0.15" spellcheck="false"></label>
+      <label class="field" id="textField" hidden>Text to compress<input type="text" id="text" value="ABRACADABRA" spellcheck="false"></label>
+      <label class="field">Tie-breaking
+        <select id="tie"><option value="fifo">oldest tree first (originals before merged)</option><option value="lifo">newest tree first (merged trees first)</option></select>
+      </label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="load">Build tree</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn ghost" id="pBook">Textbook example</button>
+      <button class="btn ghost" id="pLec">Lecture practice (ties)</button>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predictMode"> 🤔 Predict each merge</label>
+      <span class="chip" id="score">predictions: 0 / 0</span>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Up to 10 distinct symbols. In a table, write the space as <code>_</code>. In text mode a space is shown as ␣.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage-wrap"><svg class="stage" id="svgT" role="img" aria-label="Huffman forest"></svg></div>
+      <div class="callout steel formula" id="formula">&nbsp;</div>
+      <div class="callout ask" id="ask" hidden><b>🤔 Predict:</b> <span id="askQ"></span> <span id="askBtns" class="row"></span> <span id="askFb" class="small"></span></div>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>the two lightest trees (removed from the queue)</span>
+        <span><i style="background:var(--c-swap)"></i>new merged tree</span>
+        <span><i style="background:var(--c-done)"></i>codeword path</span>
+        <span><i style="background:var(--c-active)"></i>decoder position</span>
+        <span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>leaf = symbol, circle = merged weight</span>
+      </div>
+      <div id="player"></div>
+      <div class="grid cols-2">
+        <div class="panel"><div class="panel-title">Priority queue (next to leave on top)</div><div id="pq" class="scroll-x"></div></div>
+        <div class="panel"><div class="panel-title">Codewords</div><div id="codes" class="scroll-x"></div></div>
+      </div>
+      <div class="panel"><div class="panel-title">Results</div><div id="stats" class="stats"></div></div>
+      <div class="panel">
+        <div class="panel-title">Encode / decode a message</div>
+        <div class="hf-inputs">
+          <label class="field">Message (symbols from the table)<input type="text" id="msg" value="DAD_CAB" spellcheck="false"></label>
+          <button class="btn sm steel" id="enc">Encode</button>
+          <button class="btn sm primary" id="dec">▶ Animate decoding bit by bit</button>
+          <button class="btn sm ghost" id="back">Back to the tree build</button>
+        </div>
+        <div class="bits small" id="encOut" style="margin-top:8px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Tie-breaking changes the tree, not the average (lecture practice)</div>
+        <div id="ties" class="scroll-x small"></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>The stage shows the <b>forest</b> inside the priority queue, lightest tree on the left. Rectangles are symbols (leaves) with their frequency; circles are merged trees with their total weight.</li>
+        <li>Each step removes the two lightest trees (<b style="color:var(--c-compare)">yellow</b>) and joins them under a new root (<b style="color:var(--c-swap)">red</b>). The first one removed becomes the left child (edge 0), the second the right child (edge 1).</li>
+        <li>A symbol's codeword is the list of edge labels on the path from the root down to its leaf. Because symbols only live in leaves, no codeword is the prefix of another — decoding never needs separators.</li>
+        <li><b>Average bits per symbol</b> = Σ frequency × codeword length. Compare it with a fixed-length code, which needs ⌈log₂ n⌉ bits for n symbols.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Textbook table (A .35, B .1, C .2, D .2, _ .15): expect codewords A 11, B 100, C 00, D 01, _ 101; 2.25 bits per symbol vs 3 fixed, a 25% saving.</li>
+        <li>Lecture practice (A .1, B .1, C .2, D .2, E .4): build it with both tie-breaking rules. Both average 2.2 bits, but the codeword-length variance is 0.16 with “oldest first” and 1.36 with “newest first”. Which would a data link prefer?</li>
+        <li>Type text with one very common letter (e.g. <code>AAAAAAAABC</code>). How short does that letter's codeword get?</li>
+        <li>Give all symbols equal weight (e.g. 8 symbols of 0.125). Huffman should reproduce a fixed-length 3-bit code.</li>
+        <li>Encode <code>DAD_CAB</code>, then animate decoding: at each 1 or 0 the decoder moves right or left; at a leaf it prints the symbol and jumps back to the root.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="go-deeper">
+      <a class="btn sm" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/09-greedy/README.md">📖 Lesson 9: Greedy Technique</a>
+      <a class="btn sm" href="../arena/index.html?chapter=9">🏟️ Arena: Chapter 9 problems</a>
+      <a class="btn sm" href="../arena/problem.html?id=huffman-code-lengths">huffman-code-lengths</a>
+      <a class="btn sm" href="../arena/problem.html?id=huffman-average-bits">huffman-average-bits</a>
+      <a class="btn sm" href="greedy-graphs.html">Sim: Prim, Kruskal &amp; Dijkstra</a>
+      <a class="btn sm" href="greedy-choices.html">Sim: when greedy works (and fails)</a>
+      <a class="btn sm" href="heap-lab.html">Sim: heaps (the priority queue inside Huffman)</a>
+      <a class="btn sm" href="optimal-bst.html">Sim: optimal binary search tree (weighted trees by dynamic programming)</a>
+    </div>
+  </section>
+</main>
+<script src="js/huffman.js"></script>
+</body>
+</html>

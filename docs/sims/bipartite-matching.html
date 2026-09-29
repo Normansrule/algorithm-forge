@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bipartite Matching · Algorithm Forge</title>
+<meta name="description" content="Maximum matching in a bipartite graph by Breadth-First Search (BFS) augmenting paths, with a 2-coloring check and the reduction to maximum flow.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .8rem; }
+  select { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .predict .q { font-weight: 700; margin-bottom: 6px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .predict .res { margin-top: 8px; font-size: .9rem; }
+  #queue { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 26px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 10 · Iterative Improvement</div>
+    <h1>Maximum Matching in Bipartite Graphs</h1>
+    <p class="lead muted">Pair up as many vertices as possible. A Breadth-First Search (BFS) from all free vertices of V hunts for an augmenting path — edges alternating outside/inside the matching — and flipping it adds one more pair.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Graph
+        <select id="preset">
+          <option value="textbook">Textbook-style (10 vertices)</option>
+          <option value="lesson">Lesson: TAs 1–4, sections 5–8</option>
+          <option value="domino">Domino chain (one long path)</option>
+          <option value="custom">Custom (your edits)</option>
+        </select>
+      </label>
+      <label class="field">Start from
+        <select id="init">
+          <option value="preset">the preset's matching</option>
+          <option value="empty">the empty matching</option>
+        </select>
+      </label>
+      <button class="btn" id="rand">Random</button>
+      <label class="small"><input type="checkbox" id="edit"> ✏️ edit edges (click two vertices)</label>
+      <button class="btn sm" id="addV">+ V vertex</button>
+      <button class="btn sm" id="addU">+ U vertex</button>
+      <button class="btn sm" id="clearE">Clear edges</button>
+      <label class="small muted"><input type="checkbox" id="pausePredict" checked> pause to predict</label>
+    </div>
+    <div id="color" class="callout ok" style="margin-top:10px"></div>
+    <button class="btn sm steel" id="resplit" style="margin-top:8px;display:none">Re-split sides by the 2-coloring</button>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Bipartite graph with V on top and U below; matching edges highlighted"></svg>
+      <div id="queue"></div>
+      <div class="legend">
+        <span><i style="background:var(--c-done)"></i>matched vertex / matching edge</span>
+        <span><i style="background:var(--panel-2);border:2px dashed var(--muted)"></i>free vertex</span>
+        <span><i style="background:var(--c-compare)"></i>dequeued vertex / edge examined</span>
+        <span><i style="background:var(--c-active)"></i>labeled vertex (←from)</span>
+        <span><i style="background:var(--ember)"></i>augmenting path: edge to add</span>
+        <span><i style="background:var(--c-pivot)"></i>augmenting path: edge to remove</span>
+      </div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">Same problem as a maximum flow</div>
+        <svg class="stage" id="flow" role="img" aria-label="Flow network: source to V, V to U, U to sink, all capacities 1"></svg>
+        <p class="small muted" style="margin:8px 0 0">Add a source s → every V vertex and every U vertex → a sink t; direct each edge from V to U; all capacities 1. An integer flow of value k is a matching of size k. An augmenting path in the graph is an augmenting path in this network: its matched edges are used <b>backward</b> (purple, dashed).</p>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div>
+        <div id="predict" class="predict callout" style="margin-top:10px"><span class="muted small">A prediction prompt appears each time an augmenting path is found.</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>V</b> (top, blue rings) and <b>U</b> (bottom, purple rings) are the two sides; every edge must join the sides. That is exactly a 2-coloring — possible if and only if the graph has no odd-length cycle.</li>
+        <li><b>Green</b> vertices/edges are matched; dashed rings are <b>free</b> vertices.</li>
+        <li>A label <b>←w</b> means "reached from w". U vertices are labeled from V along non-matching edges; a V vertex is labeled from its mate along a matching edge.</li>
+        <li>When a free U vertex is reached, the labels trace an <b>augmenting path</b> back to a free V vertex. Flipping it (orange edges in, purple edges out) grows the matching by one.</li>
+        <li>The queue chips show BFS order; <b>↑</b> marks dequeued vertices, as in Levitin's Figure 10.10.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Textbook graph from M = {(4,8), (5,9)}: predict the three augmenting paths. The third, 3–8–4–10, ends in a different maximum matching than the "obvious" one — maximum matchings need not be unique.</li>
+        <li>Lesson graph from the empty matching: the last augmentation is the 7-edge path 2–5–1–6–3–7–4–8. Every TA moves one section to the right to make room for TA 2.</li>
+        <li>Turn on ✏️ edit and add edge 1–2 in the textbook graph. The 2-coloring check finds the odd cycle 1–2–6 (triangle) and refuses to run. Remove 2–6 instead of 1–2: now it's bipartite again — press "Re-split sides".</li>
+        <li>Load <b>Domino chain</b>: 3 of 4 already matched, yet no single edge can be added. Watch the BFS walk the whole chain to find the one 7-edge augmenting path.</li>
+        <li>Watch the flow network while an augmenting path is shown: s → free V vertex, alternating forward/backward edges, then → t. It is the max-flow labeling algorithm in disguise.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/10-iterative-improvement/README.md">📖 Lesson 10: Iterative Improvement</a>
+      <a class="btn" href="../arena/index.html?chapter=10">🏟️ Arena · Chapter 10</a>
+      <a class="btn" href="../arena/problem.html?id=bipartite-matching-size">🧩 Problem: bipartite-matching-size</a>
+      <a class="btn" href="max-flow.html">🎮 Max-flow &amp; min cut</a>
+      <a class="btn" href="stable-marriage.html">🎮 Stable marriage</a>
+      <a class="btn" href="simplex.html">🎮 Simplex</a>
+    </div>
+    <p class="small muted" style="margin-top:10px">Reference: Levitin §10.3. Each iteration costs O(n + m) and there are at most n/2 + 1 of them, so O(n(n + m)); Hopcroft–Karp improves this to O(√n (n + m)).</p>
+  </section>
+</main>
+<script src="js/bipartite-matching.js"></script>
+</body>
+</html>

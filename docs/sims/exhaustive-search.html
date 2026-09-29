@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exhaustive Search · Algorithm Forge</title>
+<meta name="description" content="Watch exhaustive search try every tour, every subset and every assignment — and see why the number of candidates explodes.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/predict-and-graph.js"></script>
+<style>
+  #modeCtl .row { margin-top: 10px; }
+  #extra { max-height: 360px; overflow: auto; position: relative; }
+  #extra table.t { width: 100%; }
+  #extra table.t td, #extra table.t th { white-space: nowrap; }
+  #extra tr.hide { display: none; }
+  #extra tr.cur td { background: var(--steel-soft); }
+  #extra tr.best td { color: var(--c-done); font-weight: 700; }
+  #extra td.bad { color: var(--bad); }
+  .tourlist { font-family: var(--mono); font-size: .82rem; line-height: 1.7; }
+  .tourlist div { padding: 0 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tourlist .cur { background: var(--steel-soft); }
+  .tourlist .best { color: var(--c-done); font-weight: 700; }
+  textarea#asgMat { font-family: var(--mono); min-width: 200px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 3 · Brute Force and Exhaustive Search</div>
+    <h1>Exhaustive Search: Try Everything</h1>
+    <p class="lead muted">Generate every candidate, keep the ones that obey the rules, remember the best. Here it solves the Traveling Salesman Problem (TSP), the 0/1 knapsack problem and the assignment problem. It always finds the right answer, but the number of candidates grows faster than any computer can keep up with.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <span class="muted small" style="font-weight:700">Problem</span>
+      <div class="fx-seg" id="modes" role="tablist" aria-label="Problem">
+        <button data-m="tsp" class="on">Traveling Salesman</button>
+        <button data-m="knap">0/1 Knapsack</button>
+        <button data-m="asg">Assignment</button>
+        <button data-m="boom">💥 Explosion chart</button>
+      </div>
+    </div>
+    <div id="modeCtl"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Exhaustive search stage"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel"><div class="panel-title" id="extraTitle">Candidates so far</div><div id="extra"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">🤔 Predict</div><div id="predict"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Traveling Salesman Problem (TSP).</b> Every city pair has a distance. The <span style="color:var(--steel);font-weight:700">blue</span> loop is the tour being measured right now; the thick <span style="color:var(--c-done);font-weight:700">green</span> loop is the shortest tour found so far. The small numbers next to cities give the visiting order. The start city is fixed, so there are (n−1)! orders of the other cities, and each tour shows up twice (once in each direction), which is why only (n−1)!/2 tours are really different.</p>
+      <p><b>0/1 knapsack.</b> Each box is an item (weight <i>w</i>, value <i>v</i>). Highlighted boxes are in the current subset. The bar underneath fills with their weights; the dashed line is the capacity W. Red means the subset is too heavy (not feasible). The table lists every subset, like Levitin's Figure 3.8, and reaches 2ⁿ rows.</p>
+      <p><b>Assignment.</b> Rows are people, columns are jobs. A candidate picks one cell in each row, all in different columns: that is a permutation, and there are n! of them. Blue cells are the current pick; green-outlined cells are the best pick so far.</p>
+      <p><b>Explosion chart.</b> The y-axis is logarithmic: each grid line is 10× the one below. Dashed lines show how many candidates a computer checks in a second, a day, a year and the age of the universe.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>In TSP with the 4-city preset, find the two tours of length 11. Why are they "the same" tour? Now tick <b>skip mirror tours</b>: the tour count drops from 3! = 6 to 3!/2 = 3 and the answer does not change.</li>
+        <li>Add cities by clicking empty space until n = 8. The player now has thousands of steps. Drag the speed slider to the max and watch the best-so-far tour jump less and less often.</li>
+        <li>Knapsack: set the capacity to 19 (the total weight). Every subset is feasible now, so the answer is "take everything". Set it to 2: only the empty set fits.</li>
+        <li>Assignment: in Levitin's matrix the smallest entry is 1 (Person 3, Job 3). Build your own 3×3 matrix where the optimal assignment does <i>not</i> use the smallest entry (Levitin Exercise 3.4.5).</li>
+        <li>Explosion chart: switch the speed from 10⁹ to 10¹⁰ checks per second. How many more cities does 10× more speed buy you for n!? (Answer: about one.)</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/03-brute-force/README.md">📘 Lesson: Ch 3 Brute Force</a>
+      <a href="../arena/index.html?chapter=3">⚔️ Arena: Chapter 3 problems</a>
+      <a href="../arena/problem.html?id=tsp-exhaustive">TSP exhaustive</a>
+      <a href="../arena/problem.html?id=knapsack-exhaustive">Knapsack exhaustive</a>
+      <a href="../arena/problem.html?id=assignment-exhaustive">Assignment exhaustive</a>
+      <a href="../arena/problem.html?id=partition-exhaustive">Partition exhaustive</a>
+      <a href="combinatorics.html">🔀 Sim: generating permutations &amp; subsets</a>
+      <a href="graph-traversal.html">🕸️ Sim: Depth-First Search (DFS) &amp; Breadth-First Search (BFS)</a>
+      <a href="dp-studio.html">🧮 Sim: knapsack by dynamic programming</a>
+      <a href="branch-and-bound.html">✂️ Sim: branch-and-bound</a>
+    </div>
+  </section>
+</main>
+<script src="js/exhaustive-search.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When Greedy Works · Algorithm Forge</title>
+<meta name="description" content="Greedy choices that work and fail: change-making with canonical and non-canonical coins versus dynamic programming, activity selection by earliest finish time, and fractional versus 0/1 knapsack.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  label.field { max-width: 100%; }
+  label.field[hidden] { display: none; }
+  select { max-width: 100%; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  .gc-inputs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .gc-inputs input[type="text"] { width: 100%; max-width: 300px; }
+  .formula { font-family: var(--mono); font-size: 0.86rem; min-height: 1.6em; overflow-wrap: anywhere; }
+  .ask[hidden] { display: none; }
+  .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .go-deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  .blurb { color: var(--ink-2); font-size: 0.92rem; margin: 10px 0 0; }
+  table.t { width: 100%; }
+  table.t tr.cur td { background: var(--steel-soft); }
+  table.t tr.acc td { color: var(--c-done); font-weight: 700; }
+  table.t tr.rej td { color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 9 · Greedy Technique</div>
+    <h1>When Greedy Works (and When It Doesn't)</h1>
+    <p class="lead muted">A greedy algorithm makes the choice that looks best right now — feasible, locally optimal, irrevocable — and never looks back. Sometimes that is provably optimal. Sometimes it is quietly wrong. Put three classic problems side by side and find out which is which.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row" style="margin-bottom:12px">
+      <label class="field">Problem
+        <select id="prob">
+          <option value="change">Change-making: greedy vs Dynamic Programming (DP)</option>
+          <option value="activity">Activity selection (interview question)</option>
+          <option value="frac">Fractional vs 0/1 knapsack</option>
+        </select>
+      </label>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predictMode"> 🤔 Predict each greedy choice</label>
+      <span class="chip" id="score">predictions: 0 / 0</span>
+    </div>
+    <div class="gc-inputs" id="inputs"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="load">Load &amp; run</button>
+      <button class="btn" id="rand">Random</button>
+      <span id="extra" class="row"></span>
+    </div>
+    <p class="blurb" id="blurb"></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage-wrap"><svg class="stage" id="stage" role="img" aria-label="Greedy choice visualization"></svg></div>
+      <div class="callout steel formula" id="formula">&nbsp;</div>
+      <div class="callout ask" id="ask" hidden><b>🤔 Predict:</b> <span id="askQ"></span> <span id="askBtns" class="row"></span> <span id="askFb" class="small"></span></div>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel"><div class="panel-title" id="sideTitle">Details</div><div id="side" class="scroll-x small"></div></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Change-making:</b> the top lane is the greedy cashier (largest coin that fits, again and again). The bottom lane is the DP optimum. Same length = greedy was optimal for this amount.</li>
+        <li><b>Activity selection:</b> each bar is an activity on a timeline, listed in the order the greedy rule considers them. <b style="color:var(--c-done)">Green</b> = picked, grey = skipped because it overlaps something already picked (outlined in red). The dashed line marks when the last picked activity ends.</li>
+        <li><b>Knapsack:</b> the long bar is the knapsack's capacity. Items pour in best value-per-weight first; the last one may be cut into a fraction. The summary compares that with the 0/1 version, where items cannot be cut.</li>
+        <li>Every run ends with a proof-by-comparison: the greedy answer next to a brute-force or DP optimum.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>US coins 25, 10, 5, 1 and 48¢: greedy gives 25 + 10 + 10 + 1 + 1 + 1 (6 coins), which is optimal. Press “Find a counterexample” — none exists for this canonical set.</li>
+        <li>Coins 1, 3, 4 and amount 6: greedy takes 4 + 1 + 1 (3 coins) but 3 + 3 needs only 2. Try coins 1, 5, 10, 20, 25 and amount 40 too.</li>
+        <li>Activity selection with the lecture's data (start 1, 3, 0, 5, 8, 5 / end 2, 4, 6, 7, 9, 9): earliest finish picks indices 0, 1, 3, 4 — four activities, the maximum.</li>
+        <li>Switch the activity rule to “earliest start” or “shortest duration” and load the matching trap preset. The greedy count drops below the brute-force optimum.</li>
+        <li>Knapsack “0/1 greedy fails” preset (W = 50): fractional greedy earns 240, which is optimal when cutting is allowed. Without cutting, greedy by ratio gets 160 but the best 0/1 choice is 220.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="go-deeper">
+      <a class="btn sm" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/09-greedy/README.md">📖 Lesson 9: Greedy Technique</a>
+      <a class="btn sm" href="../arena/index.html?chapter=9">🏟️ Arena: Chapter 9 problems</a>
+      <a class="btn sm" href="../arena/problem.html?id=greedy-change-canonical">greedy-change-canonical</a>
+      <a class="btn sm" href="../arena/problem.html?id=greedy-change-counterexample">greedy-change-counterexample</a>
+      <a class="btn sm" href="../arena/problem.html?id=activity-selection">activity-selection</a>
+      <a class="btn sm" href="../arena/problem.html?id=fractional-knapsack">fractional-knapsack</a>
+      <a class="btn sm" href="../arena/problem.html?id=change-making-dp">change-making-dp</a>
+      <a class="btn sm" href="../arena/problem.html?id=knapsack-dp">knapsack-dp</a>
+      <a class="btn sm" href="dp-studio.html?problem=change">Sim: change-making by DP</a>
+      <a class="btn sm" href="dp-studio.html?problem=knap">Sim: 0/1 knapsack by DP</a>
+      <a class="btn sm" href="greedy-graphs.html">Sim: Prim, Kruskal &amp; Dijkstra</a>
+      <a class="btn sm" href="huffman.html">Sim: Huffman codes</a>
+    </div>
+  </section>
+</main>
+<script src="js/greedy-choices.js"></script>
+</body>
+</html>

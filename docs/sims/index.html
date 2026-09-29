@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulations · Algorithm Forge</title>
+<meta name="description" content="Every Algorithm Forge simulation, grouped by chapter: watch algorithms run step by step on your own input.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<link rel="stylesheet" href="../assets/css/forge-hub.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="../assets/js/forge-hub.js"></script>
+<style>
+  .gal-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; }
+  .gal-hero .count { font-family: var(--mono); color: var(--muted); font-size: .85rem; }
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+  .how .panel { padding: 12px 14px; font-size: .9rem; color: var(--ink-2); }
+  .how b { color: var(--ink); }
+  .sticky-filter { position: sticky; top: 57px; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); padding: 12px 0; margin-top: 16px; border-bottom: 1px solid var(--line); }
+  .sim-card .open { margin-top: 10px; font-weight: 700; font-size: .85rem; color: var(--ember); }
+  a.card.sim-card:hover .open { text-decoration: underline; }
+  mark { background: var(--ember-soft); color: var(--ink); border-radius: 3px; padding: 0 2px; }
+  @media (max-width: 760px) { .how { grid-template-columns: 1fr; gap: 8px; } .how .panel { padding: 9px 12px; font-size: .85rem; } .gal-hero { grid-template-columns: 1fr; } .sticky-filter { top: 53px; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero gal-hero">
+    <div>
+      <div class="eyebrow">Visual Lab</div>
+      <h1>Simulations</h1>
+      <p class="lead">Every algorithm in the course, running on <b>your</b> input — one step at a time, with the current
+        pseudocode line highlighted and every comparison counted. Pick a chapter, or search for an algorithm.</p>
+    </div>
+    <div class="count" id="count"></div>
+  </header>
+
+  <div class="how">
+    <div class="panel"><b>1 · Type your own input.</b> Every sim has a custom-input box and a Random button — use the exact example from your notes.</div>
+    <div class="panel"><b>2 · Step, don't just play.</b> Use <kbd>←</kbd> <kbd>→</kbd> to move one step; read the narration to learn <i>why</i> it happened.</div>
+    <div class="panel"><b>3 · Predict first.</b> Before each step, guess what moves next. The sims ask you to at key moments.</div>
+  </div>
+
+  <div class="legend" style="margin-top:14px" aria-label="Color legend used by every simulation">
+    <span><i style="background:var(--c-compare)"></i>being compared</span>
+    <span><i style="background:var(--c-swap)"></i>swapped / written</span>
+    <span><i style="background:var(--c-active)"></i>current / focus</span>
+    <span><i style="background:var(--c-pivot)"></i>pivot / special</span>
+    <span><i style="background:var(--c-done)"></i>done / final</span>
+    <span><i style="background:var(--c-dim)"></i>excluded</span>
+  </div>
+
+  <div class="sticky-filter">
+    <div class="filterbar">
+      <input type="search" id="q" placeholder="Search simulations — e.g. heap, Dijkstra, knapsack, recursion" aria-label="Search simulations">
+    </div>
+    <div class="chipset scroll-sm" id="chips" style="margin-top:10px" role="group" aria-label="Filter by chapter"></div>
+  </div>
+
+  <div id="groups"></div>
+  <div id="empty" class="empty" hidden>No simulation matches that search. Try a simpler word, like “sort” or “tree”.</div>
+</main>
+<script>
+Forge.page({ title: "Simulations" });
+(function () {
+  const H = ForgeHub;
+  const groupsEl = document.getElementById("groups");
+  const chipsEl = document.getElementById("chips");
+  const q = document.getElementById("q");
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  let chapterFilter = null;
+
+  // Build one card per (chapter, sim) pair; shared sims get a chapter-specific focus line.
+  const entries = [];
+  H.CHAPTERS.forEach((c) => c.sims.forEach(([id, focus]) => {
+    const s = H.SIMS[id];
+    const others = H.CHAPTERS.filter((o) => o.n !== c.n && o.sims.some((x) => x[0] === id)).map((o) => o.n);
+    entries.push({ ch: c.n, id, title: s.title, desc: focus || s.blurb, others, hay: norm([s.title, s.blurb, focus || "", c.title, "ch " + c.n, id].join(" ")) });
+  }));
+  const unique = new Set(entries.map((e) => e.id)).size;
+  document.getElementById("count").textContent = `${unique} simulations · ${entries.length} chapter entries`;
+
+  // chips
+  const chipBtns = [];
+  function chip(label, val) {
+    const b = Forge.el("button", { class: "chip", type: "button", "aria-pressed": "false", onclick: () => { chapterFilter = chapterFilter === val ? null : val; if (val === null) chapterFilter = null; render(); } }, label);
+    b.dataset.val = val === null ? "" : val;
+    chipBtns.push(b); chipsEl.appendChild(b);
+  }
+  chip("All", null);
+  H.CHAPTERS.filter((c) => c.sims.length).forEach((c) => chip("Ch " + c.n, c.n));
+
+  function render() {
+    const terms = norm(q.value.trim()).split(/\s+/).filter(Boolean);
+    groupsEl.innerHTML = "";
+    let shown = 0;
+    chipBtns.forEach((b) => { const on = (b.dataset.val === "" && chapterFilter === null) || +b.dataset.val === chapterFilter && b.dataset.val !== ""; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    H.CHAPTERS.forEach((c) => {
+      if (chapterFilter !== null && c.n !== chapterFilter) return;
+      const list = entries.filter((e) => e.ch === c.n && terms.every((t) => e.hay.includes(t)));
+      const isPlaybook = c.n === 17 && !terms.length;
+      if (!list.length && !isPlaybook) return;
+      if (!c.sims.length && !isPlaybook) return;
+      const head = Forge.el("div", { class: "ch-group-head" },
+        Forge.el("span", { class: "ch-num" }, "Ch " + c.n),
+        Forge.el("h2", null, c.title),
+        c.beyond ? Forge.el("span", { class: "chip steel" }, "Beyond the textbook") : null,
+        Forge.el("div", { class: "links" },
+          Forge.el("a", { href: H.lessonUrl(c.n), target: "_blank", rel: "noopener" }, "📖 Lesson"),
+          Forge.el("a", { href: "../arena/index.html?chapter=" + c.n }, "🏟️ Practice")),
+        Forge.el("p", { class: "hook" }, c.hook));
+      const grid = Forge.el("div", { class: "auto-grid" });
+      list.forEach((e) => {
+        shown++;
+        const card = Forge.el("a", { class: "card sim-card", href: e.id + ".html" });
+        card.innerHTML = `<div class="glyph-box">${H.simGlyph(e.id)}</div><h3>${esc(e.title)}</h3><p>${esc(e.desc)}</p>` +
+          `<div class="meta"><span class="chip ember">Ch ${e.ch}</span>${e.others.map((o) => `<span class="chip" title="Also used in Chapter ${o}">also Ch ${o}</span>`).join("")}</div>` +
+          `<div class="open">Open simulation →</div>`;
+        grid.appendChild(card);
+      });
+      if (isPlaybook) grid.appendChild(Forge.el("div", { class: "callout steel", style: { gridColumn: "1 / -1" } },
+        "The playbook has no simulation of its own — it sends you back to the right sim for each design decision. A good habit: before you write any algorithm, find the sim above that looks most like your problem."));
+      groupsEl.appendChild(Forge.el("section", { class: "ch-group", id: "ch-" + c.n }, head, grid));
+    });
+    document.getElementById("empty").hidden = shown > 0;
+  }
+  q.addEventListener("input", render);
+
+  // ?ch=N or #ch-N preselects / scrolls
+  const params = new URLSearchParams(location.search);
+  if (params.get("q")) q.value = params.get("q");
+  if (params.get("ch") != null && params.get("ch") !== "" && !isNaN(+params.get("ch"))) chapterFilter = +params.get("ch");
+  render();
+  if (location.hash) { const t = document.querySelector(location.hash); if (t) setTimeout(() => t.scrollIntoView(), 50); }
+})();
+</script>
+</body>
+</html>

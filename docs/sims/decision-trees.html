@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Trees &amp; Lower Bounds · Algorithm Forge</title>
+<meta name="description" content="Decision trees for comparison sorting and binary search, the ⌈log₂ n!⌉ lower-bound calculator with chart, and an adversary-argument guessing game.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 380px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  select { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .predict .q { font-weight: 700; margin-bottom: 6px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .predict .res { margin-top: 8px; font-size: .9rem; }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  .chart-wrap { position: relative; }
+  #tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 9px; font-size: .78rem; box-shadow: var(--shadow); min-width: 170px; }
+  #tip i, .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+  #glog { font-size: .85rem; max-height: 190px; overflow: auto; }
+  #glog div { padding: 2px 0; border-bottom: 1px solid var(--line); }
+  #calcOut table { width: 100%; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 11 · Limitations of Algorithm Power</div>
+    <h1>Decision Trees &amp; Lower Bounds</h1>
+    <p class="lead muted">Every comparison-based algorithm is secretly a tree of yes/no questions. Count the leaves it must have and you get a limit no algorithm can beat: ⌈log₂ n!⌉ comparisons to sort, ⌈log₂(n + 1)⌉ to search.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="mode">
+          <option value="insertion">Sorting: insertion sort</option>
+          <option value="selection">Sorting: selection sort</option>
+          <option value="bubble">Sorting: bubble sort</option>
+          <option value="search">Searching: binary search</option>
+        </select>
+      </label>
+      <span id="sortOpts" class="row">
+        <label class="field">n <select id="sn"><option>3</option><option>4</option></select></label>
+        <label class="field">Input values for a, b, c, …<input id="vals" type="text" value="5 9 2" style="width:130px"></label>
+      </span>
+      <span id="searchOpts" class="row" style="display:none">
+        <label class="field">n = <span id="bnv">13</span><input id="bn" type="range" min="1" max="15" value="13" aria-label="array size n"></label>
+        <label class="field">Search key K<input id="key" type="text" value="70" style="width:70px"></label>
+        <span class="small mono muted" id="arr"></span>
+      </span>
+      <button class="btn primary" id="go">Walk the tree</button>
+      <button class="btn" id="rand">Random</button>
+      <label class="small muted"><input type="checkbox" id="pausePredict" checked> pause to predict</label>
+    </div>
+    <div id="err" class="err"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Decision tree; the path for the current input is highlighted"></svg>
+      <div class="small muted" id="stageNote"></div>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>comparison being made</span>
+        <span><i style="background:var(--ember)"></i>path of this input</span>
+        <span><i style="background:var(--c-pivot)"></i>a longest path (worst case)</span>
+        <span><i style="background:var(--panel-2);border:1px dashed var(--muted)"></i>redundant comparison</span>
+        <span><i style="background:var(--c-done)"></i>outcome reached</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div>
+        <div id="predict" class="predict callout" style="margin-top:10px"><span class="muted small">A prediction prompt appears on the first step.</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>The sorting lower bound, for any n</h2>
+      <label class="field">n <input id="cn" type="number" min="1" max="2000" value="12" style="width:100px"></label>
+      <div id="calcOut" class="scroll-x" style="margin-top:10px"></div>
+      <p class="small muted" style="margin-top:8px">Why ⌈log₂ n!⌉: a binary tree of height h has at most 2^h leaves, and a sorting tree needs one leaf per ordering, so 2^h ≥ n!.</p>
+    </div>
+    <div class="panel">
+      <h2>Bound vs. real algorithms</h2>
+      <div class="row">
+        <label class="field">up to n = <span id="cNv">64</span><input id="cN" type="range" min="4" max="512" value="64" aria-label="chart range"></label>
+        <label class="small"><input type="checkbox" id="cIns"> show insertion sort n(n−1)/2</label>
+      </div>
+      <div class="legend" id="chartLegend" style="margin:6px 0"></div>
+      <div class="chart-wrap"><svg class="stage" id="chart" role="img" aria-label="Line chart comparing the sorting lower bound with n log n and merge sort"></svg><div id="tip" hidden></div></div>
+      <details style="margin-top:8px"><summary class="small" style="cursor:pointer">Table view</summary><div id="chartTable" class="scroll-x" style="margin-top:6px"></div></details>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Adversary game: guess my number</h2>
+    <p class="small muted">An adversary argument proves a lower bound by answering questions so as to keep the algorithm guessing as long as possible — while staying consistent. Here the adversary has <b>not</b> picked a number; after each “Is it ≤ k?” it keeps whichever side is larger.</p>
+    <div class="row">
+      <label class="field">Numbers 1..n
+        <select id="gn"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>100</option><option>1000</option></select>
+      </label>
+      <label class="field">Opponent
+        <select id="gmode"><option value="adv">Adversary (keeps the larger half)</option><option value="fair">Fair (random secret)</option></select>
+      </label>
+      <label class="field">k = <span id="gkv">8</span><input id="gk" type="range" min="0" max="16" value="8" aria-label="question threshold k"></label>
+      <button class="btn primary" id="gask">Ask “Is it ≤ k?”</button>
+      <button class="btn" id="gauto">Auto-play halving</button>
+      <button class="btn" id="gnew">New game</button>
+    </div>
+    <svg class="stage" id="gsvg" role="img" aria-label="Remaining candidate numbers; click a cell to ask Is it at most that number" style="margin-top:10px;cursor:pointer"></svg>
+    <div class="grid cols-2" style="margin-top:10px">
+      <div>
+        <div class="counters"><div class="counter"><div class="k">questions asked</div><div class="v" id="gq">0</div></div><div class="counter"><div class="k">⌈log₂ n⌉ bound</div><div class="v" id="glb">4</div></div></div>
+        <div id="gstatus" class="callout steel" style="margin-top:10px"></div>
+      </div>
+      <div id="glog"></div>
+    </div>
+  </section>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>Each rounded node is one key comparison, written “x&lt;y”: <b>left</b> = yes, <b>right</b> = no. Leaves are outcomes (the sorted order, or where a failed search ends).</li>
+        <li>An input's run is a root-to-leaf path; its length = the comparisons made. The <b>height</b> is the worst case. The purple dashed path is one longest path.</li>
+        <li>Dashed-border nodes are <b>redundant</b>: earlier answers already force the result, so only one branch exists (selection and bubble sort have them; insertion sort for n = 3 doesn't).</li>
+        <li>Binary search tree: circles hold A[m] with its index above; each is a three-way comparison (=, &lt;, &gt;). Squares are the n + 1 gaps of unsuccessful searches.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Insertion sort, n = 3: the tree has height 3 = ⌈log₂ 6⌉ — optimal. Average = (2+3+3+2+3+3)/6 ≈ 2.67. Which two inputs finish in 2 comparisons?</li>
+        <li>Switch to selection sort, n = 3: same height, but two redundant nodes, and every input costs 3 comparisons (average 3).</li>
+        <li>n = 4: all three sorts have height 6, but ⌈log₂ 24⌉ = 5. Can any algorithm do 5? (Yes — merge-insertion sorts 4 elements in 5 comparisons.)</li>
+        <li>Binary search, n = 13, K = 70: found after 3 comparisons (m = 6, 9, 7); K = 40 fails after 4 = the height. Try n = 7 then n = 8: the height jumps from 3 to 4 exactly when n + 1 passes a power of 2.</li>
+        <li>Adversary game with n = 16: can you ever finish in fewer than 4 questions? Switch to Fair mode and try again — sometimes you get lucky, but never in the worst case.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/11-limitations/README.md">📖 Lesson 11: Limitations of Algorithm Power</a>
+      <a class="btn" href="../arena/index.html?chapter=11">🏟️ Arena · Chapter 11</a>
+      <a class="btn" href="../arena/problem.html?id=sort-lower-bound">🧩 Problem: sort-lower-bound</a>
+      <a class="btn" href="p-np.html">🎮 P versus NP lab (Polynomial vs Nondeterministic Polynomial time)</a>
+      <a class="btn" href="sorting-studio.html">🎮 Sorting studio</a>
+      <a class="btn" href="search-lab.html">🎮 Search lab</a>
+    </div>
+    <p class="small muted" style="margin-top:10px">Reference: Levitin §11.1–11.2. The ⌈log₂ n!⌉ bound is not always reachable: for n = 12 it says 29, but 30 comparisons are needed.</p>
+  </section>
+</main>
+<script src="js/decision-trees.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Pseudocode engine tests
+        run: node tests/engine/forge-pseudo.test.mjs
+
+      - name: Validate every Arena problem (solutions pass, starters fail, mistakes are caught)
+        run: node tools/validate-problems.mjs --quiet
+
+      - name: Every lesson ALGORITHM block is valid Forge Pseudocode
+        run: node tools/check-lesson-pseudocode.mjs
+
+      - name: Cheat-sheet pseudocode snippets run
+        run: node tools/check-pseudocode-snippets.mjs
+
+      - name: Python library tests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e . pytest
+          python -m pytest -q
+
+      - name: Java compile + self-test
+        run: |
+          javac -d build src/java/algoforge/*.java
+          java -cp build algoforge.SelfTest
+          javac -d build practice/empirical-analysis-lab/SortAnalysis.java
+
+      - name: Links resolve (repo + site)
+        run: python tools/check_links.py
+
+  site:
+    # Loads every page of the GitHub Pages site in headless Chromium (desktop + phone, dark + light):
+    # no console errors, no page errors, no horizontal scrolling on phones.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Playwright + Chromium
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Check every page
+        run: python tools/check_pages.py --all --out /tmp/shots

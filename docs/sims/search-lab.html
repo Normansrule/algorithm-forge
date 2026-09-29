@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search Lab · Algorithm Forge</title>
+<meta name="description" content="Sequential search with a sentinel, binary search, interpolation search, quickselect, the fake-coin problem, Russian peasant multiplication and exponentiation by squaring, animated step by step.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  [hidden] { display: none !important; }
+  #tabs { margin-bottom: 0; }
+  #tabs button { padding: 8px 10px; }
+  #controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  #controls input[type="text"] { max-width: 100%; }
+  .ask-q { font-weight: 600; margin-bottom: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .links a { font-weight: 600; }
+  #practice { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; font-weight: 600; margin-top: 10px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 4 · Decrease-and-Conquer (plus sequential search from Ch 3)</div>
+    <h1>Search Lab</h1>
+    <p class="lead muted">Shrink the problem at every step: by one element, by half, by a third, or by a guess. Seven small algorithms, one set of controls.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Algorithms"></div>
+    <div class="row" style="margin:10px 0 12px"><span class="chip ember" id="tabChapter"></span><span class="muted small" id="tabLead"></span></div>
+    <div id="controls"></div>
+    <div class="small" id="msg" style="color:var(--warn);min-height:1.2em;margin-top:6px"></div>
+    <div id="practice"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Visualization of the current search algorithm"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="codeHost"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctrHost"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel">
+        <div class="panel-title">🤔 Predict <span class="chip" id="predictScore" style="margin-left:auto">0 / 0 right</span></div>
+        <label class="small"><input type="checkbox" id="predictOn" checked> Pause and quiz me at key moments</label>
+        <div id="predictBox" class="small" style="margin-top:8px"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p id="howBody"></p>
+      <p class="small muted">Colors are the same in every Algorithm Forge simulation: yellow = compared, blue = current, red = swapped or written, purple = pivot or special, green = found or final, grey = ruled out. Keys: <kbd>←</kbd> <kbd>→</kbd> step, <kbd>Space</kbd> play or pause.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol id="tryBody"></ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/04-decrease-and-conquer/README.md">📘 Ch 4 lesson: Decrease-and-Conquer</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/03-brute-force/README.md">📘 Ch 3 lesson: Brute Force (sequential search)</a>
+      <a href="../arena/index.html?chapter=4">⚔️ Arena: Ch 4</a>
+      <a href="../arena/index.html?chapter=3">⚔️ Arena: Ch 3</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="../arena/problem.html?id=sequential-search-sentinel">sequential-search-sentinel</a>
+      <a href="../arena/problem.html?id=binary-search">binary-search</a>
+      <a href="../arena/problem.html?id=binary-search-first">binary-search-first</a>
+      <a href="../arena/problem.html?id=interpolation-search">interpolation-search</a>
+      <a href="../arena/problem.html?id=quickselect">quickselect</a>
+      <a href="../arena/problem.html?id=fake-coin-three-way">fake-coin-three-way</a>
+      <a href="../arena/problem.html?id=russian-peasant">russian-peasant</a>
+      <a href="../arena/problem.html?id=exp-by-squaring">exp-by-squaring</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="sorting-studio.html?alg=quick">📊 Sim: Sorting Studio (quicksort partitions)</a>
+      <a href="horner-binexp.html">🧮 Sim: Horner's rule and binary exponentiation</a>
+      <a href="recurrence-lab.html">🔁 Sim: Recurrence lab</a>
+      <a href="growth-rates.html">📈 Sim: Growth rates (log n vs n)</a>
+    </div>
+  </section>
+</main>
+<script>Forge.page({ title: "Search Lab", chapter: "Ch 4 · Decrease-and-Conquer" });</script>
+<script src="js/search-lab.js"></script>
+</body>
+</html>

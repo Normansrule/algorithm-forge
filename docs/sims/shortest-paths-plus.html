@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shortest Paths+ · Algorithm Forge</title>
+<meta name="description" content="Bellman-Ford relaxation rounds with negative edges and negative-cycle detection on an editable directed graph, plus A* versus Dijkstra on a grid you can draw walls on.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"], textarea { max-width: 100%; }
+  textarea { font-family: var(--mono); font-size: 0.82rem; }
+  .order { display: flex; flex-wrap: wrap; gap: 4px; font-family: var(--mono); font-size: 0.78rem; }
+  .order span { padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg-2); }
+  .order span.on { border-color: var(--c-compare); background: color-mix(in srgb, var(--c-compare) 25%, transparent); }
+  table.t td.chg { color: var(--c-swap); font-weight: 700; }
+  #stage.grid-mode { touch-action: none; cursor: crosshair; }
+  #stage.graph-mode { cursor: pointer; }
+  .hint { font-size: 0.8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 14 · Advanced Graphs</div>
+    <h1>Shortest Paths+: Bellman–Ford and A*</h1>
+    <p class="lead muted">When edges can be negative, relax every edge in rounds and use round |V| as an alarm for negative cycles. When you know roughly where the goal is, let a heuristic pull the search toward it.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="mode">
+          <option value="bf">Bellman–Ford (negative edges, negative cycles)</option>
+          <option value="grid">A* vs Dijkstra on a grid</option>
+        </select>
+      </label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px;margin-top:16px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+
+    <div id="bfCtl" class="stack" style="margin-top:10px">
+      <div class="row" style="align-items:flex-start">
+        <label class="field" style="flex:1;min-width:0">Edges in relaxation order: one "u v weight" per line
+          <textarea id="edges" rows="4" style="width:100%"></textarea>
+        </label>
+        <div class="stack" style="min-width:180px">
+          <label class="field">Source <select id="src"></select></label>
+          <label class="field">Weight for clicked edges <input type="number" id="newW" value="2" style="width:80px"></label>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="bfRun">Run</button>
+        <button class="btn" id="bfLesson">Lesson graph</button>
+        <button class="btn" id="bfNeg">Add d→b (−3): negative cycle</button>
+        <button class="btn" id="bfRand">Random graph</button>
+        <button class="btn" id="bfShuffle">Shuffle edge order</button>
+        <button class="btn" id="bfGood">Lucky order (follow the shortest-path tree)</button>
+      </div>
+      <p class="hint" style="margin:0">Click a vertex, then another, to add that directed edge with the weight above (or re-weight it). Click an edge's weight label to delete the edge.</p>
+    </div>
+
+    <div id="gridCtl" class="stack" style="margin-top:10px" hidden>
+      <div class="row">
+        <label class="field">Paint
+          <select id="tool"><option value="wall">walls (click / drag)</option><option value="start">move start S</option><option value="goal">move goal G</option></select>
+        </label>
+        <label class="field">A* heuristic h
+          <select id="heur">
+            <option value="manhattan">Manhattan distance (admissible)</option>
+            <option value="double">2 × Manhattan (inadmissible: weighted A*)</option>
+            <option value="zero">h = 0 (A* becomes Dijkstra)</option>
+          </select>
+        </label>
+        <label class="field">Grid
+          <select id="gsize"><option value="7x10">7 × 10</option><option value="12x18">12 × 18</option></select>
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="gLesson">Lesson grid</button>
+        <button class="btn" id="gRand">Random walls</button>
+        <button class="btn" id="gWall">Long wall</button>
+        <button class="btn" id="gClear">Clear walls</button>
+      </div>
+      <p class="hint" style="margin:0">Draw on either grid. Both searches rerun instantly on the same map; press ▶ to watch them race.</p>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Shortest path visualization"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+      <div class="panel" id="bfTablePanel">
+        <div class="panel-title">Relaxation order · distances after each pass</div>
+        <div class="order" id="order"></div>
+        <div class="scroll-x" style="margin-top:10px" id="dtable"></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <div class="grid cols-2">
+      <div>
+        <h3>Bellman–Ford</h3>
+        <ul>
+          <li>The number next to each vertex is its current estimate <code>d[v]</code> (∞ = not reached yet). The source has an orange ring.</li>
+          <li>Each <b>pass</b> relaxes every edge once, in the order shown in the chips. <span style="color:var(--c-compare)">Yellow</span> = the edge being checked; <span style="color:var(--c-swap)">red</span> = it improved <code>d[v]</code>; <span style="color:var(--c-done)">green</span> edges form the current shortest-path tree (<code>pred</code>).</li>
+          <li>After pass k, every vertex whose best path uses ≤ k edges is correct. A simple path has at most |V| − 1 edges, so |V| − 1 passes are enough, unless there is a negative cycle.</li>
+          <li><b>Round |V|</b> is the alarm: if any edge still relaxes, a negative cycle is reachable, and it is drawn in thick red.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>A* vs Dijkstra</h3>
+        <ul>
+          <li>Both grids show the same map; each move costs 1. Left: A* ranks cells by f = g + h. Right: Dijkstra ranks them by g alone (h = 0).</li>
+          <li><span style="color:var(--c-compare)">Yellow</span> cells were <b>expanded</b> (popped from the heap); the small number is f (A*) or g (Dijkstra). Blue cells sit in the heap (the frontier). Red is the cell being expanded now; green is the final path.</li>
+          <li>Heap ties on f are broken toward larger g (deeper cells), as in the lesson, so A* commits to one route instead of flooding a plateau.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Run the lesson graph (edge order c→d, a→d, a→c, b→c, b→a, s→a, s→b). It needs all 4 = |V| − 1 passes; final distances s 0, a 2, b 5, c 4, d 5. Press <b>Lucky order</b> (edges sorted along the final shortest-path tree): pass 1 already finds every final distance, and pass 2 changes nothing, so it stops early. Same graph, same answer, the order alone decides how many passes you need.</li>
+      <li>Press <b>Add d→b (−3)</b>. Before round |V|, predict whether it will fire. The cycle b → a → c → d → b has weight −3 + 2 + 1 − 3 = −3 and gets highlighted.</li>
+      <li>Make a negative cycle that the source can't reach (e.g. edges <code>x y -2</code> and <code>y x 1</code>). Bellman–Ford stays calm: unreachable cycles don't affect distances from s.</li>
+      <li>Grid: load the lesson grid. Both find a 13-step path, but Dijkstra expands <b>67</b> cells and A* only <b>21</b>.</li>
+      <li>Switch the heuristic to 2 × Manhattan and draw a U-shaped wall around the goal's side. Weighted A* expands even fewer cells, but can return a longer path than Dijkstra: the price of an inadmissible heuristic.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/14-advanced-graphs/README.md#build-card-1--bellmanford-negative-edges-negative-cycle-detection">📖 Lesson 14 · Bellman–Ford</a>
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/14-advanced-graphs/README.md#build-card-3--a-search-with-admissible-heuristics">📖 Lesson 14 · A*</a>
+      <a class="btn" href="../arena/index.html?chapter=14">🏟️ Chapter 14 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=bellman-ford">🧩 Arena: bellman-ford</a>
+      <a class="btn" href="../arena/problem.html?id=grid-shortest-path-bfs">🧩 Arena: grid-shortest-path-bfs</a>
+      <a class="btn" href="../arena/problem.html?id=network-delay-heap">🧩 Arena: network-delay-heap</a>
+      <a class="btn" href="greedy-graphs.html">🎮 Dijkstra (greedy-graphs)</a>
+      <a class="btn" href="warshall-floyd.html">🎮 Warshall–Floyd</a>
+      <a class="btn" href="graph-traversal.html">🎮 Graph traversal</a>
+      <a class="btn" href="scc.html">🎮 Strongly connected components</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Shortest Paths+", chapter: "Ch 14 · Advanced Graphs" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+const fmt = (x) => (x === Infinity ? "∞" : String(x));
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to see it.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+const stage = $("stage");
+const say = Forge.narrate($("say"));
+let mode = "bf", code = null, ctr = null;
+
+/* =========================================================
+   BELLMAN–FORD
+   ========================================================= */
+const BF_LINES = [
+  "ALGORITHM BellmanFord(n, edges[0..m-1], s)",
+  "    // edges[i] = (u, v, w); vertices are 0..n-1",
+  "    d ← array(n, ∞)",
+  "    pred ← array(n, null)",
+  "    d[s] ← 0",
+  "    for pass ← 1 to n - 1 do",
+  "        changed ← false",
+  "        for each (u, v, w) in edges do",
+  "            if d[u] + w < d[v] then",
+  "                d[v] ← d[u] + w",
+  "                pred[v] ← u",
+  "                changed ← true",
+  "        if not changed then",
+  "            return d, pred, false",
+  "    for each (u, v, w) in edges do        // round n: the alarm",
+  "        if d[u] + w < d[v] then",
+  "            return d, pred, true          // negative cycle",
+  "    return d, pred, false",
+];
+const SLOTS = { s: [90, 200], a: [300, 80], b: [300, 320], c: [500, 300], d: [700, 110], e: [700, 330], f: [500, 40], g: [90, 360], h: [90, 40] };
+const SPARE = [[500, 190], [190, 200], [610, 220], [400, 200], [200, 380], [600, 390], [400, 30], [200, 30]];
+const LESSON_EDGES = "c d 1\na d 7\na c 2\nb c 6\nb a -3\ns a 4\ns b 5";
+let G = null; // {names, pos, edges:[{u,v,w}], src}
+function parseEdges(txt) {
+  const edges = [];
+  txt.split(/\n|;/).forEach((line) => {
+    const m = line.trim().match(/^([A-Za-z0-9]{1,3})\s*(?:->|→|\s)\s*([A-Za-z0-9]{1,3})\s+(-?\d+)/);
+    if (m) {
+      const e = { u: m[1], v: m[2], w: +m[3] };
+      const k = edges.findIndex((x) => x.u === e.u && x.v === e.v);
+      if (k >= 0) edges[k] = e; else if (e.u !== e.v) edges.push(e);
+    }
+  });
+  return edges.slice(0, 24);
+}
+function buildGraph() {
+  const edges = parseEdges($("edges").value);
+  const names = [];
+  const add = (x) => { if (!names.includes(x) && names.length < 9) names.push(x); };
+  const keep = G ? G.names : [];
+  keep.forEach((x) => { if (x === "s" || edges.some((e) => e.u === x || e.v === x)) add(x); });
+  edges.forEach((e) => { add(e.u); add(e.v); });
+  if (!names.length) add("s");
+  names.sort((x, y) => (x === "s" ? -1 : y === "s" ? 1 : x < y ? -1 : x > y ? 1 : 0));
+  const E = edges.filter((e) => names.includes(e.u) && names.includes(e.v));
+  const pos = {}; let spare = 0;
+  names.forEach((x) => { pos[x] = SLOTS[x] ? SLOTS[x].slice() : SPARE[spare++ % SPARE.length].slice(); });
+  // avoid two vertices sharing a slot
+  const used = new Set();
+  names.forEach((x) => { let key = pos[x].join(","); while (used.has(key)) { pos[x] = SPARE[spare++ % SPARE.length].slice(); key = pos[x].join(","); } used.add(key); });
+  const prevSrc = $("src").value;
+  $("src").innerHTML = "";
+  names.forEach((x) => $("src").appendChild(el("option", { value: x }, x)));
+  $("src").value = names.includes(prevSrc) ? prevSrc : names.includes("s") ? "s" : names[0];
+  G = { names, pos, edges: E, src: $("src").value };
+}
+function edgesToText() { $("edges").value = G.edges.map((e) => `${e.u} ${e.v} ${e.w}`).join("\n"); }
+
+function recordBF() {
+  const { names, edges, src } = G;
+  const n = names.length, frames = [];
+  const d = {}, pred = {};
+  names.forEach((x) => { d[x] = Infinity; pred[x] = null; });
+  d[src] = 0;
+  let pass = 0, tried = 0, improved = 0;
+  const table = [];
+  const counters = () => ({ pass: pass > n - 1 ? `${n} (check)` : pass, "edges tried": tried, improvements: improved, "bound (V−1)·E": (n - 1) * edges.length });
+  const tree = () => { const o = {}; names.forEach((x) => { if (pred[x] != null) o[pred[x] + ">" + x] = "done"; }); return o; };
+  const push = (line, text, extra) => frames.push(Object.assign({ kind: "bf", d: Object.assign({}, d), es: tree(), ns: {}, cur: -1, table: table.map((r) => r.slice()), line, text, c: counters() }, extra || {}));
+  push(4, `Start: d[${src}] = 0, everything else ∞. We will relax all ${edges.length} edges in each pass, at most |V| − 1 = ${n - 1} passes.`, { ns: { [src]: "active" } });
+  table.push(["init", ...names.map((x) => [fmt(d[x]), false])]);
+  let negative = false;
+  for (pass = 1; pass <= n - 1; pass++) {
+    let changed = false;
+    const chg = new Set();
+    push(5, `Pass ${pass}: relax every edge once, in the listed order.`);
+    edges.forEach((e, k) => {
+      tried++;
+      const cand = d[e.u] + e.w;
+      const es = Object.assign(tree(), { [e.u + ">" + e.v]: "compare" });
+      if (cand < d[e.v]) {
+        const old = d[e.v];
+        d[e.v] = cand; pred[e.v] = e.u; improved++; changed = true; chg.add(e.v);
+        push(9, `${e.u}→${e.v} (${e.w}): d[${e.u}] + ${e.w} = ${fmt(cand)} &lt; ${fmt(old)}, so d[${e.v}] ← ${cand} and pred[${e.v}] ← ${e.u}.`, { es: Object.assign(tree(), { [e.u + ">" + e.v]: "swap" }), ns: { [e.v]: "swap", [e.u]: "active" }, cur: k });
+      } else {
+        push(8, d[e.u] === Infinity ? `${e.u}→${e.v}: d[${e.u}] is still ∞, so this edge can't help yet.` : `${e.u}→${e.v} (${e.w}): d[${e.u}] + ${e.w} = ${fmt(cand)} is not better than d[${e.v}] = ${fmt(d[e.v])}.`, { es, ns: { [e.u]: "active", [e.v]: "compare" }, cur: k });
+      }
+    });
+    table.push([`pass ${pass}`, ...names.map((x) => [fmt(d[x]), chg.has(x)])]);
+    if (!changed) {
+      push(13, `Pass ${pass} changed nothing, so nothing ever will: stop early. No negative cycle is reachable from ${src}.`, { final: true });
+      return frames;
+    }
+    push(12, `End of pass ${pass}: ${chg.size} distance${chg.size > 1 ? "s" : ""} improved (${[...chg].join(", ")}).`);
+  }
+  pass = n;
+  // round |V|
+  let bad = -1;
+  edges.forEach((e, k) => { if (bad < 0 && d[e.u] + e.w < d[e.v]) bad = k; });
+  push(14, `All ${n - 1} passes done. Round |V| = ${n} checks every edge one more time.`, { ask: { id: "neg-" + edges.map((e) => e.u + e.v + e.w).join(), q: `Round |V|: will <b>any</b> edge still improve a distance (which would prove a negative cycle)?`, options: ["yes", "no"], answer: bad >= 0 ? "yes" : "no", why: bad >= 0 ? "Some cycle reachable from the source has negative total weight, so going around it once more always lowers the distance." : "Without a reachable negative cycle, |V| − 1 passes already made every d[v] exact, so nothing can improve." } });
+  for (let k = 0; k < edges.length; k++) {
+    const e = edges[k];
+    tried++;
+    if (k === bad) {
+      // recover the cycle
+      const p = Object.assign({}, pred); p[e.v] = e.u;
+      let x = e.v;
+      for (let i = 0; i < n; i++) x = p[x];
+      const cyc = [x]; let y = p[x];
+      while (y !== x && cyc.length <= n) { cyc.push(y); y = p[y]; }
+      cyc.reverse();
+      const es = tree(); const ns = {};
+      let wsum = 0;
+      cyc.forEach((a, i) => { const b = cyc[(i + 1) % cyc.length]; es[a + ">" + b] = "neg"; ns[a] = "swap"; const ed = edges.find((q) => q.u === a && q.v === b); wsum += ed ? ed.w : 0; });
+      push(15, `${e.u}→${e.v}: d[${e.u}] + ${e.w} = ${d[e.u] + e.w} &lt; d[${e.v}] = ${d[e.v]}: it still improves after ${n - 1} passes!`, { es: Object.assign(tree(), { [e.u + ">" + e.v]: "swap" }), ns: { [e.v]: "swap" }, cur: k });
+      push(16, `Negative cycle found: ${cyc.concat(cyc[0]).join(" → ")} with total weight ${wsum}. Each lap makes the path ${-wsum} cheaper, so "shortest distance" is undefined for vertices it can reach.`, { es, ns, cur: k, final: true, neg: true });
+      return frames;
+    }
+    push(15, `${e.u}→${e.v}: no improvement.`, { es: Object.assign(tree(), { [e.u + ">" + e.v]: "compare" }), cur: k });
+  }
+  push(17, `Round |V| found no improvement: distances are final and no negative cycle is reachable. Shortest-path tree in green.`, { final: true });
+  return frames;
+}
+let bfPending = null;
+function renderBF(f) {
+  const W = 790, H = 420, R = 21;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  const defs = S("defs");
+  const mk = (id, col) => defs.appendChild(S("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" }, S("path", { d: "M0 0 L10 5 L0 10 z", fill: col })));
+  mk("bf-m", "var(--line-2)"); mk("bf-compare", COL.compare); mk("bf-swap", COL.swap); mk("bf-done", COL.done); mk("bf-neg", COL.swap);
+  stage.appendChild(defs);
+  const has = new Set(G.edges.map((e) => e.u + ">" + e.v));
+  G.edges.forEach((e) => {
+    const a = G.pos[e.u], b = G.pos[e.v];
+    const st = f.es[e.u + ">" + e.v];
+    const col = st === "neg" ? COL.swap : st ? COL[st] : "var(--line-2)";
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    const curve = has.has(e.v + ">" + e.u) ? 28 : 0;
+    const nx = -dy / L, ny = dx / L;
+    const x1 = a[0] + (dx / L) * R + nx * curve * 0.3, y1 = a[1] + (dy / L) * R + ny * curve * 0.3;
+    const x2 = b[0] - (dx / L) * (R + 3) + nx * curve * 0.3, y2 = b[1] - (dy / L) * (R + 3) + ny * curve * 0.3;
+    const mx = (a[0] + b[0]) / 2 + nx * curve, my = (a[1] + b[1]) / 2 + ny * curve;
+    stage.appendChild(S("path", { d: curve ? `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}` : `M${x1} ${y1} L${x2} ${y2}`, fill: "none", stroke: col, "stroke-width": st === "neg" ? 5 : st ? 3.2 : 1.8, "marker-end": `url(#bf-${st || "m"})` }));
+    const lx = (a[0] + b[0]) / 2 + nx * curve * 0.75, ly = (a[1] + b[1]) / 2 + ny * curve * 0.75;
+    const g = S("g", { "data-edge": e.u + ">" + e.v, style: "cursor:pointer" }, S("title", null, `Edge ${e.u}→${e.v}, weight ${e.w} (click to delete)`));
+    g.appendChild(S("rect", { x: lx - 15, y: ly - 11, width: 30, height: 20, rx: 6, fill: "var(--panel)", stroke: e.w < 0 ? COL.swap : "var(--line)" }));
+    g.appendChild(S("text", { x: lx, y: ly + 4, "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: e.w < 0 ? COL.swap : "var(--ink-2)" }, String(e.w)));
+    stage.appendChild(g);
+  });
+  G.names.forEach((x) => {
+    const p = G.pos[x], st = f.ns[x];
+    const g = S("g", { "data-v": x, style: "cursor:pointer" });
+    if (bfPending === x) g.appendChild(S("circle", { cx: p[0], cy: p[1], r: R + 7, fill: "none", stroke: "var(--steel)", "stroke-width": 2, "stroke-dasharray": "4 3" }));
+    g.appendChild(S("circle", { cx: p[0], cy: p[1], r: R, fill: st ? COL[st] : "var(--panel-2)", stroke: x === G.src ? "var(--ember)" : st ? COL[st] : "var(--line-2)", "stroke-width": x === G.src ? 3.5 : 2 }));
+    g.appendChild(S("text", { x: p[0], y: p[1] + 5, "text-anchor": "middle", "font-size": 15, "font-weight": 700, fill: st ? "#0d1117" : "var(--ink)" }, x));
+    const below = p[1] < 200 ? -R - 8 : R + 17;
+    g.appendChild(S("text", { x: p[0], y: p[1] + below, "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: "var(--ember-2)" }, "d=" + fmt(f.d[x])));
+    stage.appendChild(g);
+  });
+  // edge order chips + table
+  const ord = $("order"); ord.innerHTML = "";
+  G.edges.forEach((e, k) => ord.appendChild(el("span", { class: k === f.cur ? "on" : "" }, `${e.u}→${e.v} ${e.w}`)));
+  const tb = el("table", { class: "t" }, el("tr", null, el("th", null, "after"), G.names.map((x) => el("th", null, x))));
+  f.table.forEach((row) => tb.appendChild(el("tr", null, el("td", null, row[0]), row.slice(1).map(([v, c]) => el("td", { class: c ? "chg" : "" }, v)))));
+  $("dtable").innerHTML = ""; $("dtable").appendChild(tb);
+}
+
+/* =========================================================
+   A* vs DIJKSTRA ON A GRID
+   ========================================================= */
+const ASTAR_LINES = [
+  "ALGORITHM AStar(s, t, Neighbors, h)",
+  "    // Neighbors(u) yields (v, w); g has default ∞",
+  "    g[s] ← 0",
+  "    H ← empty min-heap          // key f = g + h, ties: larger g first",
+  "    HeapPush(H, (h(s), s))",
+  "    while not isEmpty(H) do",
+  "        (f, u) ← HeapPop(H)",
+  "        if f = g[u] + h(u) then          // else stale: skip",
+  "            if u = t then",
+  "                return g[t]",
+  "            for each (v, w) in Neighbors(u) do",
+  "                if g[u] + w < g[v] then",
+  "                    g[v] ← g[u] + w",
+  "                    HeapPush(H, (g[v] + h(v), v))",
+  "    return ∞                 // Dijkstra = the same code with h ≡ 0",
+];
+const LESSON_GRID = ["..........", "..........", "....#.....", "S...#....G", "....#.....", "..........", ".........."];
+let grid = null; // {R, C, wall: Uint8Array, s:[r,c], g:[r,c]}
+function gridFromStrings(rows) {
+  const R = rows.length, C = rows[0].length, wall = new Uint8Array(R * C);
+  let s = [0, 0], g = [R - 1, C - 1];
+  rows.forEach((row, r) => [...row].forEach((ch, c) => { if (ch === "#") wall[r * C + c] = 1; if (ch === "S") s = [r, c]; if (ch === "G") g = [r, c]; }));
+  return { R, C, wall, s, g };
+}
+function heapPush(h, x, less) { h.push(x); let i = h.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (!less(h[i], h[p])) break; [h[i], h[p]] = [h[p], h[i]]; i = p; } }
+function heapPop(h, less) { const top = h[0], last = h.pop(); if (h.length) { h[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < h.length && less(h[l], h[m])) m = l; if (r < h.length && less(h[r], h[m])) m = r; if (m === i) break; [h[i], h[m]] = [h[m], h[i]]; i = m; } } return top; }
+const lessKey = (a, b) => { for (let k = 0; k < 4; k++) if (a[k] !== b[k]) return a[k] < b[k]; return false; };
+/** Runs A* with heuristic factor hf (0 = Dijkstra). Returns per-expansion snapshots. */
+function searchGrid(hf) {
+  const { R, C, wall, s, g: goal } = grid;
+  const N = R * C, idx = (r, c) => r * C + c;
+  const h = (r, c) => hf * (Math.abs(r - goal[0]) + Math.abs(c - goal[1]));
+  const gv = new Float64Array(N).fill(Infinity), pred = new Int32Array(N).fill(-1);
+  const status = new Uint8Array(N); // 0 unseen, 1 open, 2 closed
+  const fval = new Float64Array(N).fill(NaN);
+  const heap = [];
+  gv[idx(...s)] = 0;
+  heapPush(heap, [h(...s), -0, s[0], s[1]], lessKey);
+  status[idx(...s)] = 1;
+  const snaps = [];
+  let expanded = 0, pushes = 1, found = -1;
+  snaps.push({ status: status.slice(), f: fval.slice(), cur: -1, expanded, pushes, path: null, info: null });
+  while (heap.length) {
+    const [f, ng, r, c] = heapPop(heap, lessKey);
+    const u = idx(r, c);
+    if (-ng > gv[u]) continue;
+    status[u] = 2; fval[u] = f; expanded++;
+    const info = { r, c, g: gv[u], h: h(r, c), f };
+    if (r === goal[0] && c === goal[1]) { found = u; snaps.push({ status: status.slice(), f: fval.slice(), cur: u, expanded, pushes, path: null, info }); break; }
+    for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nc < 0 || nr >= R || nc >= C || wall[idx(nr, nc)]) continue;
+      const v = idx(nr, nc);
+      if (gv[u] + 1 < gv[v]) { gv[v] = gv[u] + 1; pred[v] = u; heapPush(heap, [gv[v] + h(nr, nc), -gv[v], nr, nc], lessKey); pushes++; if (status[v] !== 2) status[v] = 1; }
+    }
+    snaps.push({ status: status.slice(), f: fval.slice(), cur: u, expanded, pushes, path: null, info });
+  }
+  const path = [];
+  if (found >= 0) { let x = found; while (x >= 0) { path.push(x); x = pred[x]; } path.reverse(); }
+  snaps.push(Object.assign({}, snaps[snaps.length - 1], { cur: -1, path, done: true }));
+  return { snaps, len: found >= 0 ? gv[found] : Infinity, expanded };
+}
+function recordGrid() {
+  const hsel = $("heur").value, hf = hsel === "manhattan" ? 1 : hsel === "double" ? 2 : 0;
+  const A = searchGrid(hf), D = searchGrid(0);
+  const T = Math.max(A.snaps.length, D.snaps.length);
+  const frames = [];
+  const name = hsel === "manhattan" ? "A* (Manhattan)" : hsel === "double" ? "Weighted A* (2 × Manhattan)" : "A* with h = 0";
+  const cell = (u) => `(${Math.floor(u / grid.C)},${u % grid.C})`;
+  for (let t = 0; t < T; t++) {
+    const a = A.snaps[Math.min(t, A.snaps.length - 1)], d = D.snaps[Math.min(t, D.snaps.length - 1)];
+    let text, line = 6;
+    if (t === 0) { text = `Both searches start at S ${cell(grid.s[0] * grid.C + grid.s[1])}. ${name} ranks cells by f = g + h; Dijkstra ranks them by g only. Goal G is ${cell(grid.g[0] * grid.C + grid.g[1])}.`; line = 4; }
+    else if (a.done && d.done) { text = `Finished. ${name}: path ${fmt(A.len)} after <b>${A.expanded}</b> expansions. Dijkstra: path ${fmt(D.len)} after <b>${D.expanded}</b> expansions.${A.len > D.len ? " The inadmissible heuristic returned a <b>longer</b> path." : A.len === Infinity ? " The goal is walled off." : ""}`; line = 9; }
+    else {
+      const parts = [];
+      if (!a.done && a.info) parts.push(`${name} expands ${cell(a.cur)}: g = ${a.info.g}, h = ${a.info.h}, f = ${a.info.f}.`);
+      else if (a.done) parts.push(`${name} is done.`);
+      if (!d.done && d.info) parts.push(`Dijkstra expands ${cell(d.cur)} at g = ${d.info.g}.`);
+      else if (d.done) parts.push("Dijkstra is done.");
+      text = `Step ${t}: ` + parts.join(" ");
+      line = [6, 10, 11];
+    }
+    const fr = { kind: "grid", a, d, line, text, c: { step: t, "A* expanded": a.expanded, "Dijkstra expanded": d.expanded, "A* path": a.done ? fmt(A.len) : "…", "Dijkstra path": d.done ? fmt(D.len) : "…" } };
+    frames.push(fr);
+  }
+  // predict after the first expansion: which cell does A* expand next?
+  if (A.snaps.length > 3) {
+    const f1 = frames[1], nxt = A.snaps[2].cur;
+    const openCells = [];
+    A.snaps[1].status.forEach((s, u) => { if (s === 1) openCells.push(u); });
+    if (openCells.length > 1 && openCells.includes(nxt)) {
+      const q = Object.assign({}, f1, { text: `A* has expanded S and put its neighbors in the heap. Which one comes out next?`, ask: { id: "astar-" + grid.wall.join("") + grid.s + grid.g + hf, q: `${name}: which frontier cell is expanded next?`, options: openCells.slice(0, 5).map(cell), answer: cell(nxt), why: `It has the smallest f = g + h (ties go to the larger g). Every neighbor has g = 1, so the one closest to G wins.` } });
+      frames.splice(2, 0, q);
+    }
+  }
+  return frames;
+}
+let painting = false;
+function renderGrid(f) {
+  const L = gridLayout(), { R, C } = grid, cs = L.cs, top = 30;
+  stage.setAttribute("viewBox", `0 0 ${L.W} ${L.H}`);
+  stage.innerHTML = "";
+  const hsel = $("heur").value;
+  [[f.a, L.ox[0], L.oy[0], hsel === "manhattan" ? "A* (Manhattan)" : hsel === "double" ? "Weighted A* (2 × Manhattan)" : "A* with h = 0"], [f.d, L.ox[1], L.oy[1], "Dijkstra (h = 0)"]].forEach(([st, ox, oy, title]) => {
+    stage.appendChild(S("text", { x: ox, y: oy + 20, "font-size": 13, "font-weight": 700, fill: "var(--ink)" }, `${title}: ${st.expanded} expanded`));
+    const onPath = new Set(st.path || []);
+    for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+      const u = r * C + c, x = ox + c * cs, y = oy + top + r * cs;
+      let fill = "var(--panel)", op = 1, txt = null;
+      if (grid.wall[u]) fill = "var(--ink-2)";
+      else if (onPath.has(u)) fill = COL.done;
+      else if (u === st.cur) fill = COL.swap;
+      else if (st.status[u] === 2) { fill = COL.compare; op = 0.55; }
+      else if (st.status[u] === 1) { fill = COL.active; op = 0.35; }
+      stage.appendChild(S("rect", { x: x + 1, y: y + 1, width: cs - 2, height: cs - 2, rx: 3, fill, "fill-opacity": op, stroke: "var(--line)", "stroke-width": 0.8, "data-cell": u }));
+      const isS = r === grid.s[0] && c === grid.s[1], isG = r === grid.g[0] && c === grid.g[1];
+      if (isS || isG) {
+        stage.appendChild(S("rect", { x: x + 3, y: y + 3, width: cs - 6, height: cs - 6, rx: 5, fill: isS ? "var(--ember)" : COL.pivot, "data-cell": u }));
+        txt = isS ? "S" : "G";
+        stage.appendChild(S("text", { x: x + cs / 2, y: y + cs / 2 + 5, "text-anchor": "middle", "font-size": cs * 0.45, "font-weight": 800, fill: "#0d1117", "pointer-events": "none" }, txt));
+      } else if (st.status[u] === 2 && !Number.isNaN(st.f[u]) && cs >= 30) {
+        stage.appendChild(S("text", { x: x + cs / 2, y: y + cs / 2 + 4, "text-anchor": "middle", "font-size": 10, fill: "var(--ink)", "pointer-events": "none" }, String(st.f[u])));
+      }
+    }
+  });
+}
+/** Side by side on wide screens, stacked on phones (so cells stay big enough to tap). */
+function gridLayout() {
+  const { R, C } = grid, stacked = stage.clientWidth > 0 && stage.clientWidth < 560;
+  const cs = stacked ? (R > 8 ? 26 : 36) : R > 8 ? 24 : 34, gap = 30, top = 30, gw = C * cs, gh = R * cs + top + 12;
+  if (stacked) return { stacked, cs, W: gw + 20, H: gh * 2 + 8, ox: [10, 10], oy: [0, gh + 8] };
+  return { stacked, cs, W: gw * 2 + gap + 20, H: gh, ox: [10, 10 + gw + gap], oy: [0, 0] };
+}
+function cellFromEvent(e) {
+  const pt = stage.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(stage.getScreenCTM().inverse());
+  const L = gridLayout(), { R, C } = grid, cs = L.cs, top = 30;
+  const k = L.stacked ? (p.y >= L.oy[1] ? 1 : 0) : (p.x >= L.ox[1] ? 1 : 0);
+  const c = Math.floor((p.x - L.ox[k]) / cs), r = Math.floor((p.y - L.oy[k] - top) / cs);
+  if (r < 0 || c < 0 || r >= R || c >= C) return -1;
+  return r * C + c;
+}
+let paintValue = 1, lastCell = -1;
+function applyTool(u, first) {
+  if (u < 0 || u === lastCell) return;
+  lastCell = u;
+  const r = Math.floor(u / grid.C), c = u % grid.C, tool = $("tool").value;
+  const isS = r === grid.s[0] && c === grid.s[1], isG = r === grid.g[0] && c === grid.g[1];
+  if (tool === "wall") { if (isS || isG) return; if (first) paintValue = grid.wall[u] ? 0 : 1; grid.wall[u] = paintValue; }
+  else if (tool === "start") { if (isG) return; grid.wall[u] = 0; grid.s = [r, c]; }
+  else { if (isS) return; grid.wall[u] = 0; grid.g = [r, c]; }
+  loadGrid(true);
+}
+stage.addEventListener("pointerdown", (e) => {
+  if (mode === "grid") { const u = cellFromEvent(e); if (u < 0) return; painting = true; lastCell = -1; applyTool(u, true); e.preventDefault(); return; }
+  const gv = e.target.closest("g[data-v]"), ge = e.target.closest("g[data-edge]");
+  if (ge) { const [u, v] = ge.dataset.edge.split(">"); G.edges = G.edges.filter((x) => !(x.u === u && x.v === v)); edgesToText(); bfPending = null; loadBF(true); return; }
+  if (!gv) { if (bfPending) { bfPending = null; player.go(player.index); } return; }
+  const v = gv.dataset.v;
+  if (!bfPending) { bfPending = v; player.go(player.index); return; }
+  if (bfPending !== v) {
+    const w = Math.round(+$("newW").value || 0);
+    const k = G.edges.findIndex((x) => x.u === bfPending && x.v === v);
+    if (k >= 0) G.edges[k].w = w; else if (G.edges.length < 24) G.edges.push({ u: bfPending, v, w });
+    edgesToText();
+  }
+  bfPending = null;
+  loadBF(true);
+});
+stage.addEventListener("pointermove", (e) => { if (painting && mode === "grid" && $("tool").value === "wall") applyTool(cellFromEvent(e), false); });
+window.addEventListener("pointerup", () => { painting = false; lastCell = -1; });
+
+/* =========================================================
+   shared render + controls
+   ========================================================= */
+function render(f, i) {
+  if (f.kind === "bf") renderBF(f); else renderGrid(f);
+  code.highlight(f.line);
+  ctr.set(f.c);
+  say.say(f.text);
+  predict.show(f, i);
+}
+player = Forge.player($("player"), { frames: [], render });
+function setMode(m) {
+  mode = m;
+  $("bfCtl").hidden = m !== "bf"; $("gridCtl").hidden = m !== "grid"; $("bfTablePanel").hidden = m !== "bf";
+  stage.classList.toggle("grid-mode", m === "grid"); stage.classList.toggle("graph-mode", m === "bf");
+  $("code").innerHTML = ""; $("ctr").innerHTML = "";
+  if (m === "bf") {
+    code = Forge.code($("code"), BF_LINES);
+    ctr = Forge.counters($("ctr"), { pass: 0, "edges tried": 0, improvements: 0, "bound (V−1)·E": 0 });
+    $("legend").innerHTML = `<span><i style="background:var(--c-compare)"></i>edge being checked</span><span><i style="background:var(--c-swap)"></i>relaxed (d improved) / negative cycle</span><span><i style="background:var(--c-done)"></i>shortest-path tree (pred)</span><span><i style="background:var(--c-active)"></i>edge's tail u</span><span><i style="background:transparent;border:2px solid var(--ember)"></i>source</span>`;
+  } else {
+    code = Forge.code($("code"), ASTAR_LINES);
+    ctr = Forge.counters($("ctr"), { step: 0, "A* expanded": 0, "Dijkstra expanded": 0, "A* path": "…", "Dijkstra path": "…" });
+    $("legend").innerHTML = `<span><i style="background:var(--c-compare);opacity:.6"></i>expanded (number = f or g)</span><span><i style="background:var(--c-active);opacity:.4"></i>in the heap (frontier)</span><span><i style="background:var(--c-swap)"></i>expanding now</span><span><i style="background:var(--c-done)"></i>final path</span><span><i style="background:var(--ink-2)"></i>wall</span><span><i style="background:var(--ember)"></i>start S</span><span><i style="background:var(--c-pivot)"></i>goal G</span>`;
+  }
+}
+function loadBF(keepPos) {
+  if (!keepPos) bfPending = null;
+  buildGraph();
+  predict.reset();
+  const fr = recordBF();
+  player.load(fr);
+}
+function loadGrid(toEnd) {
+  const fr = recordGrid();
+  predict.reset();
+  player.load(fr);
+  if (toEnd) player.go(fr.length - 1);
+}
+$("mode").onchange = () => { setMode($("mode").value); mode === "bf" ? loadBF() : loadGrid(); };
+$("bfRun").onclick = () => loadBF();
+$("src").onchange = () => loadBF();
+$("edges").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) loadBF(); });
+$("bfLesson").onclick = () => { G = null; $("edges").value = LESSON_EDGES; $("src").innerHTML = ""; loadBF(); };
+$("bfNeg").onclick = () => { if (!/^d b /m.test($("edges").value)) $("edges").value = $("edges").value.trim() + "\nd b -3"; loadBF(); };
+$("bfShuffle").onclick = () => { buildGraph(); const e = G.edges; for (let i = e.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [e[i], e[j]] = [e[j], e[i]]; } edgesToText(); loadBF(); };
+$("bfGood").onclick = () => {
+  buildGraph();
+  // quiet Bellman–Ford to get the shortest-path tree, then order edges by the depth of their tail in that tree
+  const d = {}, pred = {};
+  G.names.forEach((x) => { d[x] = Infinity; pred[x] = null; });
+  d[G.src] = 0;
+  for (let k = 1; k < G.names.length; k++) G.edges.forEach((e) => { if (d[e.u] + e.w < d[e.v]) { d[e.v] = d[e.u] + e.w; pred[e.v] = e.u; } });
+  const depth = (x) => { let k = 0, y = x; while (y != null && y !== G.src && k <= G.names.length) { y = pred[y]; k++; } return y === G.src ? k : Infinity; };
+  G.edges.sort((a, b) => depth(a.u) - depth(b.u));
+  edgesToText(); loadBF();
+};
+$("bfRand").onclick = () => {
+  const names = ["s", "a", "b", "c", "d", "e"].slice(0, 5 + Math.floor(Math.random() * 2));
+  const edges = [];
+  names.slice(1).forEach((v, i) => { const u = names[Math.floor(Math.random() * (i + 1))]; edges.push(`${u} ${v} ${1 + Math.floor(Math.random() * 8)}`); });
+  for (let k = 0; k < names.length; k++) {
+    const u = names[Math.floor(Math.random() * names.length)], v = names[Math.floor(Math.random() * names.length)];
+    if (u !== v && !edges.some((x) => x.startsWith(u + " " + v + " "))) edges.push(`${u} ${v} ${Math.floor(Math.random() * 11) - 4}`);
+  }
+  G = null; $("src").innerHTML = "";
+  $("edges").value = edges.join("\n");
+  loadBF();
+};
+const setGrid = (g) => { grid = g; loadGrid(); };
+$("gLesson").onclick = () => { $("gsize").value = "7x10"; setGrid(gridFromStrings(LESSON_GRID)); };
+$("gsize").onchange = () => {
+  const [R, C] = $("gsize").value.split("x").map(Number);
+  const rows = Array.from({ length: R }, () => ".".repeat(C).split(""));
+  const mr = Math.floor(R / 2);
+  rows[mr][0] = "S"; rows[mr][C - 1] = "G";
+  setGrid(gridFromStrings(rows.map((r) => r.join(""))));
+};
+$("gClear").onclick = () => { grid.wall.fill(0); loadGrid(); };
+$("gRand").onclick = () => { for (let u = 0; u < grid.wall.length; u++) grid.wall[u] = Math.random() < 0.24 ? 1 : 0; grid.wall[grid.s[0] * grid.C + grid.s[1]] = 0; grid.wall[grid.g[0] * grid.C + grid.g[1]] = 0; loadGrid(); };
+$("gWall").onclick = () => {
+  grid.wall.fill(0);
+  const c = Math.floor(grid.C / 2);
+  for (let r = 1; r < grid.R; r++) grid.wall[r * grid.C + c] = 1;
+  grid.wall[grid.s[0] * grid.C + grid.s[1]] = 0; grid.wall[grid.g[0] * grid.C + grid.g[1]] = 0;
+  loadGrid();
+};
+$("heur").onchange = () => loadGrid();
+
+$("edges").value = LESSON_EDGES;
+grid = gridFromStrings(LESSON_GRID);
+setMode("bf");
+loadBF();
+</script>
+</body>
+</html>

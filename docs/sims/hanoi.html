@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tower of Hanoi · Algorithm Forge</title>
+<meta name="description" content="Tower of Hanoi: watch the recursive solution with its call stack and recursion tree in sync, or solve it yourself and compare your move count with 2ⁿ − 1.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/ch01-02-kit.js"></script>
+<style>
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel-2); color: var(--ink-2); font: 600 .85rem var(--font); padding: 7px 12px; cursor: pointer; }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+  .manual-only { display: none; }
+  .manual .manual-only { display: flex; }
+  .manual .watch-only { display: none; }
+  #stage .peghit { cursor: default; }
+  .manual #stage .peghit { cursor: pointer; }
+  .manual #stage .peghit:hover rect.pad { fill: var(--ember-soft); }
+  .stack-list { font-family: var(--mono); font-size: .82rem; display: flex; flex-direction: column-reverse; gap: 4px; }
+  .stack-list div { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+  .stack-list div.top { border-color: var(--c-active); background: var(--steel-soft); }
+</style>
+</head>
+<body>
+<main class="wrap" id="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 2 · Analysis Framework</div>
+    <h1>Tower of Hanoi</h1>
+    <p class="lead muted">Move the whole stack from peg A to peg C, one disk at a time, never putting a bigger disk on a smaller one. The recursive solution needs exactly 2ⁿ − 1 moves, and you can watch every call that produces them.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">disks n = <b id="nLbl">3</b> <input id="n" type="range" min="1" max="8" value="3" style="width:160px"></label>
+      <div class="field" style="font-size:.8rem;color:var(--muted);font-weight:600">Mode
+        <div class="seg" role="group" aria-label="Mode"><button id="mWatch" class="on">Watch the recursion</button><button id="mPlay">Play it yourself</button></div>
+      </div>
+      <button class="btn" id="rand">Random n</button>
+      <span class="muted small watch-only">Keyboard: ← → step, space play/pause.</span>
+      <span class="muted small manual-only">Click a peg to pick up its top disk, then click where it goes. Keys: 1 / 2 / 3 (or A / B / C).</span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Three pegs with disks"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-swap)"></i>disk that just moved</span>
+        <span><i style="background:var(--c-active)"></i>call on the stack</span>
+        <span><i style="background:var(--c-compare)"></i>call making the current move</span>
+        <span><i style="background:var(--c-done)"></i>finished call</span>
+        <span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>not called yet</span>
+      </div>
+      <div class="watch-only" id="player"></div>
+      <div class="row manual-only">
+        <button class="btn" id="undo">↶ Undo</button>
+        <button class="btn" id="hint">💡 Hint (best next move)</button>
+        <button class="btn" id="reset">Reset</button>
+        <span class="muted small" id="manualStatus"></span>
+      </div>
+      <div class="row watch-only"><button class="btn" id="predictBtn">🤔 Predict the next move</button></div>
+      <div id="predict"></div>
+      <div class="panel">
+        <div class="panel-title">Recursion tree (one node per call, laid out in move order)</div>
+        <svg class="stage" id="tree" role="img" aria-label="Recursion tree of Hanoi calls"></svg>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">Call stack (top is the running call)</div><div class="stack-list" id="stackList"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Pegs:</b> disk k is labeled k; bigger number = bigger disk. The red outline marks the disk that just moved, and the arrow shows where it came from.</li>
+        <li><b>Recursion tree:</b> each node is one call Hanoi(k, from→to). Its left child moves the k − 1 smaller disks out of the way, the node itself moves disk k, and its right child moves the k − 1 disks back on top. Reading the nodes left to right gives the moves in order, which is why every node sits exactly above its own move.</li>
+        <li><b>Call stack:</b> the chain of calls that are still unfinished. Its height is at most n, even though there are 2ⁿ − 1 calls in total: time is exponential, memory is linear.</li>
+        <li><b>Counters:</b> the moves so far next to 2ⁿ − 1, the number that the recurrence M(n) = 2M(n−1) + 1, M(1) = 1 predicts.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Watch n = 3 and write down the 7 moves. Then switch to "Play it yourself" and reproduce them from memory.</li>
+        <li>With n = 4, pause right after disk 4 moves (move 8). Where are disks 1–3? (All on peg B: exactly what the first recursive call promised.)</li>
+        <li>Notice that disk 1 moves on every odd-numbered move, always cycling in the same direction. Can you use this to solve n = 5 by hand?</li>
+        <li>Play n = 4 yourself and try to finish in fewer than 15 moves. You can't: 2ⁿ − 1 is also a lower bound. The biggest disk must move at least once, and just before that the n − 1 smaller disks must all sit on the third peg, which already costs 2ⁿ⁻¹ − 1 moves, and the same again afterwards.</li>
+        <li>Slide n from 1 to 8 and watch the tree double each time: 1, 3, 7, 15, …, 255 calls.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/02-analysis-framework/README.md">📖 Lesson: Chapter 2 (Build Card E)</a>
+      <a class="btn" href="../arena/index.html?chapter=2">🏟️ Arena: Chapter 2</a>
+      <a class="btn sm" href="../arena/problem.html?id=hanoi-moves">hanoi-moves</a>
+      <a class="btn sm" href="../arena/problem.html?id=factorial-recursive">factorial-recursive</a>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted small">Related sims:</span>
+      <a href="recurrence-lab.html">Recurrence lab (M(n) = 2M(n−1) + 1)</a> ·
+      <a href="fibonacci.html">Fibonacci call tree</a> ·
+      <a href="growth-rates.html">Growth rates (2ⁿ)</a>
+    </div>
+  </section>
+</main>
+<script src="js/hanoi.js"></script>
+</body>
+</html>

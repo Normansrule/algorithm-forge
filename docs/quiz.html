@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz · Algorithm Forge</title>
+<meta name="description" content="Interactive multiple-choice quiz for algorithm analysis and design, Chapters 1–12: course quizzes plus original questions, with explanations, scoring, mistake review and flashcards.">
+<link rel="stylesheet" href="assets/css/forge.css">
+<link rel="stylesheet" href="assets/css/forge-hub.css">
+<script src="assets/js/forge-kit.js"></script>
+<script src="quiz/quiz-bank.js"></script>
+<style>
+  .setup { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .setup .chipset .chip { font-size: .8rem; padding: 4px 10px; }
+  .setup .chipset .chip small { opacity: .7; font-weight: 600; margin-left: 3px; }
+  .opt-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+  .seg button { background: var(--panel-2); border: 0; color: var(--ink-2); font: 700 .84rem var(--font); padding: 7px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line-2); }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+  .field-label { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 14px 0 6px; }
+  .field-label:first-child { margin-top: 0; }
+  .start-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+  .start-row .btn { padding: 10px 16px; font-size: .95rem; }
+
+  .qwrap { max-width: 860px; margin: 0 auto; }
+  .qtop { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .qtop .bar { flex: 1; min-width: 120px; }
+  .qtop .score { font-family: var(--mono); font-weight: 800; }
+  .qcard { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; box-shadow: var(--shadow); }
+  .qmeta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .qtext { font-size: 1.08rem; color: var(--ink); }
+  .qtext p { margin: 0 0 .6em; }
+  .qtext ul { margin: 0 0 .6em; padding-left: 20px; }
+  pre.code-block { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: .85rem; margin: 8px 0; }
+  .math { white-space: normal; }
+  .opts { display: grid; gap: 10px; margin-top: 16px; }
+  .opt { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; background: var(--bg-2); border: 1.5px solid var(--line-2); border-radius: 12px; padding: 12px 14px; color: var(--ink); font: 500 .98rem var(--font); cursor: pointer; transition: border-color .12s, background .12s, transform .05s; }
+  .opt:hover:not(:disabled) { border-color: var(--ember); }
+  .opt:active:not(:disabled) { transform: translateY(1px); }
+  .opt:disabled { cursor: default; }
+  .opt .key { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-family: var(--mono); font-weight: 800; background: var(--panel-2); border: 1px solid var(--line-2); color: var(--ink-2); }
+  .opt .mark { font-weight: 800; font-size: 1.1rem; }
+  .opt.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 13%, var(--bg-2)); }
+  .opt.right .key { background: var(--ok); color: #04150d; border-color: var(--ok); }
+  .opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, var(--bg-2)); }
+  .opt.wrong .key { background: var(--bad); color: #1d0508; border-color: var(--bad); }
+  .opt.faded { opacity: .55; }
+  .feedback { margin-top: 16px; }
+  .feedback .head { font-weight: 800; font-size: 1.02rem; margin-bottom: 6px; }
+  .feedback p { margin: 0 0 .6em; }
+  .feedback p:last-child { margin-bottom: 0; }
+  .qnav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  .result-hero { text-align: center; padding: 24px 10px 10px; }
+  .result-hero .big { font-size: 3.2rem; font-weight: 900; font-family: var(--mono); line-height: 1; }
+  .ch-break { display: grid; gap: 8px; margin-top: 12px; }
+  .ch-break .r { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr) 60px; gap: 10px; align-items: center; font-size: .88rem; }
+  .missed-list { margin-top: 10px; display: grid; gap: 8px; }
+  .missed-list details { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .missed-list summary { cursor: pointer; font-weight: 600; }
+
+  .flash { perspective: 1400px; }
+  .fc { position: relative; min-height: 360px; transition: transform .5s cubic-bezier(.3,.7,.2,1); transform-style: preserve-3d; cursor: pointer; }
+  .fc.flipped { transform: rotateY(180deg); }
+  .fc .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; overflow-y: auto; box-shadow: var(--shadow); }
+  .fc .back { transform: rotateY(180deg); background: color-mix(in srgb, var(--ok) 6%, var(--panel)); }
+  .fc .hint { position: absolute; bottom: 10px; right: 14px; font-size: .75rem; color: var(--muted); }
+  .fc ol.olist { margin: 12px 0 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+  .fc ol.olist li { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: .92rem; }
+  .fc ol.olist li b { font-family: var(--mono); margin-right: 6px; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { .fc { transition: none; } }
+  @media (max-width: 760px) {
+    .kbd-tip, .kbdhint { display: none; }
+    .setup { grid-template-columns: 1fr; }
+    .qcard { padding: 16px; }
+    .opt { grid-template-columns: 30px minmax(0, 1fr) auto; padding: 10px 12px; font-size: .94rem; }
+    .fc { min-height: 460px; }
+    .ch-break .r { grid-template-columns: minmax(0, 1fr) 80px 44px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero" id="quiz-hero">
+    <div class="eyebrow">Quiz · Chapters 1–12</div>
+    <h1>Check yourself</h1>
+    <p class="lead">Multiple-choice questions from the CSC 501 course quizzes (Algorithm Analysis and Design) plus
+      practice and original questions. Every answer explains why it is right <i>and</i> why the other options are wrong —
+      read the explanation even when you get it right.</p>
+    <p class="small muted" style="max-width:900px">Acronyms you'll meet: Depth-First Search (DFS), Breadth-First Search (BFS), Directed Acyclic Graph (DAG),
+      Traveling Salesman Problem (TSP), Minimum Spanning Tree (MST), Binary Search Tree (BST), Binary Reflected Gray Code (BRGC),
+      Adelson-Velsky–Landis tree (AVL), Dynamic Programming (DP), deterministic Polynomial time (P), Nondeterministic Polynomial time (NP).</p>
+  </header>
+
+  <section id="v-setup">
+    <div class="setup">
+      <div class="panel">
+        <div class="field-label">Chapters</div>
+        <div class="chipset" id="chips"></div>
+        <div class="field-label">Questions from</div>
+        <div class="seg" id="src-seg" role="group" aria-label="Question source">
+          <button type="button" data-v="all" class="on">All sources</button>
+          <button type="button" data-v="course">Course quizzes only</button>
+          <button type="button" data-v="new">Practice &amp; original</button>
+        </div>
+        <div class="field-label">How many</div>
+        <div class="seg" id="n-seg" role="group" aria-label="Number of questions">
+          <button type="button" data-v="10" class="on">10</button>
+          <button type="button" data-v="20">20</button>
+          <button type="button" data-v="0">All</button>
+        </div>
+        <div class="field-label">Order</div>
+        <div class="seg" id="o-seg" role="group" aria-label="Question order">
+          <button type="button" data-v="shuffle" class="on">Shuffled</button>
+          <button type="button" data-v="book">Book order</button>
+        </div>
+        <div class="start-row">
+          <button class="btn primary" id="go-quiz" type="button">▶ Start quiz</button>
+          <button class="btn" id="go-flash" type="button">🃏 Flashcards</button>
+          <span class="muted small" id="pool-count"></span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <div class="panel-title">Your record</div>
+          <div class="stats" id="record"></div>
+          <div class="start-row" style="margin-top:12px">
+            <button class="btn" id="go-mistakes" type="button">🔁 Review my mistakes</button>
+            <button class="btn ghost sm" id="reset-record" type="button">Reset</button>
+          </div>
+        </div>
+        <div class="callout steel small kbd-tip">
+          <b>Keyboard:</b> <kbd>1</kbd>–<kbd>4</kbd> or <kbd>A</kbd>–<kbd>D</kbd> to answer, <kbd>Enter</kbd> for the next question,
+          <kbd>Space</kbd> to flip a flashcard, <kbd>←</kbd> <kbd>→</kbd> to move between cards.
+        </div>
+        <div class="callout small">Stuck on a topic? The <a href="cheatsheet.html">cheat sheet</a> has every formula, and the
+          <a href="path.html">learning path</a> links each chapter's lesson, simulations and practice problems.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-quiz" hidden>
+    <div class="qwrap">
+      <div class="qtop">
+        <button class="btn sm ghost" id="quit" type="button">← Setup</button>
+        <span class="small muted" id="qpos"></span>
+        <div class="bar"><i id="qbar" style="width:0"></i></div>
+        <span class="score" id="qscore"></span>
+      </div>
+      <article class="qcard" id="qcard" aria-live="polite"></article>
+    </div>
+  </section>
+
+  <section id="v-result" hidden>
+    <div class="qwrap">
+      <div class="panel">
+        <div class="result-hero">
+          <div class="eyebrow">Quiz complete</div>
+          <div class="big" id="r-score"></div>
+          <p class="lead" id="r-msg" style="margin:10px auto 0"></p>
+        </div>
+        <div class="panel-title" style="margin-top:14px">By chapter</div>
+        <div class="ch-break" id="r-ch"></div>
+        <div class="start-row" style="justify-content:center">
+          <button class="btn primary" id="r-mistakes" type="button">🔁 Retry the ones I missed</button>
+          <button class="btn" id="r-again" type="button">↻ New quiz, same settings</button>
+          <button class="btn" id="r-setup" type="button">⚙ Change settings</button>
+        </div>
+        <div id="r-missed"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-flash" hidden>
+    <div class="qwrap">
+      <div class="qtop">
+        <button class="btn sm ghost" id="f-quit" type="button">← Setup</button>
+        <span class="small muted" id="fpos"></span>
+        <div class="bar"><i id="fbar" style="width:0"></i></div>
+        <span class="score small" id="fknown"></span>
+      </div>
+      <div class="flash"><div class="fc" id="fc" tabindex="0" role="button" aria-label="Flashcard: press to flip">
+        <div class="face front" id="f-front"></div>
+        <div class="face back" id="f-back"></div>
+      </div></div>
+      <div class="qnav">
+        <button class="btn" id="f-prev" type="button">← Previous</button>
+        <div class="row">
+          <button class="btn" id="f-again" type="button">Still learning</button>
+          <button class="btn steel" id="f-known" type="button">I knew it ✓</button>
+        </div>
+        <button class="btn" id="f-next" type="button">Next →</button>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Quiz" });
+(function () {
+  const BANK = window.FORGE_QUIZ || { chapters: {}, questions: [] };
+  const Q = BANK.questions, CH = BANK.chapters;
+  const byId = Object.fromEntries(Q.map((q) => [q.id, q]));
+  const $ = (id) => document.getElementById(id);
+  const KEY = "forge-quiz-v1";
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch (e) { return {}; } };
+  const save = (s) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) { /* storage blocked */ } };
+  let store = load();
+  store.missed = Array.isArray(store.missed) ? store.missed.filter((id) => byId[id]) : [];
+  store.seen = store.seen && typeof store.seen === "object" ? store.seen : {};
+  store.settings = store.settings || {};
+
+  /* ---------- settings ---------- */
+  const settings = Object.assign({ chapters: [], src: "all", n: 10, order: "shuffle" }, store.settings);
+  const params = new URLSearchParams(location.search);
+  if (params.get("ch")) settings.chapters = params.get("ch").split(",").map(Number).filter((n) => CH[n]);
+  const chipsEl = $("chips");
+  const chapterNums = Object.keys(CH).map(Number);
+  function chipLabel(n) { const c = Q.filter((q) => q.ch === n).length; return `Ch ${n}<small>${c}</small>`; }
+  const allChip = Forge.el("button", { class: "chip", type: "button", onclick: () => { settings.chapters = []; syncSetup(); } }, "All chapters");
+  chipsEl.appendChild(allChip);
+  const chChips = chapterNums.map((n) => {
+    const b = Forge.el("button", { class: "chip", type: "button", title: CH[n], "aria-pressed": "false", onclick: () => {
+      const s = new Set(settings.chapters); s.has(n) ? s.delete(n) : s.add(n); settings.chapters = [...s].sort((a, b) => a - b); syncSetup(); } });
+    b.innerHTML = chipLabel(n);
+    chipsEl.appendChild(b);
+    return b;
+  });
+  function seg(id, key, parse) {
+    const el = $(id);
+    el.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { settings[key] = parse(b.dataset.v); syncSetup(); }));
+    return () => el.querySelectorAll("button").forEach((b) => { const on = parse(b.dataset.v) === settings[key]; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+  }
+  const syncSrc = seg("src-seg", "src", String), syncN = seg("n-seg", "n", Number), syncO = seg("o-seg", "order", String);
+  function pool() {
+    return Q.filter((q) => (!settings.chapters.length || settings.chapters.includes(q.ch)) &&
+      (settings.src === "all" || (settings.src === "course" ? q.course : !q.course)));
+  }
+  function syncSetup() {
+    allChip.classList.toggle("on", !settings.chapters.length);
+    chChips.forEach((b, k) => { const on = settings.chapters.includes(chapterNums[k]); b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    syncSrc(); syncN(); syncO();
+    const p = pool();
+    $("pool-count").textContent = p.length ? `${p.length} question${p.length === 1 ? "" : "s"} match` : "No questions match — widen the filters";
+    $("go-quiz").disabled = $("go-flash").disabled = !p.length;
+    store.settings = settings; save(store);
+    renderRecord();
+  }
+  function renderRecord() {
+    const seen = Object.values(store.seen);
+    const answered = seen.length, right = seen.filter((s) => s.last).length;
+    const tile = (k, v, small) => Forge.el("div", { class: "stat" }, Forge.el("div", { class: "k" }, k), Forge.el("div", { class: "v", html: v + (small ? ` <small>${small}</small>` : "") }));
+    const box = $("record"); box.innerHTML = "";
+    box.append(tile("Answered", answered, `of ${Q.length}`), tile("Right last time", right), tile("To review", store.missed.length));
+    $("go-mistakes").disabled = !store.missed.length;
+  }
+  $("reset-record").onclick = () => { if (confirm("Forget your quiz history and mistake list?")) { store.missed = []; store.seen = {}; save(store); renderRecord(); } };
+
+  /* ---------- quiz ---------- */
+  let run = null; // {list, i, answers: [{id, pick, ok}], mode}
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function pick() {
+    let list = pool().slice();
+    if (settings.order === "shuffle") shuffle(list);
+    if (settings.n) list = list.slice(0, settings.n);
+    return list;
+  }
+  function show(view) { ["setup", "quiz", "result", "flash"].forEach((v) => ($("v-" + v).hidden = v !== view)); $("quiz-hero").hidden = view !== "setup"; document.querySelector("main").style.paddingTop = view === "setup" ? "" : "28px"; window.scrollTo({ top: 0 }); }
+  function startQuiz(list) { run = { list, i: 0, answers: [] }; show("quiz"); renderQ(); }
+  const LETTERS = "ABCDEFGH";
+  function renderQ() {
+    const q = run.list[run.i], card = $("qcard");
+    $("qpos").textContent = `Question ${run.i + 1} of ${run.list.length}`;
+    $("qbar").style.width = (100 * run.i) / run.list.length + "%";
+    const right = run.answers.filter((a) => a.ok).length;
+    $("qscore").textContent = `${right} / ${run.answers.length}`;
+    card.innerHTML = "";
+    card.appendChild(Forge.el("div", { class: "qmeta" },
+      Forge.el("span", { class: "chip ember" }, `Ch ${q.ch} · ${CH[q.ch]}`), Forge.el("span", { class: "chip" }, q.src)));
+    card.appendChild(Forge.el("div", { class: "qtext", html: q.q }));
+    const opts = Forge.el("div", { class: "opts", role: "group", "aria-label": "Answer options" });
+    q.options.forEach((o, k) => {
+      const b = Forge.el("button", { class: "opt", type: "button", "data-k": k, onclick: () => answer(k) });
+      b.innerHTML = `<span class="key">${LETTERS[k]}</span><span>${o}</span><span class="mark" aria-hidden="true"></span>`;
+      opts.appendChild(b);
+    });
+    card.appendChild(opts);
+    card.appendChild(Forge.el("div", { class: "feedback", id: "fb" }));
+    card.appendChild(Forge.el("div", { class: "qnav" }, Forge.el("span", { class: "kbdhint" }, "Press 1–4 to answer"), Forge.el("span")));
+    const first = opts.querySelector("button"); if (first) first.focus({ preventScroll: true });
+  }
+  function answer(k) {
+    const q = run.list[run.i];
+    if (run.answers.length > run.i) return; // already answered
+    const ok = k === q.answer;
+    run.answers.push({ id: q.id, pick: k, ok });
+    store.seen[q.id] = { last: ok, t: Date.now() };
+    const m = new Set(store.missed); ok ? m.delete(q.id) : m.add(q.id); store.missed = [...m];
+    save(store);
+    document.querySelectorAll("#qcard .opt").forEach((b) => {
+      const j = +b.dataset.k; b.disabled = true;
+      if (j === q.answer) { b.classList.add("right"); b.querySelector(".mark").textContent = "✓"; }
+      else if (j === k) { b.classList.add("wrong"); b.querySelector(".mark").textContent = "✗"; }
+      else b.classList.add("faded");
+    });
+    const fb = $("fb");
+    fb.className = "feedback callout " + (ok ? "ok" : "bad");
+    fb.innerHTML = `<div class="head">${ok ? "✅ Correct!" : `❌ Not quite — the answer is ${LETTERS[q.answer]}.`}</div>` + q.explain;
+    const last = run.i === run.list.length - 1;
+    const nav = document.querySelector("#qcard .qnav");
+    nav.innerHTML = "";
+    nav.append(Forge.el("span", { class: "kbdhint" }, "Press Enter to continue"),
+      Forge.el("button", { class: "btn primary", type: "button", id: "next", onclick: next }, last ? "See my score →" : "Next question →"));
+    $("qscore").textContent = `${run.answers.filter((a) => a.ok).length} / ${run.answers.length}`;
+    $("qbar").style.width = (100 * (run.i + 1)) / run.list.length + "%";
+    $("next").focus({ preventScroll: true });
+  }
+  function next() { if (run.i < run.list.length - 1) { run.i++; renderQ(); window.scrollTo({ top: 0, behavior: "smooth" }); } else results(); }
+  function results() {
+    show("result");
+    const n = run.answers.length, right = run.answers.filter((a) => a.ok).length, pct = n ? Math.round((100 * right) / n) : 0;
+    $("r-score").textContent = `${right} / ${n}`;
+    $("r-msg").textContent = pct === 100 ? "Perfect. Try a harder chapter, or switch to Book order and go for the full set."
+      : pct >= 80 ? `${pct}% — strong. Review the few you missed while the reasoning is fresh.`
+      : pct >= 50 ? `${pct}% — solid start. Retry the misses now, then again in two days.`
+      : `${pct}% — that's what practice is for. Reread the explanations, watch the chapter's simulation, then retry.`;
+    const per = {};
+    run.answers.forEach((a) => { const c = byId[a.id].ch; per[c] = per[c] || { n: 0, r: 0 }; per[c].n++; if (a.ok) per[c].r++; });
+    const box = $("r-ch"); box.innerHTML = "";
+    Object.keys(per).map(Number).sort((a, b) => a - b).forEach((c) => {
+      const p = per[c];
+      box.appendChild(Forge.el("div", { class: "r" }, Forge.el("span", null, `Ch ${c} · ${CH[c]}`),
+        Forge.el("div", { class: "bar" }, Forge.el("i", { style: `width:${(100 * p.r) / p.n}%; background:${p.r === p.n ? "var(--ok)" : "linear-gradient(90deg,var(--ember),var(--ember-2))"}` })),
+        Forge.el("span", { class: "mono small" }, `${p.r}/${p.n}`)));
+    });
+    const missed = run.answers.filter((a) => !a.ok);
+    $("r-mistakes").disabled = !missed.length;
+    const mb = $("r-missed"); mb.innerHTML = "";
+    if (missed.length) {
+      mb.appendChild(Forge.el("div", { class: "panel-title", style: { marginTop: "18px" } }, "What you missed"));
+      const list = Forge.el("div", { class: "missed-list" });
+      missed.forEach((a) => {
+        const q = byId[a.id];
+        const d = Forge.el("details");
+        d.innerHTML = `<summary>Ch ${q.ch} · ${q.q.replace(/<sup>/g, "^").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 110)}…</summary>` +
+          `<div class="small" style="margin-top:8px">${q.q}<p><b>You picked:</b> ${LETTERS[a.pick]}) ${q.options[a.pick]}<br><b>Answer:</b> ${LETTERS[q.answer]}) ${q.options[q.answer]}</p>${q.explain}</div>`;
+        list.appendChild(d);
+      });
+      mb.appendChild(list);
+    }
+  }
+  $("r-mistakes").onclick = () => startQuiz(shuffle(run.answers.filter((a) => !a.ok).map((a) => byId[a.id])));
+  $("r-again").onclick = () => startQuiz(pick());
+  $("r-setup").onclick = () => { show("setup"); syncSetup(); };
+  $("quit").onclick = () => { show("setup"); syncSetup(); };
+  $("go-quiz").onclick = () => startQuiz(pick());
+  $("go-mistakes").onclick = () => startQuiz(shuffle(store.missed.map((id) => byId[id])));
+
+  /* ---------- flashcards ---------- */
+  let deck = null; // {list, i, known:Set}
+  function startFlash(list) { deck = { list, i: 0, known: new Set() }; show("flash"); renderF(); }
+  function renderF() {
+    const q = deck.list[deck.i];
+    $("fc").classList.remove("flipped");
+    $("fpos").textContent = `Card ${deck.i + 1} of ${deck.list.length}`;
+    $("fbar").style.width = (100 * (deck.i + 1)) / deck.list.length + "%";
+    $("fknown").textContent = `${deck.known.size} known`;
+    $("f-front").innerHTML = `<div class="qmeta"><span class="chip ember">Ch ${q.ch} · ${CH[q.ch]}</span><span class="chip">${q.src}</span></div>` +
+      `<div class="qtext">${q.q}</div><ol class="olist">${q.options.map((o, k) => `<li><b>${LETTERS[k]}</b>${o}</li>`).join("")}</ol>` +
+      `<div class="hint">tap or press Space to flip</div>`;
+    $("f-back").innerHTML = `<div class="qmeta"><span class="chip ok">Answer ${LETTERS[q.answer]}</span></div>` +
+      `<div class="qtext" style="font-weight:700">${q.options[q.answer]}</div><div class="feedback">${q.explain}</div><div class="hint">tap to flip back</div>`;
+    $("f-prev").disabled = deck.i === 0;
+    $("f-next").textContent = deck.i === deck.list.length - 1 ? "Finish ✓" : "Next →";
+    fitCard();
+  }
+  function fitCard() { // grow the card to fit the longer face
+    const fc = $("fc");
+    fc.style.minHeight = "";
+    const h = Math.max($("f-front").scrollHeight, $("f-back").scrollHeight);
+    fc.style.minHeight = Math.max(parseInt(getComputedStyle(fc).minHeight) || 0, h + 4) + "px";
+  }
+  const flip = () => $("fc").classList.toggle("flipped");
+  $("fc").addEventListener("click", (e) => { if (!e.target.closest("a")) flip(); });
+  function fnext() {
+    if (deck.i < deck.list.length - 1) { deck.i++; renderF(); }
+    else { alert(`Deck finished: you marked ${deck.known.size} of ${deck.list.length} as known.`); show("setup"); syncSetup(); }
+  }
+  $("f-next").onclick = fnext;
+  $("f-prev").onclick = () => { if (deck.i > 0) { deck.i--; renderF(); } };
+  $("f-known").onclick = () => { const q = deck.list[deck.i]; deck.known.add(q.id); const m = new Set(store.missed); m.delete(q.id); store.missed = [...m]; save(store); fnext(); };
+  $("f-again").onclick = () => { const q = deck.list[deck.i]; deck.known.delete(q.id); const m = new Set(store.missed); m.add(q.id); store.missed = [...m]; save(store); fnext(); };
+  $("f-quit").onclick = () => { show("setup"); syncSetup(); };
+  $("go-flash").onclick = () => startFlash(pick());
+  addEventListener("resize", () => { if (!$("v-flash").hidden) fitCard(); });
+
+  /* ---------- keyboard ---------- */
+  document.addEventListener("keydown", (e) => {
+    if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!$("v-quiz").hidden && run) {
+      const k = "1234abcd".indexOf(e.key.toLowerCase());
+      if (k >= 0 && run.answers.length === run.i) { const j = k % 4; if (j < run.list[run.i].options.length) { answer(j); e.preventDefault(); } }
+      else if (e.key === "Enter" && run.answers.length > run.i) { e.preventDefault(); next(); }
+    } else if (!$("v-flash").hidden && deck) {
+      if (e.key === " ") { e.preventDefault(); flip(); }
+      else if (e.key === "ArrowRight") fnext();
+      else if (e.key === "ArrowLeft" && deck.i > 0) { deck.i--; renderF(); }
+    }
+  });
+
+  syncSetup();
+  if (params.get("start") === "1" && pool().length) startQuiz(pick());
+  if (params.get("start") === "flash" && pool().length) startFlash(pick());
+})();
+</script>
+</body>
+</html>

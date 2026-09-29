@@ -1,0 +1,603 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segment Tree & Fenwick · Algorithm Forge</title>
+<meta name="description" content="Interactive segment tree (range sum / range min, point update, query decomposition) and Fenwick tree (Binary Indexed Tree) with the i AND -i jumps shown in binary.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  input[type="number"] { width: 72px; }
+  .opgroup { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; padding: 8px 10px; border: 1px dashed var(--line-2); border-radius: 10px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 13 · Advanced Data Structures</div>
+    <h1>Segment Tree &amp; Fenwick Tree</h1>
+    <p class="lead muted">Answer "sum (or min) of this range?" and "change one element" in O(log n) each. The segment tree splits a query into a few whole blocks; the Fenwick tree, also called a Binary Indexed Tree (BIT), jumps through its blocks by flipping the lowest 1-bit of the index.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Structure
+        <select id="mode">
+          <option value="seg">Segment tree</option>
+          <option value="bit">Fenwick tree = Binary Indexed Tree (BIT)</option>
+        </select>
+      </label>
+      <label class="field" id="combineWrap">Combine
+        <select id="combine"><option value="sum">range sum</option><option value="min">range min</option></select>
+      </label>
+      <label class="field" style="flex:1;min-width:0"><span id="arrLabel">Array B[0..n−1] (up to 16 numbers)</span>
+        <input type="text" id="arr" value="2, 5, 1, 4, 9, 3" style="width:100%">
+      </label>
+      <button class="btn primary" id="build">Build</button>
+      <button class="btn" id="rand">Random</button>
+    </div>
+    <div class="row" style="margin-top:10px" id="segOps">
+      <div class="opgroup">
+        <label class="field">l <input type="number" id="ql" value="1"></label>
+        <label class="field">r <input type="number" id="qr" value="4"></label>
+        <button class="btn steel" id="doQuery">Query [l..r]</button>
+      </div>
+      <div class="opgroup">
+        <label class="field">index i <input type="number" id="ui" value="2"></label>
+        <label class="field">new value <input type="number" id="uv" value="7"></label>
+        <button class="btn steel" id="doUpdate">Update B[i]</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px" id="bitOps" hidden>
+      <div class="opgroup">
+        <label class="field">i <input type="number" id="pi" value="6"></label>
+        <button class="btn steel" id="doPrefix">Prefix(i)</button>
+      </div>
+      <div class="opgroup">
+        <label class="field">l <input type="number" id="bl" value="3"></label>
+        <label class="field">r <input type="number" id="br" value="6"></label>
+        <button class="btn steel" id="doRange">Range sum [l..r]</button>
+      </div>
+      <div class="opgroup">
+        <label class="field">i <input type="number" id="ai" value="3"></label>
+        <label class="field">delta <input type="number" id="ad" value="2"></label>
+        <button class="btn steel" id="doAdd">Add delta to A[i]</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Tree of range summaries above the array"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <div class="grid cols-2">
+      <div>
+        <h3>Segment tree</h3>
+        <ul>
+          <li>Each box is a node that stores the sum (or min) of the slice <code>[l..r]</code> written above it. The root covers everything; leaves cover one element. Node k's children are 2k and 2k + 1.</li>
+          <li>During a <b>query</b> every visited node gets a verdict: <span style="color:var(--c-done)">green</span> = fully inside, use its stored value whole; <span style="color:var(--c-compare)">yellow</span> = partial overlap, split and recurse; gray = outside, contributes the identity (0 for sum, ∞ for min). The green nodes at the end are the <b>decomposition</b> of the range.</li>
+          <li>The small orange number under a node is what that call returned.</li>
+          <li>An <b>update</b> walks down to one leaf (blue), rewrites it (red), then recombines every ancestor on the way back up.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Fenwick tree (BIT)</h3>
+        <ul>
+          <li>Each horizontal bar is one cell <code>T[j]</code>. It stores the sum of <code>A(j − LowBit(j) .. j]</code>, so its length is the lowest 1-bit of j: odd j cover 1 cell, j = 4 covers 4, j = 8 covers 8.</li>
+          <li>The register under the array shows the bit trick: <code>i</code>, its two's complement <code>−i</code>, and <code>i AND −i</code>, which isolates the lowest 1-bit (highlighted).</li>
+          <li><b>Prefix</b> subtracts that bit (i ← i − LowBit(i)) and walks <i>left</i>; <b>update</b> adds it (i ← i + LowBit(i)) and climbs to bigger blocks. Either way at most ⌊log₂ n⌋ + 1 steps.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Segment tree on <code>2, 5, 1, 4, 9, 3</code>, query [1..4]. The decomposition is <code>[1..1]</code>, <code>[2..2]</code>, <code>[3..4]</code> → 5 + 1 + 13 = <b>19</b>, and only 9 nodes are visited.</li>
+      <li>Switch to <b>range min</b> and query [1..4] again: same nodes, answer 1. Only the combine rule and the identity (∞ instead of 0) changed.</li>
+      <li>Load 16 numbers and query [1..14]. Count the yellow (partial) nodes on each level: never more than 2, which is why a query is O(log n).</li>
+      <li>Fenwick on <code>3, 2, −1, 6, 5, 4, −3, 3</code>: Prefix(6) visits 6 → 4 → 0 and returns 9 + 10 = <b>19</b>. Prefix(7) visits 7 → 6 → 4 → 0: three steps because 7 = 111 has three 1-bits.</li>
+      <li>Fenwick: add 2 to A[3]. It touches T[3], T[4], T[8] (3 → 4 → 8 → 16 &gt; n). Then Prefix(6) is 21.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/13-advanced-data-structures/README.md#build-card-4--segment-tree-and-the-lazy-propagation-idea">📖 Lesson 13 · Segment tree</a>
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/13-advanced-data-structures/README.md#build-card-3--fenwick-tree-binary-indexed-tree-bit">📖 Lesson 13 · Fenwick tree</a>
+      <a class="btn" href="../arena/index.html?chapter=13">🏟️ Chapter 13 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=fenwick-range-sum">🧩 Arena: fenwick-range-sum</a>
+      <a class="btn" href="../arena/problem.html?id=segment-tree-range-min">🧩 Arena: segment-tree-range-min</a>
+      <a class="btn" href="patterns.html">🎮 Prefix sums (patterns)</a>
+      <a class="btn" href="union-find.html">🎮 Union-Find</a>
+      <a class="btn" href="heap-lab.html">🎮 Heap lab</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Segment Tree & Fenwick", chapter: "Ch 13 · Advanced Data Structures" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+const fmt = (v) => (v === Infinity ? "∞" : v === undefined || v === null ? "·" : String(v));
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to continue.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+const stage = $("stage");
+let mode = "seg", code = null, ctr = null;
+const say = Forge.narrate($("say"));
+let asksLeft = 0;
+
+/* =========================================================
+   SEGMENT TREE
+   ========================================================= */
+let seg = null; // {B, S (array), nodes: [{k,l,r,d}], op}
+function segLines(op) {
+  const comb = op === "sum" ? "S[2 * node] + S[2 * node + 1]" : "min(S[2 * node], S[2 * node + 1])";
+  return [
+    "ALGORITHM SegBuild(B[0..n-1], S, node, l, r)",
+    "    if l = r then",
+    "        S[node] ← B[l]",
+    "        return",
+    "    mid ← (l + r) div 2",
+    "    SegBuild(B, S, 2 * node, l, mid)",
+    "    SegBuild(B, S, 2 * node + 1, mid + 1, r)",
+    "    S[node] ← " + comb,
+    "ALGORITHM SegQuery(S, node, l, r, ql, qr)",
+    "    if qr < l or r < ql then",
+    op === "sum" ? "        return 0                     // outside" : "        return ∞                     // outside",
+    "    if ql ≤ l and r ≤ qr then",
+    "        return S[node]               // fully inside",
+    "    mid ← (l + r) div 2               // partial: split",
+    "    left ← SegQuery(S, 2 * node, l, mid, ql, qr)",
+    "    right ← SegQuery(S, 2 * node + 1, mid + 1, r, ql, qr)",
+    op === "sum" ? "    return left + right" : "    return min(left, right)",
+    "ALGORITHM SegUpdate(S, node, l, r, i, value)",
+    "    if l = r then",
+    "        S[node] ← value",
+    "        return",
+    "    mid ← (l + r) div 2",
+    "    if i ≤ mid then",
+    "        SegUpdate(S, 2 * node, l, mid, i, value)",
+    "    else",
+    "        SegUpdate(S, 2 * node + 1, mid + 1, r, i, value)",
+    "    S[node] ← " + comb,
+  ];
+}
+const segComb = (op, a, b) => (op === "sum" ? a + b : Math.min(a, b));
+function segInit(B, op) {
+  const nodes = [];
+  const walk = (k, l, r, d) => { nodes.push({ k, l, r, d }); if (l < r) { const m = (l + r) >> 1; walk(2 * k, l, m, d + 1); walk(2 * k + 1, m + 1, r, d + 1); } };
+  walk(1, 0, B.length - 1, 0);
+  seg = { B: B.slice(), S: [], nodes, op, depth: Math.max(...nodes.map((x) => x.d)) };
+}
+function segSnap(frames, extra) {
+  frames.push(Object.assign({ kind: "seg", B: seg.B.slice(), S: seg.S.slice(), st: {}, notes: {}, cells: {}, range: null, c: {} }, extra));
+}
+function segBuildFrames() {
+  const frames = [], op = seg.op;
+  seg.S = [];
+  let visited = 0, writes = 0;
+  const c = () => ({ "nodes visited": visited, writes, "used whole": "—", split: "—", skipped: "—" });
+  segSnap(frames, { line: 0, text: `Build a ${op === "sum" ? "sum" : "min"} tree over ${seg.B.length} elements. Each node will summarize a slice; children split it in half.`, c: c() });
+  const build = (k, l, r) => {
+    visited++;
+    if (l === r) {
+      seg.S[k] = seg.B[l]; writes++;
+      segSnap(frames, { line: 2, st: { [k]: "swap" }, cells: { [l]: "active" }, text: `Leaf [${l}..${l}]: copy B[${l}] = ${seg.B[l]}.`, c: c() });
+      return;
+    }
+    segSnap(frames, { line: 4, st: { [k]: "active" }, text: `Node ${k} covers [${l}..${r}]: split at mid = ${(l + r) >> 1} and build both halves first.`, c: c() });
+    const m = (l + r) >> 1;
+    build(2 * k, l, m); build(2 * k + 1, m + 1, r);
+    seg.S[k] = segComb(op, seg.S[2 * k], seg.S[2 * k + 1]); writes++;
+    segSnap(frames, { line: 7, st: { [k]: "swap", [2 * k]: "compare", [2 * k + 1]: "compare" }, text: `Combine children: ${op === "sum" ? `${seg.S[2 * k]} + ${seg.S[2 * k + 1]}` : `min(${seg.S[2 * k]}, ${seg.S[2 * k + 1]})`} = ${seg.S[k]} for [${l}..${r}].`, c: c() });
+  };
+  build(1, 0, seg.B.length - 1);
+  segSnap(frames, { line: 7, text: `Built: ${seg.nodes.length} nodes (2n − 1 = ${2 * seg.B.length - 1}), ${writes} writes, O(n) time. Now run a query or an update.`, c: c() });
+  return frames;
+}
+function segQueryFrames(ql, qr) {
+  const frames = [], op = seg.op, id = op === "sum" ? 0 : Infinity;
+  let visited = 0, inside = 0, partial = 0, outside = 0;
+  const st = {}, notes = {};
+  const c = () => ({ "nodes visited": visited, writes: 0, "used whole": inside, split: partial, skipped: outside });
+  const cells = {};
+  for (let i = ql; i <= qr; i++) cells[i] = "compare";
+  const snap = (line, text, ask) => segSnap(frames, { line, text, st: Object.assign({}, st), notes: Object.assign({}, notes), cells, range: [ql, qr], c: c(), ask });
+  snap(8, `Query ${op} of B[${ql}..${qr}] (${qr - ql + 1} elements). Start at the root, which covers [0..${seg.B.length - 1}].`);
+  let asks = 3;
+  const q = (k, l, r) => {
+    visited++;
+    const verdict = qr < l || r < ql ? "outside" : ql <= l && r <= qr ? "inside" : "partial";
+    st[k] = "active";
+    if (asks > 0) {
+      asks--;
+      snap(9, `Visit node ${k}, which covers [${l}..${r}]. Compare it with the query [${ql}..${qr}].`, {
+        id: `q${ql}-${qr}-${k}`, q: `Node [${l}..${r}] versus query [${ql}..${qr}]: what's the verdict?`, options: ["outside", "inside", "partial"], answer: verdict,
+        why: verdict === "outside" ? "The slices don't overlap at all." : verdict === "inside" ? "The whole slice lies within the query, so its stored value can be used as is." : "It overlaps only part of the query, so we must look at both children.",
+      });
+    }
+    if (verdict === "outside") {
+      outside++; st[k] = "dim"; notes[k] = fmt(id);
+      snap(10, `[${l}..${r}] is completely outside [${ql}..${qr}]: return the identity ${fmt(id)} without looking further.`);
+      return id;
+    }
+    if (verdict === "inside") {
+      inside++; st[k] = "done"; notes[k] = fmt(seg.S[k]);
+      snap(12, `[${l}..${r}] lies fully inside the query: use its stored value ${seg.S[k]} whole. No need to visit its ${r - l + 1} element${r > l ? "s" : ""}.`);
+      return seg.S[k];
+    }
+    partial++; st[k] = "compare";
+    snap(13, `[${l}..${r}] overlaps the query only partly: split at mid = ${(l + r) >> 1} and ask both children.`);
+    const m = (l + r) >> 1;
+    const a = q(2 * k, l, m);
+    const b = q(2 * k + 1, m + 1, r);
+    const res = segComb(op, a, b);
+    notes[k] = fmt(res);
+    snap(16, `Back at [${l}..${r}]: ${op === "sum" ? `${fmt(a)} + ${fmt(b)}` : `min(${fmt(a)}, ${fmt(b)})`} = ${fmt(res)}.`);
+    return res;
+  };
+  const ans = q(1, 0, seg.B.length - 1);
+  const used = seg.nodes.filter((x) => st[x.k] === "done").map((x) => `[${x.l}..${x.r}]`);
+  const brute = seg.B.slice(ql, qr + 1).reduce((s, x) => segComb(op, s, x), id);
+  segSnap(frames, { line: 16, text: `Answer: <b>${fmt(ans)}</b> (check: ${fmt(brute)}). The range decomposed into ${used.length} whole node${used.length > 1 ? "s" : ""}: ${used.join(", ")}. Visited ${visited} nodes; bound 4·⌈log₂ n⌉ = ${4 * Math.ceil(Math.log2(seg.B.length))}.`, st: Object.fromEntries(Object.entries(st).map(([k, v]) => [k, v === "done" ? "done" : "dim"])), notes, cells, range: [ql, qr], c: c() });
+  return frames;
+}
+function segUpdateFrames(i, v) {
+  const frames = [], op = seg.op;
+  let visited = 0, writes = 0;
+  const st = {};
+  const c = () => ({ "nodes visited": visited, writes, "used whole": "—", split: "—", skipped: "—" });
+  segSnap(frames, { line: 17, text: `Update: set B[${i}] from ${seg.B[i]} to ${v}. Only the nodes whose slice contains index ${i} change: one per level.`, cells: { [i]: "swap" }, c: c() });
+  seg.B[i] = v;
+  const u = (k, l, r) => {
+    visited++;
+    if (l === r) {
+      seg.S[k] = v; writes++; st[k] = "swap";
+      segSnap(frames, { line: 19, text: `Reached leaf [${l}..${l}]: write ${v}.`, st: Object.assign({}, st), cells: { [i]: "swap" }, c: c() });
+      return;
+    }
+    const m = (l + r) >> 1;
+    st[k] = "active";
+    segSnap(frames, { line: i <= m ? 23 : 25, text: `Node [${l}..${r}]: mid = ${m}, and ${i} ${i <= m ? "≤" : ">"} ${m}, so go ${i <= m ? "left" : "right"}.`, st: Object.assign({}, st), cells: { [i]: "swap" }, c: c() });
+    if (i <= m) u(2 * k, l, m); else u(2 * k + 1, m + 1, r);
+    const old = seg.S[k];
+    seg.S[k] = segComb(op, seg.S[2 * k], seg.S[2 * k + 1]); writes++; st[k] = "swap";
+    segSnap(frames, { line: 26, text: `Recombine [${l}..${r}]: ${old} → ${seg.S[k]}.`, st: Object.assign({}, st, { [2 * k]: st[2 * k] || "compare", [2 * k + 1]: st[2 * k + 1] || "compare" }), cells: { [i]: "swap" }, c: c() });
+  };
+  u(1, 0, seg.B.length - 1);
+  segSnap(frames, { line: 26, text: `Update done: ${visited} nodes touched (tree height + 1 = ${seg.depth + 1}), versus rebuilding all ${seg.nodes.length}.`, st, cells: { [i]: "swap" }, c: c() });
+  return frames;
+}
+function renderSeg(f) {
+  const n = f.B.length, W = 760, pad = 20;
+  const leafW = (W - 2 * pad) / n, rowH = 68, top = 26;
+  const H = top + (seg.depth + 1) * rowH + 70;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  const bw = Math.min(58, leafW * 0.9), bh = 30;
+  const pos = (nd) => ({ x: pad + ((nd.l + nd.r + 1) / 2) * leafW, y: top + 12 + nd.d * rowH });
+  seg.nodes.forEach((nd) => {
+    if (nd.l === nd.r) return;
+    const p = pos(nd);
+    [2 * nd.k, 2 * nd.k + 1].forEach((ck) => {
+      const ch = seg.nodes.find((x) => x.k === ck);
+      const q = pos(ch);
+      stage.appendChild(S("line", { x1: p.x, y1: p.y + bh / 2, x2: q.x, y2: q.y - bh / 2 - 9, stroke: f.st[ck] && f.st[ck] !== "dim" ? COL[f.st[ck]] : "var(--line-2)", "stroke-width": f.st[ck] && f.st[ck] !== "dim" ? 2.5 : 1.5 }));
+    });
+  });
+  const small = Math.max(8, Math.min(10, leafW * 0.2));
+  seg.nodes.forEach((nd) => {
+    const p = pos(nd), s = f.st[nd.k];
+    stage.appendChild(S("text", { x: p.x, y: p.y - bh / 2 - 3, "text-anchor": "middle", "font-size": small, fill: "var(--muted)" }, nd.l === nd.r ? `[${nd.l}]` : `[${nd.l}..${nd.r}]`));
+    stage.appendChild(S("rect", { x: p.x - bw / 2, y: p.y - bh / 2, width: bw, height: bh, rx: 7, fill: s ? COL[s] : "var(--panel-2)", stroke: s ? COL[s] : "var(--line-2)", "stroke-width": 1.5, opacity: s === "dim" ? 0.8 : 1 }));
+    stage.appendChild(S("text", { x: p.x, y: p.y + 5, "text-anchor": "middle", "font-size": Math.min(14, bw * 0.36), "font-weight": 700, fill: s && s !== "dim" ? "#0d1117" : "var(--ink)" }, fmt(f.S[nd.k])));
+    if (f.notes[nd.k] != null) stage.appendChild(S("text", { x: p.x + bw / 2 - 2, y: p.y + bh / 2 + 11, "text-anchor": "end", "font-size": 10, "font-weight": 700, fill: "var(--ember-2)" }, "→" + f.notes[nd.k]));
+  });
+  // array row
+  const ay = top + (seg.depth + 1) * rowH + 8, cw = Math.min(46, leafW);
+  stage.appendChild(S("text", { x: pad, y: ay - 6, "font-size": 10, fill: "var(--muted)" }, "B"));
+  f.B.forEach((v, i) => {
+    const x = pad + i * leafW + (leafW - cw) / 2, s = f.cells[i];
+    stage.appendChild(S("rect", { x: x + 1, y: ay, width: cw - 2, height: 30, rx: 5, fill: s ? COL[s] : "var(--panel)", stroke: s ? COL[s] : "var(--line-2)" }));
+    stage.appendChild(S("text", { x: x + cw / 2, y: ay + 20, "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: s ? "#0d1117" : "var(--ink)" }, String(v)));
+    stage.appendChild(S("text", { x: x + cw / 2, y: ay + 44, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, String(i)));
+  });
+  if (f.range) {
+    const x1 = pad + f.range[0] * leafW + 2, x2 = pad + (f.range[1] + 1) * leafW - 2;
+    stage.appendChild(S("path", { d: `M${x1} ${ay + 50} v6 H${x2} v-6`, fill: "none", stroke: "var(--ember)", "stroke-width": 2 }));
+  }
+}
+
+/* =========================================================
+   FENWICK TREE
+   ========================================================= */
+let bit = null; // {A: [0, a1..an], T: [0, t1..tn]}
+const low = (i) => i & -i;
+const BIT_LINES = [
+  "ALGORITHM FenwickUpdate(T[0..n], i, delta)",
+  "    // T[1..n] holds the tree (T[0] unused); adds delta to A[i]",
+  "    while i ≤ n do",
+  "        T[i] ← T[i] + delta",
+  "        i ← i + LowBit(i)            // LowBit(i) = i AND (−i)",
+  "ALGORITHM FenwickPrefix(T[0..n], i)",
+  "    // Returns A[1] + ... + A[i]",
+  "    s ← 0",
+  "    while i > 0 do",
+  "        s ← s + T[i]",
+  "        i ← i − LowBit(i)",
+  "    return s",
+  "ALGORITHM FenwickRangeSum(T[0..n], l, r)",
+  "    return FenwickPrefix(T, r) − FenwickPrefix(T, l − 1)",
+];
+function bitSnap(frames, extra) {
+  frames.push(Object.assign({ kind: "bit", A: bit.A.slice(), T: bit.T.slice(), bars: {}, cells: {}, reg: null, c: {} }, extra));
+}
+function bitCounters(steps, reads, writes, result) {
+  return { "loop steps": steps, "T reads": reads, "T writes": writes, "max steps": Math.floor(Math.log2(bit.n)) + 1, result: result == null ? "—" : result };
+}
+function jumpAsk(i, dir, n) {
+  const next = dir < 0 ? i - low(i) : i + low(i);
+  const cand = [...new Set([next, dir < 0 ? i - 1 : i + 1, dir < 0 ? i >> 1 : i * 2, dir < 0 ? i - low(i) / 2 || i - 2 : i + 2 * low(i)])].filter((x) => x >= 0).sort((a, b) => a - b).slice(0, 4);
+  if (!cand.includes(next)) cand.push(next);
+  return {
+    id: `j${dir}-${i}-${JSON.stringify(bit.T)}`, q: `i = ${i} = <code>${i.toString(2)}</code>₂. LowBit(${i}) = ${low(i)}. What is the next index?`, options: cand, answer: next,
+    why: dir < 0 ? `Prefix walks left: i − LowBit(i) = ${i} − ${low(i)} = ${next}, which clears the lowest 1-bit.` : `Update climbs: i + LowBit(i) = ${i} + ${low(i)} = ${next}, the next block that also covers A[${i}]${next > n ? ` (but ${next} > n, so it stops)` : ""}.`,
+  };
+}
+function bitPrefixFrames(frames, i0, label, lineBase, acc) {
+  let i = i0, s = 0, steps = acc.steps, reads = acc.reads;
+  const used = {};
+  bitSnap(frames, { line: [7, lineBase], text: `${label}Prefix(${i0}): add up the blocks that tile A[1..${i0}], starting with s = 0.`, reg: { i }, cells: rangeCells(1, i0), c: bitCounters(steps, reads, 0, null) });
+  while (i > 0) {
+    const from = i;
+    s += bit.T[i]; reads++; steps++;
+    used[i] = "done";
+    bitSnap(frames, { line: [9, lineBase], text: `T[${i}] covers A[${i - low(i) + 1}..${i}] and holds ${bit.T[i]}. s = ${s}.`, bars: Object.assign({}, used, { [i]: "swap" }), reg: { i }, cells: rangeCells(1, i0), c: bitCounters(steps, reads, 0, null) });
+    if (asksLeft > 0 && i - low(i) > 0) { asksLeft--; bitSnap(frames, { line: [10, lineBase], text: "Which index does the loop visit next?", bars: Object.assign({}, used), reg: { i }, cells: rangeCells(1, i0), c: bitCounters(steps, reads, 0, null), ask: jumpAsk(i, -1, bit.n) }); }
+    i -= low(i);
+    bitSnap(frames, { line: [10, lineBase], text: `i ← ${from} − LowBit(${from}) = ${from} − ${low(from)} = ${i}${i === 0 ? ": loop ends" : ""}. In binary, ${from.toString(2)} → ${i.toString(2)}: the lowest 1-bit was cleared.`, bars: Object.assign({}, used), reg: { i: from, next: i }, cells: rangeCells(1, i0), c: bitCounters(steps, reads, 0, null) });
+  }
+  acc.steps = steps; acc.reads = reads;
+  return s;
+}
+function rangeCells(l, r) { const o = {}; for (let j = l; j <= r; j++) o[j] = "compare"; return o; }
+function bitBuildFrames() {
+  const frames = [], n = bit.n;
+  bit.T = Array(n + 1).fill(0);
+  let steps = 0, writes = 0;
+  bitSnap(frames, { line: 0, text: `Build by calling FenwickUpdate(T, i, A[i]) for i = 1..${n}, starting from all-zero T. (An O(n) build also exists; this one is O(n log n) and shows the climbing jumps.)`, c: bitCounters(0, 0, 0, null) });
+  for (let j = 1; j <= n; j++) {
+    let i = j;
+    const touched = {};
+    while (i <= n) {
+      bit.T[i] += bit.A[j]; steps++; writes++; touched[i] = "swap";
+      bitSnap(frames, { line: 3, text: `Add A[${j}] = ${bit.A[j]} into T[${i}] (T[${i}] covers A[${i - low(i) + 1}..${i}]), T[${i}] = ${bit.T[i]}. Next: ${i} + ${low(i)} = ${i + low(i)}.`, bars: Object.assign({}, touched), cells: { [j]: "active" }, reg: { i, next: i + low(i) }, c: bitCounters(steps, 0, writes, null) });
+      i += low(i);
+    }
+  }
+  bitSnap(frames, { line: 4, text: `Built: T[1..${n}] = [${bit.T.slice(1).join(", ")}]. Every A[j] went into at most ⌊log₂ n⌋ + 1 cells.`, c: bitCounters(steps, 0, writes, null) });
+  return frames;
+}
+function bitAddFrames(i0, d) {
+  const frames = [], n = bit.n;
+  let i = i0, steps = 0, writes = 0;
+  const touched = {};
+  bitSnap(frames, { line: 0, text: `Add ${d} to A[${i0}]. Every cell whose block contains index ${i0} must change: climb with i ← i + LowBit(i).`, cells: { [i0]: "swap" }, reg: { i }, c: bitCounters(0, 0, 0, null) });
+  bit.A[i0] += d;
+  let asks = 2;
+  while (i <= n) {
+    const from = i;
+    bit.T[i] += d; steps++; writes++; touched[i] = "swap";
+    bitSnap(frames, { line: 3, text: `T[${i}] covers A[${i - low(i) + 1}..${i}], which includes A[${i0}]: T[${i}] ← T[${i}] + ${d} = ${bit.T[i]}.`, bars: Object.assign({}, touched), cells: { [i0]: "swap" }, reg: { i }, c: bitCounters(steps, 0, writes, null) });
+    if (asks-- > 0) bitSnap(frames, { line: 4, text: "Which index does the loop visit next?", bars: Object.assign({}, touched), cells: { [i0]: "swap" }, reg: { i }, c: bitCounters(steps, 0, writes, null), ask: jumpAsk(i, +1, n) });
+    i += low(i);
+    bitSnap(frames, { line: 4, text: `i ← ${from} + ${low(from)} = ${i}${i > n ? ` > n = ${n}: stop` : ""}. Binary ${from.toString(2)} → ${i.toString(2)}: adding the lowest 1-bit carries into a higher bit, reaching a bigger block.`, bars: Object.assign({}, touched), cells: { [i0]: "swap" }, reg: { i: from, next: i }, c: bitCounters(steps, 0, writes, null) });
+  }
+  bitSnap(frames, { line: 4, text: `Done: ${steps} cells updated (bound ⌊log₂ ${n}⌋ + 1 = ${Math.floor(Math.log2(n)) + 1}).`, bars: touched, cells: { [i0]: "swap" }, c: bitCounters(steps, 0, writes, null) });
+  return frames;
+}
+function bitQueryFrames(l, r) {
+  const frames = [], acc = { steps: 0, reads: 0 };
+  asksLeft = 2;
+  if (l == null) {
+    const s = bitPrefixFrames(frames, r, "", 5, acc);
+    bitSnap(frames, { line: 11, text: `Prefix(${r}) = <b>${s}</b> after ${acc.steps} step${acc.steps === 1 ? "" : "s"}: one per 1-bit of ${r} = ${r.toString(2)}₂.`, cells: rangeCells(1, r), c: bitCounters(acc.steps, acc.reads, 0, s) });
+    return frames;
+  }
+  const a = bitPrefixFrames(frames, r, "Range: first ", 13, acc);
+  const b = l - 1 > 0 ? bitPrefixFrames(frames, l - 1, "Range: then ", 13, acc) : 0;
+  const cells = rangeCells(l, r);
+  bitSnap(frames, { line: 13, text: `Sum A[${l}..${r}] = Prefix(${r}) − Prefix(${l - 1}) = ${a} − ${b} = <b>${a - b}</b>. Sums are invertible, so two prefixes give any range.`, cells, c: bitCounters(acc.steps, acc.reads, 0, a - b) });
+  return frames;
+}
+function renderBit(f) {
+  const n = bit.n, W = 760, pad = 56;
+  const cw = (W - pad - 16) / n, lv = Math.floor(Math.log2(n)) + 1, lh = 30, top = 18;
+  const ay = top + lv * lh + 14;
+  const bits = Math.floor(Math.log2(n)) + 2;
+  const regY = ay + 88, rowH = 26, bx = 26;
+  const H = regY + 4 * rowH + 12;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  stage.appendChild(S("text", { x: 8, y: top + 12, "font-size": 10, fill: "var(--muted)" }, "T[j]"));
+  for (let j = 1; j <= n; j++) {
+    const len = low(j), level = Math.log2(len);
+    const x1 = pad + (j - len) * cw + 2, x2 = pad + j * cw - 2;
+    const y = top + (lv - 1 - level) * lh;
+    const s = f.bars[j];
+    stage.appendChild(S("rect", { x: x1, y, width: x2 - x1, height: lh - 6, rx: 5, fill: s ? COL[s] : "var(--panel-2)", stroke: s ? COL[s] : "var(--line-2)" }, S("title", null, `T[${j}] = sum of A[${j - len + 1}..${j}] = ${f.T[j]}`)));
+    stage.appendChild(S("text", { x: x2 - 5, y: y + lh / 2 + 1, "text-anchor": "end", "font-size": Math.min(11, cw * 0.3), "font-weight": 700, fill: s ? "#0d1117" : "var(--ink)" }, `T${j}=${f.T[j]}`));
+  }
+  stage.appendChild(S("text", { x: 8, y: ay + 20, "font-size": 10, fill: "var(--muted)" }, "A[j]"));
+  stage.appendChild(S("text", { x: 8, y: ay + 60, "font-size": 10, fill: "var(--muted)" }, "binary"));
+  for (let j = 1; j <= n; j++) {
+    const x = pad + (j - 1) * cw, s = f.cells[j];
+    stage.appendChild(S("rect", { x: x + 2, y: ay, width: cw - 4, height: 30, rx: 5, fill: s ? COL[s] : "var(--panel)", stroke: s ? COL[s] : "var(--line-2)" }));
+    stage.appendChild(S("text", { x: x + cw / 2, y: ay + 20, "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: s ? "#0d1117" : "var(--ink)" }, String(f.A[j])));
+    stage.appendChild(S("text", { x: x + cw / 2, y: ay + 44, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, String(j)));
+    const bstr = j.toString(2).padStart(bits - 1, "0");
+    stage.appendChild(S("text", { x: x + cw / 2, y: ay + 60, "text-anchor": "middle", "font-size": Math.min(10, cw / (bits * 0.7)), fill: "var(--ink-2)" }, bstr));
+  }
+  // bit register
+  const reg = f.reg;
+  stage.appendChild(S("text", { x: 8, y: regY - 10, "font-size": 11, fill: "var(--muted)", "font-weight": 700 }, "BIT TRICK (two's complement, " + bits + " bits)"));
+  if (!reg) {
+    stage.appendChild(S("text", { x: 8, y: regY + 20, "font-size": 12, fill: "var(--muted)" }, "Run Prefix, Range sum or Add to see i, −i and i AND −i here."));
+    return;
+  }
+  const mask = (1 << bits) - 1, i = reg.i;
+  const rows = [["i", i & mask, i], ["−i", -i & mask, -i], ["i AND −i", low(i), low(i)]];
+  if (reg.next != null) rows.push(["next i", reg.next & mask, reg.next]);
+  const lb = low(i) ? Math.log2(low(i)) : -1;
+  rows.forEach(([name, val, dec], r) => {
+    const y = regY + r * rowH;
+    stage.appendChild(S("text", { x: 8, y: y + 16, "font-size": 12, fill: "var(--ink-2)" }, name));
+    for (let b = bits - 1; b >= 0; b--) {
+      const x = 110 + (bits - 1 - b) * bx, one = (val >> b) & 1, isLow = b === lb;
+      stage.appendChild(S("rect", { x, y, width: bx - 3, height: rowH - 4, rx: 4, fill: isLow ? (r === 2 ? "var(--c-done)" : "var(--c-compare)") : one ? "var(--panel-2)" : "var(--bg-2)", stroke: "var(--line-2)" }));
+      stage.appendChild(S("text", { x: x + (bx - 3) / 2, y: y + 16, "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: isLow ? "#0d1117" : one ? "var(--ink)" : "var(--muted)" }, String(one)));
+    }
+    stage.appendChild(S("text", { x: 110 + bits * bx + 10, y: y + 16, "font-size": 12, fill: "var(--ink-2)" }, `= ${dec}${r === 3 && dec > n ? "  (> n, stop)" : ""}`));
+  });
+}
+
+/* =========================================================
+   shared render + controls
+   ========================================================= */
+function render(f, i) {
+  if (f.kind === "seg") renderSeg(f); else renderBit(f);
+  code.highlight(f.line);
+  ctr.set(f.c);
+  say.say(f.text);
+  predict.show(f, i);
+}
+player = Forge.player($("player"), { frames: [], render });
+
+function setMode(m) {
+  mode = m;
+  $("segOps").hidden = m !== "seg";
+  $("bitOps").hidden = m !== "bit";
+  $("combineWrap").hidden = m !== "seg";
+  $("arrLabel").textContent = m === "seg" ? "Array B[0..n−1] (up to 16 numbers)" : "Array A[1..n] (up to 16 numbers)";
+  $("code").innerHTML = ""; $("ctr").innerHTML = "";
+  if (m === "seg") {
+    code = Forge.code($("code"), segLines($("combine").value));
+    ctr = Forge.counters($("ctr"), { "nodes visited": 0, writes: 0, "used whole": 0, split: 0, skipped: 0 });
+    $("legend").innerHTML = `<span><i style="background:var(--c-active)"></i>current node / path</span><span><i style="background:var(--c-done)"></i>fully inside: used whole</span><span><i style="background:var(--c-compare)"></i>partial overlap: split</span><span><i style="background:var(--c-dim)"></i>outside: skipped</span><span><i style="background:var(--c-swap)"></i>written</span>`;
+  } else {
+    code = Forge.code($("code"), BIT_LINES);
+    ctr = Forge.counters($("ctr"), { "loop steps": 0, "T reads": 0, "T writes": 0, "max steps": 0, result: "—" });
+    $("legend").innerHTML = `<span><i style="background:var(--c-swap)"></i>cell being read / written now</span><span><i style="background:var(--c-done)"></i>block already added</span><span><i style="background:var(--c-compare)"></i>A-range asked for / lowest 1-bit</span><span><i style="background:var(--c-active)"></i>element being inserted</span>`;
+  }
+}
+function parseArr() {
+  return $("arr").value.split(/[\s,;]+/).filter(Boolean).map(Number).filter((x) => Number.isFinite(x)).map((x) => Math.round(x)).slice(0, 16);
+}
+function play(frames) { predict.reset(); player.load(frames); }
+function doBuild() {
+  let arr = parseArr();
+  if (arr.length < 2) arr = mode === "seg" ? [2, 5, 1, 4, 9, 3] : [3, 2, -1, 6, 5, 4, -3, 3];
+  if (mode === "seg") { segInit(arr, $("combine").value); play(segBuildFrames()); }
+  else { bit = { n: arr.length, A: [0, ...arr], T: [] }; play(bitBuildFrames()); }
+}
+const clampInt = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(+v || 0)));
+$("mode").onchange = () => {
+  setMode($("mode").value);
+  $("arr").value = mode === "seg" ? "2, 5, 1, 4, 9, 3" : "3, 2, -1, 6, 5, 4, -3, 3";
+  doBuild();
+};
+$("combine").onchange = () => { setMode("seg"); doBuild(); };
+$("build").onclick = doBuild;
+$("arr").addEventListener("keydown", (e) => { if (e.key === "Enter") doBuild(); });
+$("rand").onclick = () => {
+  const n = 6 + Math.floor(Math.random() * 7);
+  const arr = mode === "seg" ? Forge.randArray(n, 1, 9) : Forge.randArray(n, -5, 9);
+  $("arr").value = arr.join(", ");
+  doBuild();
+};
+$("doQuery").onclick = () => {
+  const n = seg.B.length;
+  let l = clampInt($("ql").value, 0, n - 1), r = clampInt($("qr").value, 0, n - 1);
+  if (l > r) [l, r] = [r, l];
+  $("ql").value = l; $("qr").value = r;
+  play(segQueryFrames(l, r));
+};
+$("doUpdate").onclick = () => {
+  const i = clampInt($("ui").value, 0, seg.B.length - 1), v = Math.round(+$("uv").value || 0);
+  $("ui").value = i;
+  play(segUpdateFrames(i, v));
+  $("arr").value = seg.B.join(", ");
+};
+$("doPrefix").onclick = () => { const i = clampInt($("pi").value, 1, bit.n); $("pi").value = i; play(bitQueryFrames(null, i)); };
+$("doRange").onclick = () => {
+  let l = clampInt($("bl").value, 1, bit.n), r = clampInt($("br").value, 1, bit.n);
+  if (l > r) [l, r] = [r, l];
+  $("bl").value = l; $("br").value = r;
+  play(bitQueryFrames(l, r));
+};
+$("doAdd").onclick = () => {
+  const i = clampInt($("ai").value, 1, bit.n), d = Math.round(+$("ad").value || 0);
+  $("ai").value = i;
+  play(bitAddFrames(i, d));
+  $("arr").value = bit.A.slice(1).join(", ");
+};
+setMode("seg");
+doBuild();
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="900" height="380" role="img" aria-labelledby="ttl dsc">
+<title id="ttl">Algorithm Forge - build algorithms from scratch</title>
+<desc id="dsc">Wordmark and tagline beside an insertion sort animation whose pseudocode highlight follows every compare and shift.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}.e{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif}@keyframes k0{0%,99.29%,100%{opacity:0}3.21%,96.07%{opacity:1}}.k0{animation:k0 14.0s ease-in-out infinite}@keyframes k1{0%,7.43%{transform:translate(0px,0px);fill:#ffb07a}8.29%,9.86%{transform:translate(0px,0px);fill:#ffd24d}11.43%,11.92%{transform:translate(60px,0px);fill:#ff5d73}12.64%,17.14%{transform:translate(60px,0px);fill:#ffb07a}18%,19.57%{transform:translate(60px,0px);fill:#ffd24d}21.14%,21.64%{transform:translate(120px,0px);fill:#ff5d73}22.35%,29.29%,32.06%,41.43%{transform:translate(120px,0px);fill:#ffb07a}30.14%,31.35%,42.29%,43.86%{transform:translate(120px,0px);fill:#ffd24d}45.43%,45.92%{transform:translate(180px,0px);fill:#ff5d73}46.64%,65.71%{transform:translate(180px,0px);fill:#ffb07a}66.57%,68.14%{transform:translate(180px,0px);fill:#ffd24d}69.71%,70.21%{transform:translate(240px,0px);fill:#ff5d73}70.92%,81%{transform:translate(240px,0px);fill:#ffb07a}82.43%,98.57%{transform:translate(240px,0px);fill:#3ddc97}98.93%,100%{transform:translate(0px,0px);fill:#6b7fa6}}.k1{animation:k1 14.0s ease-in-out infinite}@keyframes k2{0%,5%,98.93%,100%{transform:translate(0px,0px);fill:#6b7fa6}6.57%,9.86%{transform:translate(0px,-20px);fill:#5ab0ff}11.43%,12.29%{transform:translate(-60px,-20px);fill:#5ab0ff}13.86%,22%,24.78%,51.14%{transform:translate(-60px,0px);fill:#ffb07a}22.86%,24.06%,52%,53.57%{transform:translate(-60px,0px);fill:#ffd24d}55.14%,55.64%{transform:translate(0px,0px);fill:#ff5d73}56.35%,75.43%,78.21%,81.5%{transform:translate(0px,0px);fill:#ffb07a}76.29%,77.49%{transform:translate(0px,0px);fill:#ffd24d}82.93%,98.57%{transform:translate(0px,0px);fill:#3ddc97}}.k2{animation:k2 14.0s ease-in-out infinite}@keyframes k3{0%,14.71%,98.93%,100%{transform:translate(0px,0px);fill:#6b7fa6}16.29%,19.57%{transform:translate(0px,-20px);fill:#5ab0ff}21.14%,24.43%{transform:translate(-60px,-20px);fill:#5ab0ff}26%,46.29%{transform:translate(-60px,0px);fill:#ffb07a}47.14%,48.71%{transform:translate(-60px,0px);fill:#ffd24d}50.29%,50.78%{transform:translate(0px,0px);fill:#ff5d73}51.49%,70.57%{transform:translate(0px,0px);fill:#ffb07a}71.43%,73%{transform:translate(0px,0px);fill:#ffd24d}74.57%,75.06%{transform:translate(60px,0px);fill:#ff5d73}75.78%,82%{transform:translate(60px,0px);fill:#ffb07a}83.43%,98.57%{transform:translate(60px,0px);fill:#3ddc97}}.k3{animation:k3 14.0s ease-in-out infinite}@keyframes k4{0%,26.86%,98.93%,100%{transform:translate(0px,0px);fill:#6b7fa6}28.43%,31.71%{transform:translate(0px,-20px);fill:#5ab0ff}33.29%,36.57%{transform:translate(0px,0px);fill:#ffb07a}37.43%,39%{transform:translate(0px,0px);fill:#ffd24d}40.57%,41.06%{transform:translate(60px,0px);fill:#ff5d73}41.78%,60.86%{transform:translate(60px,0px);fill:#ffb07a}61.71%,63.29%{transform:translate(60px,0px);fill:#ffd24d}64.86%,65.35%{transform:translate(120px,0px);fill:#ff5d73}66.06%,82.5%{transform:translate(120px,0px);fill:#ffb07a}83.93%,98.57%{transform:translate(120px,0px);fill:#3ddc97}}.k4{animation:k4 14.0s ease-in-out infinite}@keyframes k5{0%,34.14%,98.93%,100%{transform:translate(0px,0px);fill:#6b7fa6}35.71%,39%{transform:translate(0px,-20px);fill:#5ab0ff}40.57%,43.86%{transform:translate(-60px,-20px);fill:#5ab0ff}45.43%,48.71%{transform:translate(-120px,-20px);fill:#5ab0ff}50.29%,53.57%{transform:translate(-180px,-20px);fill:#5ab0ff}55.14%,56%{transform:translate(-240px,-20px);fill:#5ab0ff}57.57%,83%{transform:translate(-240px,0px);fill:#ffb07a}84.43%,98.57%{transform:translate(-240px,0px);fill:#3ddc97}}.k5{animation:k5 14.0s ease-in-out infinite}@keyframes k6{0%,58.43%,98.93%,100%{transform:translate(0px,0px);fill:#6b7fa6}60%,63.29%{transform:translate(0px,-20px);fill:#5ab0ff}64.86%,68.14%{transform:translate(-60px,-20px);fill:#5ab0ff}69.71%,73%{transform:translate(-120px,-20px);fill:#5ab0ff}74.57%,77.86%{transform:translate(-180px,-20px);fill:#5ab0ff}79.43%,83.5%{transform:translate(-180px,0px);fill:#ffb07a}84.93%,98.57%{transform:translate(-180px,0px);fill:#3ddc97}}.k6{animation:k6 14.0s ease-in-out infinite}@keyframes k7{0%,5%,7.43%,100%{opacity:0}5.5%,6.93%{opacity:1}}.k7{animation:k7 14.0s ease-in-out infinite}@keyframes k8{0%,7.43%,9.86%,100%{opacity:0}7.93%,9.36%{opacity:1}}.k8{animation:k8 14.0s ease-in-out infinite}@keyframes k9{0%,9.86%,12.29%,100%{opacity:0}10.36%,11.79%{opacity:1}}.k9{animation:k9 14.0s ease-in-out infinite}@keyframes k10{0%,12.29%,14.71%,100%{opacity:0}12.79%,14.21%{opacity:1}}.k10{animation:k10 14.0s ease-in-out infinite}@keyframes k11{0%,14.71%,17.14%,100%{opacity:0}15.21%,16.64%{opacity:1}}.k11{animation:k11 14.0s ease-in-out infinite}@keyframes k12{0%,17.14%,19.57%,100%{opacity:0}17.64%,19.07%{opacity:1}}.k12{animation:k12 14.0s ease-in-out infinite}@keyframes k13{0%,19.57%,22%,100%{opacity:0}20.07%,21.5%{opacity:1}}.k13{animation:k13 14.0s ease-in-out infinite}@keyframes k14{0%,22%,24.43%,100%{opacity:0}22.5%,23.93%{opacity:1}}.k14{animation:k14 14.0s ease-in-out infinite}@keyframes k15{0%,24.43%,26.86%,100%{opacity:0}24.93%,26.36%{opacity:1}}.k15{animation:k15 14.0s ease-in-out infinite}@keyframes k16{0%,26.86%,29.29%,100%{opacity:0}27.36%,28.79%{opacity:1}}.k16{animation:k16 14.0s ease-in-out infinite}@keyframes k17{0%,29.29%,31.71%,100%{opacity:0}29.79%,31.21%{opacity:1}}.k17{animation:k17 14.0s ease-in-out infinite}@keyframes k18{0%,31.71%,34.14%,100%{opacity:0}32.21%,33.64%{opacity:1}}.k18{animation:k18 14.0s ease-in-out infinite}@keyframes k19{0%,34.14%,36.57%,100%{opacity:0}34.64%,36.07%{opacity:1}}.k19{animation:k19 14.0s ease-in-out infinite}@keyframes k20{0%,36.57%,39%,100%{opacity:0}37.07%,38.5%{opacity:1}}.k20{animation:k20 14.0s ease-in-out infinite}@keyframes k21{0%,39%,41.43%,100%{opacity:0}39.5%,40.93%{opacity:1}}.k21{animation:k21 14.0s ease-in-out infinite}@keyframes k22{0%,41.43%,43.86%,100%{opacity:0}41.93%,43.36%{opacity:1}}.k22{animation:k22 14.0s ease-in-out infinite}@keyframes k23{0%,43.86%,46.29%,100%{opacity:0}44.36%,45.79%{opacity:1}}.k23{animation:k23 14.0s ease-in-out infinite}@keyframes k24{0%,46.29%,48.71%,100%{opacity:0}46.79%,48.21%{opacity:1}}.k24{animation:k24 14.0s ease-in-out infinite}@keyframes k25{0%,48.71%,51.14%,100%{opacity:0}49.21%,50.64%{opacity:1}}.k25{animation:k25 14.0s ease-in-out infinite}@keyframes k26{0%,51.14%,53.57%,100%{opacity:0}51.64%,53.07%{opacity:1}}.k26{animation:k26 14.0s ease-in-out infinite}@keyframes k27{0%,53.57%,56%,100%{opacity:0}54.07%,55.5%{opacity:1}}.k27{animation:k27 14.0s ease-in-out infinite}@keyframes k28{0%,56%,58.43%,100%{opacity:0}56.5%,57.93%{opacity:1}}.k28{animation:k28 14.0s ease-in-out infinite}@keyframes k29{0%,58.43%,60.86%,100%{opacity:0}58.93%,60.36%{opacity:1}}.k29{animation:k29 14.0s ease-in-out infinite}@keyframes k30{0%,60.86%,63.29%,100%{opacity:0}61.36%,62.79%{opacity:1}}.k30{animation:k30 14.0s ease-in-out infinite}@keyframes k31{0%,63.29%,65.71%,100%{opacity:0}63.79%,65.21%{opacity:1}}.k31{animation:k31 14.0s ease-in-out infinite}@keyframes k32{0%,65.71%,68.14%,100%{opacity:0}66.21%,67.64%{opacity:1}}.k32{animation:k32 14.0s ease-in-out infinite}@keyframes k33{0%,68.14%,70.57%,100%{opacity:0}68.64%,70.07%{opacity:1}}.k33{animation:k33 14.0s ease-in-out infinite}@keyframes k34{0%,70.57%,73%,100%{opacity:0}71.07%,72.5%{opacity:1}}.k34{animation:k34 14.0s ease-in-out infinite}@keyframes k35{0%,73%,75.43%,100%{opacity:0}73.5%,74.93%{opacity:1}}.k35{animation:k35 14.0s ease-in-out infinite}@keyframes k36{0%,75.43%,77.86%,100%{opacity:0}75.93%,77.36%{opacity:1}}.k36{animation:k36 14.0s ease-in-out infinite}@keyframes k37{0%,77.86%,83.14%,100%{opacity:0}78.36%,82.64%{opacity:1}}.k37{animation:k37 14.0s ease-in-out infinite}@keyframes k38{0%,83.14%{opacity:0}84.57%,100%{opacity:1}}.k38{animation:k38 14.0s ease-in-out infinite}@keyframes k39{0%,7.43%{opacity:1}7.79%,100%{opacity:0}}.k39{animation:k39 14.0s ease-in-out infinite}@keyframes k40{0%,7.43%,10.21%,100%{opacity:0}7.79%,9.86%{opacity:1}}.k40{animation:k40 14.0s ease-in-out infinite}@keyframes k41{0%,9.86%,15.07%,100%{opacity:0}10.21%,14.71%{opacity:1}}.k41{animation:k41 14.0s ease-in-out infinite}@keyframes k42{0%,14.71%,17.5%,100%{opacity:0}15.07%,17.14%{opacity:1}}.k42{animation:k42 14.0s ease-in-out infinite}@keyframes k43{0%,17.14%,19.93%,100%{opacity:0}17.5%,19.57%{opacity:1}}.k43{animation:k43 14.0s ease-in-out infinite}@keyframes k44{0%,19.57%,22.36%,100%{opacity:0}19.93%,22%{opacity:1}}.k44{animation:k44 14.0s ease-in-out infinite}@keyframes k45{0%,22%,27.21%,100%{opacity:0}22.36%,26.86%{opacity:1}}.k45{animation:k45 14.0s ease-in-out infinite}@keyframes k46{0%,26.86%,29.64%,100%{opacity:0}27.21%,29.29%{opacity:1}}.k46{animation:k46 14.0s ease-in-out infinite}@keyframes k47{0%,29.29%,34.5%,100%{opacity:0}29.64%,34.14%{opacity:1}}.k47{animation:k47 14.0s ease-in-out infinite}@keyframes k48{0%,34.14%,36.93%,100%{opacity:0}34.5%,36.57%{opacity:1}}.k48{animation:k48 14.0s ease-in-out infinite}@keyframes k49{0%,36.57%,39.36%,100%{opacity:0}36.93%,39%{opacity:1}}.k49{animation:k49 14.0s ease-in-out infinite}@keyframes k50{0%,39%,41.79%,100%{opacity:0}39.36%,41.43%{opacity:1}}.k50{animation:k50 14.0s ease-in-out infinite}@keyframes k51{0%,41.43%,44.21%,100%{opacity:0}41.79%,43.86%{opacity:1}}.k51{animation:k51 14.0s ease-in-out infinite}@keyframes k52{0%,43.86%,46.64%,100%{opacity:0}44.21%,46.29%{opacity:1}}.k52{animation:k52 14.0s ease-in-out infinite}@keyframes k53{0%,46.29%,49.07%,100%{opacity:0}46.64%,48.71%{opacity:1}}.k53{animation:k53 14.0s ease-in-out infinite}@keyframes k54{0%,48.71%,51.5%,100%{opacity:0}49.07%,51.14%{opacity:1}}.k54{animation:k54 14.0s ease-in-out infinite}@keyframes k55{0%,51.14%,53.93%,100%{opacity:0}51.5%,53.57%{opacity:1}}.k55{animation:k55 14.0s ease-in-out infinite}@keyframes k56{0%,53.57%,58.79%,100%{opacity:0}53.93%,58.43%{opacity:1}}.k56{animation:k56 14.0s ease-in-out infinite}@keyframes k57{0%,58.43%,61.21%,100%{opacity:0}58.79%,60.86%{opacity:1}}.k57{animation:k57 14.0s ease-in-out infinite}@keyframes k58{0%,60.86%,63.64%,100%{opacity:0}61.21%,63.29%{opacity:1}}.k58{animation:k58 14.0s ease-in-out infinite}@keyframes k59{0%,63.29%,66.07%,100%{opacity:0}63.64%,65.71%{opacity:1}}.k59{animation:k59 14.0s ease-in-out infinite}@keyframes k60{0%,65.71%,68.5%,100%{opacity:0}66.07%,68.14%{opacity:1}}.k60{animation:k60 14.0s ease-in-out infinite}@keyframes k61{0%,68.14%,70.93%,100%{opacity:0}68.5%,70.57%{opacity:1}}.k61{animation:k61 14.0s ease-in-out infinite}@keyframes k62{0%,70.57%,73.36%,100%{opacity:0}70.93%,73%{opacity:1}}.k62{animation:k62 14.0s ease-in-out infinite}@keyframes k63{0%,73%,75.79%,100%{opacity:0}73.36%,75.43%{opacity:1}}.k63{animation:k63 14.0s ease-in-out infinite}@keyframes k64{0%,75.43%{opacity:0}75.79%,100%{opacity:1}}.k64{animation:k64 14.0s ease-in-out infinite}@keyframes k65{0%,5%,98.93%,100%{transform:translate(0px,0px);opacity:1}5.86%,7.43%,15.57%,17.14%,27.71%,29.29%,35%,36.57%,59.29%,60.86%{transform:translate(0px,16px);opacity:1}8.29%,9.86%,18%,19.57%,22.86%,24.43%,30.14%,31.71%,37.43%,39%,42.29%,43.86%,47.14%,48.71%,52%,53.57%,61.71%,63.29%,66.57%,68.14%,71.43%,73%,76.29%,77.86%{transform:translate(0px,32px);opacity:1}10.71%,12.29%,20.43%,22%,39.86%,41.43%,44.71%,46.29%,49.57%,51.14%,54.43%,56%,64.14%,65.71%,69%,70.57%,73.86%,75.43%{transform:translate(0px,48px);opacity:1}13.14%,14.71%,25.29%,26.86%,32.57%,34.14%,56.86%,58.43%,78.71%,81.71%{transform:translate(0px,64px);opacity:1}83.86%,98.57%{transform:translate(0px,64px);opacity:0}}.k65{animation:k65 14.0s ease-in-out infinite}</style>
+<defs><linearGradient id="bgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121823"/><stop offset="1" stop-color="#0d1117"/></linearGradient><radialGradient id="glow" cx=".12" cy="0" r=".7"><stop offset="0" stop-color="#ff8a3d" stop-opacity=".10"/><stop offset="1" stop-color="#ff8a3d" stop-opacity="0"/></radialGradient></defs>
+<rect x=".5" y=".5" width="899" height="379" rx="18" fill="url(#bgG)" stroke="#2a3448"/>
+<rect x=".5" y=".5" width="899" height="379" rx="18" fill="url(#glow)"/>
+<g transform="translate(34,78) scale(1.55)"><rect x="3" y="18" width="6" height="11" rx="1.5" fill="#5ab0ff"/><rect x="11" y="12" width="6" height="17" rx="1.5" fill="#5ab0ff" opacity=".8"/><rect x="19" y="6" width="6" height="23" rx="1.5" fill="#ff8a3d"/><path d="M22 2l2 3-2 1-2-1z" fill="#ffd24d"/></g>
+<text x="34" y="70" font-size="11" fill="#ff8a3d" font-weight="700" letter-spacing="1.4">LEVITIN CH 1–12 + BEYOND 13–17</text>
+<text x="88" y="120" font-size="40" fill="#e8edf5" font-weight="800" letter-spacing="-0.8">Algorithm <tspan fill="#ff8a3d">Forge</tspan></text>
+<text x="34" y="166" font-size="19" fill="#e8edf5" font-weight="600">Build algorithms from scratch —</text>
+<text x="34" y="192" font-size="19" fill="#e8edf5" font-weight="600">see them, write them, <tspan fill="#ff8a3d">prove them</tspan></text>
+<text x="34" y="226" font-size="13.5" fill="#b4bfd1">Lessons, interactive simulations and a graded</text>
+<text x="34" y="245" font-size="13.5" fill="#b4bfd1">pseudocode Arena — from first loop to senior patterns.</text>
+<rect x="34" y="270" width="123.6" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
+<text x="45" y="289" font-size="13" fill="#e8edf5" class="e">📖</text>
+<text x="64" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">17 chapters</text>
+<rect x="165.6" y="270" width="93.2" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
+<text x="176.6" y="289" font-size="13" fill="#e8edf5" class="e">👀</text>
+<text x="195.6" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">48 sims</text>
+<rect x="266.8" y="270" width="131.2" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
+<text x="277.8" y="289" font-size="13" fill="#e8edf5" class="e">✅</text>
+<text x="296.8" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">213 problems</text>
+<text x="34" y="330" font-size="12" fill="#7f8ba3">Levels 0 → 5 · runs in the browser · no installs</text>
+<rect x="438" y="20" width="440" height="340" rx="14" fill="#161d2a" stroke="#2a3448"/>
+<text x="454" y="44" font-size="10.5" fill="#ff8a3d" font-weight="700" letter-spacing="1.3">INSERTION SORT</text>
+<rect x="580" y="35" width="11" height="11" rx="3" fill="#ffd24d"/>
+<text x="596" y="44" font-size="10.5" fill="#b4bfd1">compare</text>
+<rect x="645.16" y="35" width="11" height="11" rx="3" fill="#ff5d73"/>
+<text x="661.16" y="44" font-size="10.5" fill="#b4bfd1">shift</text>
+<rect x="698.56" y="35" width="11" height="11" rx="3" fill="#5ab0ff"/>
+<text x="714.56" y="44" font-size="10.5" fill="#b4bfd1">v</text>
+<rect x="728.44" y="35" width="11" height="11" rx="3" fill="#ffb07a"/>
+<text x="744.44" y="44" font-size="10.5" fill="#b4bfd1">prefix</text>
+<rect x="787.72" y="35" width="11" height="11" rx="3" fill="#3ddc97"/>
+<text x="803.72" y="44" font-size="10.5" fill="#b4bfd1">done</text>
+<g class="k0">
+<g class="k1">
+<rect x="484" y="110" width="44" height="90" rx="5"/>
+<text x="506" y="126" font-size="13" fill="#0d1117" font-weight="800" text-anchor="middle">5</text>
+</g>
+<g class="k2">
+<rect x="544" y="164" width="44" height="36" rx="5"/>
+<text x="566" y="180" font-size="13" fill="#0d1117" font-weight="800" text-anchor="middle">2</text>
+</g>
+<g class="k3">
+<rect x="604" y="128" width="44" height="72" rx="5"/>
+<text x="626" y="144" font-size="13" fill="#0d1117" font-weight="800" text-anchor="middle">4</text>
+</g>
+<g class="k4">
+<rect x="664" y="92" width="44" height="108" rx="5"/>
+<text x="686" y="108" font-size="13" fill="#0d1117" font-weight="800" text-anchor="middle">6</text>
+</g>
+<g class="k5">
+<rect x="724" y="182" width="44" height="18" rx="5"/>
+<text x="746" y="198" font-size="13" fill="#0d1117" font-weight="800" text-anchor="middle">1</text>
+</g>
+<g class="k6">
+<rect x="784" y="146" width="44" height="54" rx="5"/>
+<text x="806" y="162" font-size="13" fill="#0d1117" font-weight="800" text-anchor="middle">3</text>
+</g>
+<line x1="476" y1="201" x2="836" y2="201" stroke="#36425b"/>
+<text x="506" y="215" font-size="10" fill="#7f8ba3" text-anchor="middle" class="m">0</text>
+<text x="566" y="215" font-size="10" fill="#7f8ba3" text-anchor="middle" class="m">1</text>
+<text x="626" y="215" font-size="10" fill="#7f8ba3" text-anchor="middle" class="m">2</text>
+<text x="686" y="215" font-size="10" fill="#7f8ba3" text-anchor="middle" class="m">3</text>
+<text x="746" y="215" font-size="10" fill="#7f8ba3" text-anchor="middle" class="m">4</text>
+<text x="806" y="215" font-size="10" fill="#7f8ba3" text-anchor="middle" class="m">5</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k7">i = 1: lift v = 2 out of the array</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k8">compare A[0] = 5 with v = 2  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k9">shift 5 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k10">drop v = 2 into slot 0</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k11">i = 2: lift v = 4 out of the array</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k12">compare A[1] = 5 with v = 4  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k13">shift 5 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k14">compare A[0] = 2 with v = 4  →  stop</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k15">drop v = 4 into slot 1</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k16">i = 3: lift v = 6 out of the array</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k17">compare A[2] = 5 with v = 6  →  stop</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k18">drop v = 6 into slot 3</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k19">i = 4: lift v = 1 out of the array</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k20">compare A[3] = 6 with v = 1  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k21">shift 6 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k22">compare A[2] = 5 with v = 1  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k23">shift 5 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k24">compare A[1] = 4 with v = 1  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k25">shift 4 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k26">compare A[0] = 2 with v = 1  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k27">shift 2 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k28">drop v = 1 into slot 0</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k29">i = 5: lift v = 3 out of the array</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k30">compare A[4] = 6 with v = 3  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k31">shift 6 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k32">compare A[3] = 5 with v = 3  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k33">shift 5 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k34">compare A[2] = 4 with v = 3  →  bigger, shift it</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k35">shift 4 one slot right</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k36">compare A[1] = 2 with v = 3  →  stop</text>
+<text x="454" y="240" font-size="12" fill="#e8edf5" class="m k37">drop v = 3 into slot 2</text>
+<text x="454" y="240" font-size="12" fill="#3ddc97" font-weight="700" class="m k38">sorted!  5 passes, 12 comparisons, in place</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k39">comparisons 0 · shifts 0</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k40">comparisons 1 · shifts 0</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k41">comparisons 1 · shifts 1</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k42">comparisons 1 · shifts 0</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k43">comparisons 2 · shifts 1</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k44">comparisons 2 · shifts 2</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k45">comparisons 3 · shifts 2</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k46">comparisons 3 · shifts 0</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k47">comparisons 4 · shifts 2</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k48">comparisons 4 · shifts 0</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k49">comparisons 5 · shifts 2</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k50">comparisons 5 · shifts 3</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k51">comparisons 6 · shifts 3</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k52">comparisons 6 · shifts 4</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k53">comparisons 7 · shifts 4</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k54">comparisons 7 · shifts 5</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k55">comparisons 8 · shifts 5</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k56">comparisons 8 · shifts 6</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k57">comparisons 8 · shifts 0</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k58">comparisons 9 · shifts 6</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k59">comparisons 9 · shifts 7</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k60">comparisons 10 · shifts 7</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k61">comparisons 10 · shifts 8</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k62">comparisons 11 · shifts 8</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k63">comparisons 11 · shifts 9</text>
+<text x="454" y="66" font-size="11.5" fill="#b4bfd1" class="m k64">comparisons 12 · shifts 9</text>
+<rect x="448" y="253" width="420" height="16" rx="4" fill="#ff8a3d" class="k65" fill-opacity=".17"/>
+<rect x="448" y="253" width="3" height="16" rx="1.5" fill="#ff8a3d" class="k65"/>
+<text x="456" y="265.5" font-size="11.5" fill="#b4bfd1" class="m"><tspan fill="#5ab0ff" font-weight="700">for</tspan> i ← <tspan fill="#ffb07a">1</tspan> <tspan fill="#5ab0ff" font-weight="700">to</tspan> n - <tspan fill="#ffb07a">1</tspan> <tspan fill="#5ab0ff" font-weight="700">do</tspan></text>
+<text x="456" y="281.5" font-size="11.5" fill="#b4bfd1" class="m">    v ← A[i];  j ← i - <tspan fill="#ffb07a">1</tspan></text>
+<text x="456" y="297.5" font-size="11.5" fill="#b4bfd1" class="m">    <tspan fill="#5ab0ff" font-weight="700">while</tspan> j ≥ <tspan fill="#ffb07a">0</tspan> <tspan fill="#5ab0ff" font-weight="700">and</tspan> A[j] &gt; v <tspan fill="#5ab0ff" font-weight="700">do</tspan></text>
+<text x="456" y="313.5" font-size="11.5" fill="#b4bfd1" class="m">        A[j + <tspan fill="#ffb07a">1</tspan>] ← A[j];  j ← j - <tspan fill="#ffb07a">1</tspan></text>
+<text x="456" y="329.5" font-size="11.5" fill="#b4bfd1" class="m">    A[j + <tspan fill="#ffb07a">1</tspan>] ← v</text>
+</g>
+</svg>

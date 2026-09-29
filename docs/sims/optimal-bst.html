@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optimal BST · Algorithm Forge</title>
+<meta name="description" content="Build an optimal binary search tree by dynamic programming: fill the cost table C and root table R diagonal by diagonal, see every root candidate k, then draw the resulting tree.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  label.field { max-width: 100%; }
+  label.field[hidden] { display: none; }
+  select { max-width: 100%; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  .obst-inputs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .obst-inputs input[type="text"] { width: 100%; max-width: 260px; }
+  .ttl { font-size: 0.75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  .formula { font-family: var(--mono); font-size: 0.86rem; min-height: 1.6em; overflow-wrap: anywhere; }
+  table.t.cands { width: 100%; }
+  table.t.cands td.cur { background: var(--steel-soft); outline: 2px solid var(--c-active); outline-offset: -2px; }
+  table.t.cands td.best { color: var(--c-done); font-weight: 700; }
+  .ask[hidden] { display: none; }
+  .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .go-deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 8 · Dynamic Programming</div>
+    <h1>Optimal Binary Search Tree</h1>
+    <p class="lead muted">Some keys are searched far more often than others. An optimal Binary Search Tree (BST) puts popular keys near the root so the <i>average</i> number of comparisons is as small as possible. Dynamic programming finds it by trying every root for every range of keys — shortest ranges first.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="obst-inputs">
+      <label class="field">Keys (sorted order)<input type="text" id="keys" value="A, B, C, D" spellcheck="false"></label>
+      <label class="field">Search probabilities<input type="text" id="probs" value="0.1, 0.2, 0.4, 0.3" spellcheck="false"></label>
+      <button class="btn primary" id="load">Load &amp; run</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn ghost" id="reset">Textbook example</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="row small" style="gap:6px"><input type="checkbox" id="predictMode"> 🤔 Predict the winning root before each cell is computed</label>
+      <span class="chip" id="score">predictions: 0 / 0</span>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Up to 8 keys. Probabilities need not add up to 1 (they act as weights); only successful searches are modelled, as in Levitin §8.3.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="grid cols-2">
+        <div><p class="ttl">Cost table C[i, j]</p><svg class="stage" id="svgC" role="img" aria-label="Cost table C"></svg></div>
+        <div><p class="ttl">Root table R[i, j]</p><svg class="stage" id="svgR" role="img" aria-label="Root table R"></svg></div>
+      </div>
+      <div class="callout steel formula" id="formula">&nbsp;</div>
+      <div class="callout ask" id="ask" hidden><b>🤔 Predict:</b> <span id="askQ"></span> <span id="askBtns" class="row"></span> <span id="askFb" class="small"></span></div>
+      <div class="grid cols-2">
+        <div class="panel"><div class="panel-title">Root candidates k for the current cell</div><div id="cands" class="scroll-x"></div></div>
+        <div><p class="ttl">Tree</p><svg class="stage" id="svgT" role="img" aria-label="Optimal binary search tree"></svg></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>cell being filled</span>
+        <span><i style="background:var(--c-compare)"></i>sub-tree costs read for candidate k</span>
+        <span><i style="background:var(--c-done)"></i>best so far / final answer</span>
+        <span><i style="background:var(--c-pivot)"></i>root chosen from R</span>
+        <span><i style="background:var(--c-dim)"></i>unused (j &lt; i − 1)</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>C[i, j]</b> is the smallest average number of comparisons for a BST holding keys i..j. <b>R[i, j]</b> is the root that achieves it. Empty ranges C[i, i − 1] cost 0.</li>
+        <li>The tables fill <b>diagonal by diagonal</b>: first single keys (d = 0), then pairs (d = 1), triples, … up to all n keys in the top-right corner C[1, n].</li>
+        <li>For each cell, every key k in i..j is tried as the root. The two <b style="color:var(--c-compare)">yellow cells</b> are the optimal left subtree C[i, k − 1] and right subtree C[k + 1, j]. Putting them under a new root pushes every key one level deeper, which adds P[i] + … + P[j].</li>
+        <li>The candidate table on the left-bottom shows each k's total; the <b style="color:var(--c-done)">green</b> row is the current minimum.</li>
+        <li>After the tables, the tree is rebuilt from R: the root of 1..n is R[1, n], its left child is R[1, k − 1], and so on.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Run the textbook example (A, B, C, D with 0.1, 0.2, 0.4, 0.3). Check the corner: C[1, 4] = 1.7 with root C, left child B (whose left child is A) and right child D.</li>
+        <li>Make the probabilities equal (0.25 each). Does the tree become as balanced as possible? What is C[1, 4] now?</li>
+        <li>Give one key almost all the weight (e.g. 0.01, 0.01, 0.01, 0.97). Predict the root before playing.</li>
+        <li>Count the candidates for n = 4: Σ (n − d)(d + 1) over d = 1..3 = 6 + 6 + 4 = 16. Watch the “k tried” counter. For n = 8 the count grows like n³/6 — the algorithm is Θ(n³).</li>
+        <li>Turn on 🤔 Predict. Levitin notes R[i, j] always lies between R[i, j − 1] and R[i + 1, j]. Use that to guess the root faster.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="go-deeper">
+      <a class="btn sm" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/08-dynamic-programming/README.md">📖 Lesson 8: Dynamic Programming</a>
+      <a class="btn sm" href="../arena/index.html?chapter=8">🏟️ Arena: Chapter 8 problems</a>
+      <a class="btn sm" href="../arena/problem.html?id=optimal-bst-cost">optimal-bst-cost</a>
+      <a class="btn sm" href="../arena/problem.html?id=matrix-chain-order">matrix-chain-order (same diagonal pattern)</a>
+      <a class="btn sm" href="dp-studio.html">Sim: Dynamic Programming (DP) Table Studio</a>
+      <a class="btn sm" href="warshall-floyd.html">Sim: Warshall &amp; Floyd</a>
+      <a class="btn sm" href="search-trees.html">Sim: BST, Adelson-Velsky–Landis (AVL) and 2-3 trees</a>
+      <a class="btn sm" href="huffman.html">Sim: Huffman trees (a greedy cousin)</a>
+    </div>
+  </section>
+</main>
+<script src="js/optimal-bst.js"></script>
+</body>
+</html>

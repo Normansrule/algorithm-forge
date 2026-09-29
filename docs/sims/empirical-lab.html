@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empirical Analysis Lab · Algorithm Forge</title>
+<meta name="description" content="The CSC 501 empirical-analysis project in the browser: count insertion sort's key comparisons correctly, run it on random arrays of many sizes, plot comparisons and time, fit c·n², test the n²/4 hypothesis and predict n = 10,000.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/ch01-02-kit.js"></script>
+<style>
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel-2); color: var(--ink-2); font: 600 .85rem var(--font); padding: 7px 12px; cursor: pointer; }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+  .progress { height: 10px; border-radius: 6px; background: var(--bg-2); border: 1px solid var(--line); overflow: hidden; min-width: 160px; flex: 1; }
+  .progress > div { height: 100%; width: 0; background: var(--ember); transition: width .15s; }
+  .plots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 900px) { .plots { grid-template-columns: minmax(0, 1fr); } }
+  .plots .panel h3 { margin-bottom: 2px; }
+  .plots .cap { font-size: .82rem; color: var(--muted); margin: 0 0 8px; }
+  .buggy-only { display: none; }
+  .show-buggy .buggy-only { display: block; }
+  td.buggy-only, th.buggy-only { display: none; }
+  .show-buggy td.buggy-only, .show-buggy th.buggy-only { display: table-cell; }
+  .big { font-family: var(--mono); font-size: 1.35rem; font-weight: 700; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+  .stat { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .stat .k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 2 · Analysis Framework</div>
+    <h1>Empirical analysis lab: insertion sort</h1>
+    <p class="lead muted">A counter in the wrong place quietly lies. First watch every key comparison get counted on a tiny array, then run the real experiment: hundreds of random arrays, a scatter plot, a fitted c·n² model, and a prediction for n = 10,000 that you check afterwards.</p>
+  </header>
+
+  <!-- ============ Part 1: step through ============ -->
+  <h2 style="margin-top:22px">Part 1 · Where does the counter go?</h2>
+  <section class="panel" style="margin-top:8px">
+    <div class="row">
+      <label class="field">Your array <input id="inp" type="text" value="5, 2, 4, 6, 1, 3" style="min-width:220px"></label>
+      <button class="btn primary" id="load">Load</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn" id="sorted">Sorted</button>
+      <button class="btn" id="reversed">Reversed</button>
+      <div class="field" style="font-size:.8rem;color:var(--muted);font-weight:600">Pseudocode shown
+        <div class="seg" role="group" aria-label="Counter placement"><button id="vCorrect" class="on">corrected counter</button><button id="vBuggy">given (buggy) counter</button></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Array being sorted by insertion sort"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>A[j] being compared with v</span>
+        <span><i style="background:var(--c-swap)"></i>shifted right</span>
+        <span><i style="background:var(--c-active)"></i>v's slot (position i)</span>
+        <span><i style="background:var(--c-done)"></i>sorted prefix</span>
+      </div>
+      <div id="player"></div>
+      <div class="row"><button class="btn" id="predictBtn">🤔 Predict: will the given counter count this step?</button></div>
+      <div id="predict"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <!-- ============ Part 2: the experiment ============ -->
+  <h2 style="margin-top:28px">Part 2 · The experiment</h2>
+  <section class="panel" style="margin-top:8px" id="expPanel">
+    <div class="row">
+      <label class="field">first n <input id="nFrom" type="number" value="1000" min="10" max="20000" style="width:95px"></label>
+      <label class="field">step <input id="nStep" type="number" value="500" min="10" max="10000" style="width:85px"></label>
+      <label class="field">last n <input id="nTo" type="number" value="9500" min="10" max="20000" style="width:95px"></label>
+      <label class="field">arrays per size
+        <select id="trials"><option>1</option><option>3</option><option selected>5</option><option>10</option><option>20</option></select>
+      </label>
+      <label class="field">input
+        <select id="kind"><option value="random" selected>random</option><option value="sorted">already sorted</option><option value="reversed">reversed</option><option value="nearly">nearly sorted (1% swapped)</option></select>
+      </label>
+      <label class="field">seed <input id="seed" type="number" value="501" style="width:85px"></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="run">▶ Run experiment</button>
+      <button class="btn" id="stop" disabled>■ Stop</button>
+      <label class="row small" style="gap:6px;cursor:pointer"><input type="checkbox" id="showBuggy"> show the buggy counter side by side</label>
+      <div class="progress" aria-label="progress"><div id="bar"></div></div>
+      <span class="muted small mono" id="status">ready</span>
+    </div>
+    <p class="muted small" style="margin:8px 0 0">"20 random arrays" with 18 sizes is read as 20 arrays <em>per size</em> (360 runs), like the Java version in the repo. Each run sorts one copy with the counters and times a separate, uninstrumented copy (best of 2) with <code>performance.now()</code>. The work runs in small chunks so the page stays responsive.</p>
+  </section>
+
+  <div class="plots" style="margin-top:16px">
+    <section class="panel">
+      <h3>Key comparisons C(n) · corrected counter</h3>
+      <p class="cap">Every dot is one run. Lines: the least-squares fit c·n² and the hypothesis n²/4.</p>
+      <svg class="stage" id="pCmp" role="img" aria-label="Scatter plot of comparisons against n"></svg>
+    </section>
+    <section class="panel buggy-only">
+      <h3>Key comparisons · given (buggy) counter</h3>
+      <p class="cap">Same arrays, counter inside the loop body. On random input the bug hides: it misses only about n comparisons per array.</p>
+      <svg class="stage" id="pBug" role="img" aria-label="Scatter plot of the buggy counts against n"></svg>
+    </section>
+    <section class="panel">
+      <h3>Running time (milliseconds)</h3>
+      <p class="cap">Same shape, more noise: time depends on the machine, the browser and whatever else is running.</p>
+      <svg class="stage" id="pTime" role="img" aria-label="Scatter plot of time against n"></svg>
+    </section>
+    <section class="panel">
+      <h3>Ratio test: C(n) / n²</h3>
+      <p class="cap">If C(n) ∈ Θ(n²), this ratio levels off at a constant. Which one?</p>
+      <svg class="stage" id="pRatio" role="img" aria-label="Ratio of comparisons to n squared"></svg>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px" id="resPanel">
+    <h2>Results and the n = 10,000 prediction</h2>
+    <div class="stat-grid" id="stats"></div>
+    <div id="predict10k" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn steel" id="measure10k" disabled>Measure n = 10,000 (5 new arrays)</button>
+      <span class="muted small" id="m10kOut"></span>
+    </div>
+    <div class="scroll-x" style="margin-top:14px"><table class="t" id="tbl"></table></div>
+  </section>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Part 1:</b> the bars are the array. The yellow bar is A[j], being compared with the value v that is being inserted (shown top-left). Red bars were just shifted one place right. Both counters run at once, so you can see exactly which comparisons the given code forgets: the one <em>false</em> test that ends each insertion (unless j ran off the left end, where <code>and</code> short-circuits and no comparison happens at all).</li>
+        <li><b>Part 2, scatter plots:</b> one dot per array, x = size n, y = the measured quantity. The vertical spread at each n is real run-to-run variation, not an error.</li>
+        <li><b>Fit c·n²:</b> least squares through the origin, c = Σ C·n² / Σ n⁴ over all runs.</li>
+        <li><b>Hypothesis n²/4:</b> for a random permutation the expected count is n(n−1)/4 + (n − 1) − (Hₙ − 1), where Hₙ = 1 + 1/2 + … + 1/n. Its leading term is n²/4.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li>Part 1: load <b>Sorted</b>. The corrected counter says n − 1; the given counter says 0. That is the whole bug in one example.</li>
+        <li>Part 1: load <b>Reversed</b>. Both counters agree on n(n−1)/2: every insertion runs off the left end, so there is never a false comparison to miss.</li>
+        <li>Part 2: run the default experiment. The fitted c should land within about 1% of 0.25, and the ratio plot should flatten near 0.25.</li>
+        <li>Before pressing "Measure n = 10,000", type your prediction. Theory says about 25,007,490. How close is the mean of 5 arrays? (The standard deviation of one array's count is about 167,000, so expect a wobble of tens of thousands.)</li>
+        <li>Switch the input to <b>already sorted</b> with the buggy counter shown: the corrected plot is a straight line (n − 1), the buggy plot is flat at 0. Then try <b>nearly sorted</b>: fast, and nowhere near n²/4.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="row">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/practice/empirical-analysis-lab/README.md">🧪 Full lab write-up (Java + Python)</a>
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/02-analysis-framework/README.md">📖 Lesson: Chapter 2</a>
+      <a class="btn" href="../arena/index.html?chapter=2">🏟️ Arena: Chapter 2</a>
+      <a class="btn sm" href="../arena/problem.html?id=sort-analysis-counter">sort-analysis-counter</a>
+      <a class="btn sm" href="../arena/problem.html?id=insertion-sort">insertion-sort</a>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <span class="muted small">Related sims:</span>
+      <a href="growth-rates.html">Growth rates</a> ·
+      <a href="sorting-studio.html">Sorting studio</a> ·
+      <a href="recurrence-lab.html">Recurrence lab</a>
+    </div>
+  </section>
+</main>
+<script src="js/empirical-lab.js"></script>
+</body>
+</html>

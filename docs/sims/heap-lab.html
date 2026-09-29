@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heap Lab · Algorithm Forge</title>
+<meta name="description" content="Interactive heap lab: bottom-up and top-down heap construction, root deletion, heapsort, and a priority-queue playground, with the tree and the array kept in sync.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 410px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  #pqRow[hidden] { display: none; }
+  div.field { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+  .field select, .field input[type="text"] { max-width: 100%; }
+  label.field { max-width: 100%; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 6 · Transform-and-Conquer</div>
+    <h1>Heap Lab</h1>
+    <p class="lead muted">A heap is a tree that lives inside an array: the children of position i sit at 2i and 2i + 1, and its parent sits at ⌊i/2⌋. Build one, pull the root out of it, and sort with it, watching both views move together.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">What to run
+        <select id="mode">
+          <option value="bottomup">Bottom-up construction (heapify)</option>
+          <option value="topdown">Top-down construction (successive insertions)</option>
+          <option value="heapsort">Heapsort (stage 1 + stage 2)</option>
+          <option value="pq">Priority-queue playground</option>
+        </select>
+      </label>
+      <label class="field">Keys (up to 20)
+        <input id="inp" type="text" value="2, 9, 7, 6, 5, 8" style="min-width:220px">
+      </label>
+      <button class="btn primary" id="load">Load</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn" id="book" title="Levitin's example list 2, 9, 7, 6, 5, 8">Book example</button>
+      <div class="field">Heap type
+        <div class="seg" role="group" aria-label="Heap type">
+          <button class="btn sm on" id="maxBtn" aria-pressed="true">max-heap</button>
+          <button class="btn sm" id="minBtn" aria-pressed="false">min-heap</button>
+        </div>
+      </div>
+    </div>
+    <div class="row" id="pqRow" hidden style="margin-top:12px">
+      <label class="field">Value to insert <input id="pqVal" type="number" value="10" style="width:90px"></label>
+      <button class="btn steel" id="pqIns">Insert (sift up)</button>
+      <button class="btn steel" id="pqDel">Delete root</button>
+      <button class="btn" id="pqReset">Reset queue from keys</button>
+      <span class="small muted" id="pqLog"></span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="The heap drawn as a binary tree above the same heap stored in an array"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>key being placed (v)</span>
+        <span><i style="background:var(--c-compare)"></i>being compared</span>
+        <span><i style="background:var(--c-swap)"></i>just moved</span>
+        <span><i style="background:var(--c-done)"></i>settled / sorted</span>
+        <span><i style="background:var(--c-dim)"></i>not in the heap yet</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>Two views, one heap</dt>
+      <dd>The top drawing is the tree; the row of boxes underneath is the array H[1..n] that actually stores it. The small number on each tree node is its array index, so you can match them. Position 0 is left unused so the index arithmetic stays clean: parent of i = ⌊i/2⌋, children of i = 2i and 2i + 1.</dd>
+      <dt>Parental dominance</dt>
+      <dd>In a max-heap every parent is ≥ its children, so the largest key is at the root. Flip the toggle to a min-heap and every comparison flips: parents are ≤ children and the smallest key rises to the top.</dd>
+      <dt>Colors</dt>
+      <dd>Blue is the key v being sifted, yellow marks the keys being compared, red marks the pair that just traded places, green marks keys that are settled (in heapsort: already in their final sorted place), and gray marks array slots that are not part of the heap yet.</dd>
+      <dt>Counters</dt>
+      <dd>“Comparisons” counts key comparisons exactly as the pseudocode makes them: one to pick the bigger child (only when there are two children) and one to test v against it. Bottom-up construction never needs more than 2n of them (Levitin §6.4).</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Book check.</b> Run bottom-up construction on 2, 9, 7, 6, 5, 8. You should end with 9, 6, 8, 2, 5, 7 after 7 comparisons, well under 2n = 12.</li>
+      <li><b>Bottom-up vs top-down.</b> Load 1, 2, 3, …, 15 (sorted, max-heap). Bottom-up needs 22 comparisons; top-down needs 34, because every new key climbs all the way to the root. Now try 15, 14, …, 1: both methods need only 14 comparisons. Why is an already-sorted-descending array so cheap for both?</li>
+      <li><b>Heapsort's two stages.</b> Run heapsort on 2, 9, 7, 6, 5, 8 and write down the array after each root deletion. The green tail should grow as 9 | 8, 9 | 7, 8, 9 | … until the array is sorted.</li>
+      <li><b>Priority queue.</b> In the playground, insert 10 into the book heap. Predict how many levels it rises before you press play (it becomes the new root). Then delete the root three times: the keys come out in decreasing order.</li>
+      <li><b>Min-heap.</b> Toggle min-heap and run heapsort. The array now ends up in <i>decreasing</i> order. Explain why in one sentence.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/06-transform-and-conquer/README.md">📖 Lesson: Chapter 6 Transform-and-Conquer</a>
+      <a href="../arena/index.html?chapter=6">🏟️ Arena: Chapter 6 problems</a>
+      <a href="../arena/problem.html?id=heap-bottom-up">Arena: heap-bottom-up</a>
+      <a href="../arena/problem.html?id=heap-insert">Arena: heap-insert</a>
+      <a href="../arena/problem.html?id=is-max-heap">Arena: is-max-heap</a>
+      <a href="../arena/problem.html?id=heapsort">Arena: heapsort</a>
+      <a href="../arena/problem.html?id=kth-largest-stream">Arena: kth-largest-stream</a>
+      <a href="sorting-studio.html">🎮 Sorting Studio (heapsort among other sorts)</a>
+      <a href="search-trees.html">🎮 Search Trees</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Heap Lab", chapter: "Ch 6 · Transform-and-Conquer" });
+
+/* ------------------------------------------------------------------ state */
+let MAX = true;
+let MODE = "bottomup";
+let KEYS = [2, 9, 7, 6, 5, 8];
+let nextId = 1000;
+let PQ = [];               // current priority queue: [null, {id, v}, ...]
+let pqLog = [];
+
+const $ = (id) => document.getElementById(id);
+const stage = $("stage");
+const view = FX.treeView(stage);
+const codes = FX.codeSwitch($("code"));
+const say = Forge.narrate($("say"));
+let ctr = null, ctrKeys = "";
+const pred = FX.predict($("pred"), () => player);
+
+const above = (a, b) => (MAX ? a > b : a < b);       // a belongs strictly above b
+const BIG = () => (MAX ? "larger" : "smaller");
+const GE = () => (MAX ? "≥" : "≤");
+const LT = () => (MAX ? "<" : ">");
+
+/* --------------------------------------------------------------- listings */
+function siftLines(sizeVar) {
+  return [
+    `    v ← H[k];  heap ← false`,
+    `    while not heap and 2 * k ≤ ${sizeVar} do`,
+    `        j ← 2 * k`,
+    `        if j < ${sizeVar} and H[j] ${LT()} H[j + 1] then`,
+    `            j ← j + 1                 // the ${BIG()} child`,
+    `        if v ${GE()} H[j] then heap ← true`,
+    `        else H[k] ← H[j];  k ← j`,
+    `    H[k] ← v`,
+  ];
+}
+function listing(mode) {
+  const kind = MAX ? "max-heap" : "min-heap";
+  if (mode === "bottomup") return [
+    "ALGORITHM HeapBottomUp(H[1..n])",
+    `    // Builds a ${kind} in place`,
+    "    for i ← ⌊n / 2⌋ downto 1 do",
+    "        k ← i;  v ← H[k];  heap ← false",
+    "        while not heap and 2 * k ≤ n do",
+    "            j ← 2 * k",
+    `            if j < n and H[j] ${LT()} H[j + 1] then`,
+    "                j ← j + 1",
+    `            if v ${GE()} H[j] then heap ← true`,
+    "            else H[k] ← H[j];  k ← j",
+    "        H[k] ← v",
+    "    return H",
+  ];
+  if (mode === "topdown") return [
+    "ALGORITHM HeapTopDown(A[1..n])",
+    `    // Builds a ${kind} by n insertions`,
+    "    for i ← 1 to n do",
+    "        m ← i;  H[m] ← A[i];  k ← m",
+    `        while k > 1 and H[⌊k / 2⌋] ${LT()} H[k] do`,
+    "            swap H[k] and H[⌊k / 2⌋]",
+    "            k ← ⌊k / 2⌋",
+    "    return H",
+  ];
+  if (mode === "heapsort") return [
+    "ALGORITHM HeapSort(H[1..n])",
+    "    for i ← ⌊n / 2⌋ downto 1 do    // stage 1",
+    "        SiftDown(H, i, n)",
+    "    for m ← n downto 2 do          // stage 2",
+    "        swap H[1] and H[m]",
+    "        SiftDown(H, 1, m − 1)",
+    "    return H",
+    "ALGORITHM SiftDown(H, k, m)",
+    ...siftLines("m"),
+  ];
+  return [
+    "ALGORITHM HeapInsert(H[1..m], x)",
+    "    m ← m + 1;  H[m] ← x;  k ← m",
+    `    while k > 1 and H[⌊k / 2⌋] ${LT()} H[k] do`,
+    "        swap H[k] and H[⌊k / 2⌋];  k ← ⌊k / 2⌋",
+    "ALGORITHM DeleteRoot(H[1..m])",
+    "    root ← H[1]",
+    "    swap H[1] and H[m];  m ← m − 1",
+    "    SiftDown(H, 1, m)",
+    "    return root",
+    "ALGORITHM SiftDown(H, k, m)",
+    ...siftLines("m"),
+  ];
+}
+/* line numbers inside each listing for the sift-down steps */
+const SIFT = {
+  bottomup: { start: 3, loop: 4, j: 5, pick: [6, 7], pickNo: 6, test: 8, move: 9, place: 10 },
+  heapsort: { start: 8, loop: 9, j: 10, pick: [11, 12], pickNo: 11, test: 13, move: 14, place: 15 },
+  pq: { start: 10, loop: 11, j: 12, pick: [13, 14], pickNo: 13, test: 15, move: 16, place: 17 },
+};
+
+/* --------------------------------------------------------------- recorder */
+function Recorder(H, extra) {
+  const R = {
+    H, frames: [], cmp: 0, moves: 0, cmp1: 0, cmp2: 0, size: H.length - 1, tailFrom: Infinity, pendingFrom: Infinity,
+    stage: 1, asks: 0, caller: null, ctr: () => ({}),
+    count() { R.cmp++; if (R.stage === 1) R.cmp1++; else R.cmp2++; },
+    push(line, st, text, ask) {
+      const ln = [].concat(line, R.caller == null ? [] : [R.caller]);
+      R.frames.push({ H: R.H.slice(), size: R.size, tailFrom: R.tailFrom, pendingFrom: R.pendingFrom, st: st || {}, line: ln, text, ask: ask || null, ctr: R.ctr() });
+    },
+  };
+  Object.assign(R, extra || {});
+  return R;
+}
+
+function siftDown(R, k, m, L, intro) {
+  const H = R.H, v = H[k];
+  // dry run: how far will v sink?
+  let levels = 0;
+  for (let kk = k; 2 * kk <= m;) {
+    let j = 2 * kk;
+    if (j < m && above(H[j + 1].v, H[j].v)) j++;
+    if (!above(H[j].v, v.v)) break;
+    levels++; kk = j;
+  }
+  const maxLv = Math.floor(Math.log2(m)) - Math.floor(Math.log2(k));
+  let ask = null;
+  if (maxLv >= 1 && R.asks < 4) {
+    R.asks++;
+    ask = {
+      q: `Key <b>${v.v}</b> is about to sift down from position ${k}. How many levels will it sink?`,
+      opts: Array.from({ length: maxLv + 1 }, (_, i) => String(i)), ans: levels,
+      why: levels === 0 ? `${v.v} already dominates its children, so it stays put.` : `${v.v} keeps losing to its ${BIG()} child ${levels} time${levels > 1 ? "s" : ""}, then parental dominance holds.`,
+    };
+  }
+  R.push(L.start, { [k]: "active" }, `${intro} Take v = <b>${v.v}</b> from position ${k} and sift it down until it is ${GE()} its children${MAX ? "" : " (min-heap: ≤)"}.`, ask);
+  let heap = false;
+  while (!heap && 2 * k <= m) {
+    let j = 2 * k;
+    if (j < m) {
+      R.count();
+      const pick = above(H[j + 1].v, H[j].v) ? j + 1 : j;
+      R.push(pick === j + 1 ? L.pick : L.pickNo, { [k]: "active", [j]: "compare", [j + 1]: "compare" },
+        `Children of ${k} are at 2·${k} = ${j} and 2·${k}+1 = ${j + 1}: keys ${H[j].v} and ${H[j + 1].v}. One comparison picks the ${BIG()} one: <b>${H[pick].v}</b> at position ${pick}.`);
+      j = pick;
+    } else {
+      R.push(L.j, { [k]: "active", [j]: "compare" }, `Position ${k} has only one child, at 2·${k} = ${j} (key ${H[j].v}), so there is nothing to choose.`);
+    }
+    R.count();
+    if (!above(H[j].v, v.v)) {
+      heap = true;
+      R.push(L.test, { [k]: "done", [j]: "compare" }, `Compare v = ${v.v} with ${H[j].v}: ${v.v} ${GE()} ${H[j].v}, so parental dominance holds and ${v.v} stays at position ${k}.`);
+    } else {
+      [H[k], H[j]] = [H[j], H[k]];
+      R.moves++;
+      R.push(L.move, { [k]: "swap", [j]: "swap" }, `Compare v = ${v.v} with ${H[k].v}: ${v.v} ${LT()} ${H[k].v}, so ${H[k].v} moves up to position ${k} and v continues down from position ${j}.`);
+      k = j;
+    }
+  }
+  R.push(L.place, { [k]: "done" }, heap ? `H[${k}] ← ${v.v}. The subtree rooted where we started is a heap again.` :
+    `Position ${k} is a leaf (2·${k} > ${m}), so v = ${v.v} settles here. The subtree is a heap again.`);
+}
+
+function bottomUp(R, n, L, opts) {
+  opts = opts || {};
+  for (let i = n >> 1; i >= 1; i--) {
+    siftDown(R, i, n, L, opts.intro ? opts.intro(i) : `Parental node i = ${i} (we go from ⌊n/2⌋ = ${n >> 1} down to 1).`);
+  }
+}
+
+function initial(keys) { return [null, ...keys.map((v, i) => ({ id: i, v }))]; }
+
+function recBottomUp(keys) {
+  const n = keys.length;
+  const R = Recorder(initial(keys));
+  R.ctr = () => ({ comparisons: R.cmp, "key moves": R.moves, "2n bound": 2 * n });
+  R.push(0, {}, `Start: the ${n} keys sit in the array in the order given, so the tree has the right <i>shape</i> but not the heap property. Leaves (positions ${(n >> 1) + 1}..${n}) are already one-node heaps; we fix the parental nodes 1..${n >> 1} from the bottom up.`);
+  bottomUp(R, n, SIFT.bottomup);
+  const all = {}; for (let i = 1; i <= n; i++) all[i] = "done";
+  R.push(11, all, `Done: a ${MAX ? "max" : "min"}-heap with the ${MAX ? "largest" : "smallest"} key ${R.H[1].v} at the root. ${R.cmp} comparisons, and bottom-up construction never needs more than 2n = ${2 * n}.`);
+  return R.frames;
+}
+
+function recTopDown(keys) {
+  const n = keys.length;
+  const R = Recorder(initial(keys));
+  let worst = 0; for (let i = 2; i <= n; i++) worst += Math.floor(Math.log2(i));
+  R.size = 0; R.pendingFrom = 1;
+  R.ctr = () => ({ comparisons: R.cmp, "key moves": R.moves, "worst Σ⌊log₂ i⌋": worst });
+  R.push(0, {}, `Start with an empty heap. The gray keys are the input A still waiting; each one is appended as the new last leaf and then sifted <b>up</b>.`);
+  const H = R.H;
+  for (let i = 1; i <= n; i++) {
+    R.size = i; R.pendingFrom = i + 1;
+    let rise = 0;
+    for (let k = i; k > 1 && above(H[k].v, H[k >> 1].v); k >>= 1) rise++;
+    let ask = null;
+    if (i >= 2 && R.asks < 4) {
+      R.asks++;
+      const mx = Math.floor(Math.log2(i));
+      ask = { q: `Key <b>${H[i].v}</b> joins as the last leaf (position ${i}). How many levels will it rise?`, opts: Array.from({ length: mx + 1 }, (_, t) => String(t)), ans: rise,
+        why: rise ? `It beats ${rise} ancestor${rise > 1 ? "s" : ""} on the way up.` : `Its parent already dominates it.` };
+    }
+    R.push(3, { [i]: "active" }, `Insert A[${i}] = <b>${H[i].v}</b> as the new last leaf, position ${i}${i > 1 ? `; its parent is at ⌊${i}/2⌋ = ${i >> 1}` : " (it is the root)"}.`, ask);
+    let k = i;
+    while (k > 1) {
+      const p = k >> 1;
+      R.count();
+      if (above(H[k].v, H[p].v)) {
+        R.push(4, { [k]: "active", [p]: "compare" }, `Compare with the parent: ${H[p].v} ${LT()} ${H[k].v}, so the new key must move up.`);
+        [H[k], H[p]] = [H[p], H[k]]; R.moves++;
+        R.push([5, 6], { [k]: "swap", [p]: "swap" }, `Swap positions ${k} and ${p}; the key is now at ${p}.`);
+        k = p;
+      } else {
+        R.push(4, { [k]: "done", [p]: "compare" }, `Compare with the parent: ${H[p].v} ${GE()} ${H[k].v}. Parental dominance holds, so the insertion stops.`);
+        break;
+      }
+    }
+    if (k === 1 && i > 1) R.push(4, { 1: "done" }, `The key reached the root (k = 1), so the loop stops.`);
+  }
+  const all = {}; for (let i = 1; i <= n; i++) all[i] = "done";
+  R.push(7, all, `Done with ${R.cmp} comparisons. Top-down construction is O(n log n) in the worst case (here at most Σ⌊log₂ i⌋ = ${worst}); bottom-up would need at most 2n = ${2 * n}.`);
+  return R.frames;
+}
+
+function recHeapsort(keys) {
+  const n = keys.length;
+  const R = Recorder(initial(keys));
+  const b2 = Math.round(2 * n * Math.log2(Math.max(2, n)));
+  R.ctr = () => ({ "stage 1 cmp": R.cmp1, "≤ 2n": 2 * n, "stage 2 cmp": R.cmp2, "≤ 2n·log₂n": b2, "key moves": R.moves });
+  R.push(0, {}, `Heapsort, stage 1: turn the array into a ${MAX ? "max" : "min"}-heap bottom-up. Stage 2: repeatedly swap the root into the last heap slot and re-heapify the rest.`);
+  R.caller = 2;
+  bottomUp(R, n, SIFT.heapsort, { intro: (i) => `Stage 1, i = ${i}.` });
+  R.caller = null;
+  R.stage = 2;
+  R.asks = 2;  // keep a couple of questions for stage 2
+  R.push(3, {}, `Stage 1 done: the array is a heap (${R.cmp1} comparisons). Stage 2 starts: the root holds the ${MAX ? "maximum" : "minimum"}.`);
+  for (let m = n; m >= 2; m--) {
+    const H = R.H;
+    [H[1], H[m]] = [H[m], H[1]]; R.moves++;
+    R.size = m - 1; R.tailFrom = m;
+    R.push(4, { 1: "swap", [m]: "swap" }, `Swap the root ${H[m].v} with H[${m}] = ${H[1].v}. ${H[m].v} is now in its final sorted place; the heap shrinks to H[1..${m - 1}].`);
+    if (m - 1 >= 2) { R.caller = 5; siftDown(R, 1, m - 1, SIFT.heapsort, `Re-heapify H[1..${m - 1}].`); R.caller = null; }
+  }
+  R.size = 0; R.tailFrom = 1;
+  const all = {}; for (let i = 1; i <= n; i++) all[i] = "done";
+  R.push(6, all, `Sorted in ${MAX ? "increasing" : "decreasing"} order: ${R.H.slice(1).map((x) => x.v).join(", ")}. Stage 1 used ${R.cmp1} comparisons (≤ 2n), stage 2 used ${R.cmp2} (≤ 2n log₂ n): Θ(n log n) overall, in place.`);
+  return R.frames;
+}
+
+function pqCtr(R) {
+  return () => { const s = Math.max(1, R.size); return { "comparisons (op)": R.cmp, "heap size": R.size, "height ⌊log₂n⌋": Math.floor(Math.log2(s)) }; };
+}
+function recPQReady() {
+  const R = Recorder(PQ.slice());
+  R.ctr = pqCtr(R);
+  R.push([], {}, PQ.length > 1 ? `Priority queue ready: ${PQ.length - 1} keys, built bottom-up from your list. The root ${PQ[1].v} is the ${MAX ? "highest" : "lowest"}-priority key. Insert a value or delete the root.` : `The queue is empty. Insert some values.`);
+  return R.frames;
+}
+function recPQInsert(x) {
+  const R = Recorder(PQ.slice());
+  R.ctr = pqCtr(R);
+  const H = R.H;
+  H.push({ id: nextId++, v: x });
+  const m = H.length - 1;
+  R.size = m;
+  let rise = 0;
+  for (let k = m; k > 1 && above(H[k].v, H[k >> 1].v); k >>= 1) rise++;
+  const mx = Math.floor(Math.log2(m));
+  R.push(1, { [m]: "active" }, `Insert ${x}: put it in the first free slot, position ${m}, so the tree keeps its shape.`,
+    m > 1 ? { q: `How many levels will <b>${x}</b> rise?`, opts: Array.from({ length: mx + 1 }, (_, t) => String(t)), ans: rise, why: `It moves up past ${rise} parent${rise === 1 ? "" : "s"}.` } : null);
+  let k = m;
+  while (k > 1) {
+    const p = k >> 1;
+    R.count();
+    if (above(H[k].v, H[p].v)) {
+      R.push(2, { [k]: "active", [p]: "compare" }, `Parent H[${p}] = ${H[p].v} ${LT()} ${x}: move up.`);
+      [H[k], H[p]] = [H[p], H[k]]; R.moves++;
+      R.push(3, { [k]: "swap", [p]: "swap" }, `Swap positions ${k} and ${p}.`);
+      k = p;
+    } else {
+      R.push(2, { [k]: "done", [p]: "compare" }, `Parent H[${p}] = ${H[p].v} ${GE()} ${x}: stop.`);
+      break;
+    }
+  }
+  R.push([], { [k]: "done" }, `Inserted with ${R.cmp} comparison${R.cmp === 1 ? "" : "s"}, never more than the height ⌊log₂ ${m}⌋ = ${mx}: O(log n).`);
+  return { frames: R.frames, H: R.H };
+}
+function recPQDelete() {
+  const R = Recorder(PQ.slice());
+  R.ctr = pqCtr(R);
+  const H = R.H, m = H.length - 1;
+  const root = H[1];
+  R.push(5, { 1: "active" }, `DeleteRoot: the answer is the root, ${root.v}.`);
+  [H[1], H[m]] = [H[m], H[1]]; R.moves++;
+  R.push(6, { 1: "swap", [m]: "swap" }, `Swap it with the last key ${H[1].v}, then cut the last slot off the heap.`);
+  H.pop(); R.size = m - 1;
+  if (R.size >= 2) { R.caller = 7; siftDown(R, 1, R.size, SIFT.pq, `Re-heapify.`); R.caller = null; }
+  R.push(8, {}, `Returned ${root.v}. Deletion used ${R.cmp} comparisons, at most 2·height: O(log n).`);
+  return { frames: R.frames, H: R.H, root: root.v };
+}
+
+/* ----------------------------------------------------------------- render */
+let LAYOUT = null;
+function computeLayout(N) {
+  const D = Math.max(1, Math.floor(Math.log2(Math.max(1, N))));
+  const top = 34, gap = N > 15 ? 56 : 62;
+  const treeBottom = top + D * gap;
+  const W = D <= 2 ? 440 : D === 3 ? 620 : 760;
+  const cw = Math.min(46, Math.floor((W - 40) / (N + 1)));
+  const arrY = treeBottom + 78;
+  return { D, top, gap, W, H: arrY + 56, cw, arrY, x0: (W - cw * (N + 1)) / 2, r: N > 15 ? 15 : 18 };
+}
+function treeXY(i) {
+  const d = Math.floor(Math.log2(i)), p = i - (1 << d);
+  return { x: 20 + (p + 0.5) * ((LAYOUT.W - 40) / (1 << d)), y: LAYOUT.top + d * LAYOUT.gap };
+}
+
+function render(f) {
+  const N = f.H.length - 1;
+  if (!LAYOUT || LAYOUT.N !== N) { LAYOUT = computeLayout(Math.max(N, 1)); LAYOUT.N = N; }
+  const L = LAYOUT;
+  const nodes = [], edges = [];
+  for (let i = 1; i <= N; i++) {
+    const it = f.H[i];
+    const inHeap = i <= f.size, tail = i >= f.tailFrom, pending = i >= f.pendingFrom;
+    let st = f.st[i] || (tail ? "done" : pending ? "dim" : null);
+    if (inHeap || tail) {
+      const p = treeXY(i);
+      nodes.push({ id: "t" + it.id, x: p.x, y: p.y, label: it.v, state: st, r: L.r, badge: i, opacity: tail ? 0.55 : 1 });
+      if (i > 1) edges.push({ from: "t" + f.H[i >> 1].id, to: "t" + it.id, state: tail ? "dim" : (f.st[i] && f.st[i >> 1] ? (f.st[i] === "swap" ? "swap" : "active") : null) });
+    }
+    nodes.push({ id: "c" + it.id, x: L.x0 + i * L.cw + L.cw / 2, y: L.arrY, keys: [it.v], cw: L.cw, h: 32, state: st, fs: L.cw < 34 ? 11 : 13 });
+  }
+  view.draw({
+    W: L.W, H: L.H, nodes, edges,
+    under(g) {
+      g.appendChild(Forge.svg("text", { x: 14, y: 18, "font-size": 11, fill: "var(--muted)" }, "tree view"));
+      g.appendChild(Forge.svg("text", { x: L.x0, y: L.arrY - 26, "font-size": 11, fill: "var(--muted)" }, `array view H[1..${N}]   (parent ⌊i/2⌋ · children 2i, 2i+1)`));
+      g.appendChild(Forge.svg("rect", { x: L.x0 + 2, y: L.arrY - 14, width: L.cw - 4, height: 28, rx: 5, fill: "none", stroke: "var(--line-2)", "stroke-dasharray": "3 3" }));
+      g.appendChild(Forge.svg("text", { x: L.x0 + L.cw / 2, y: L.arrY + 4, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, "–"));
+      for (let i = 0; i <= N; i++) {
+        g.appendChild(Forge.svg("text", { x: L.x0 + i * L.cw + L.cw / 2, y: L.arrY + 32, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, String(i)));
+      }
+    },
+    over(g) {
+      if (f.tailFrom <= N && f.tailFrom > 1) {
+        const x = L.x0 + f.tailFrom * L.cw - 1;
+        g.appendChild(Forge.svg("line", { x1: x, y1: L.arrY - 22, x2: x, y2: L.arrY + 22, stroke: "var(--ember)", "stroke-width": 2.5 }));
+        g.appendChild(Forge.svg("text", { x: x - 4, y: L.arrY - 24, "text-anchor": "end", "font-size": 10, fill: "var(--ember-2)" }, "heap"));
+        g.appendChild(Forge.svg("text", { x: x + 4, y: L.arrY - 24, "font-size": 10, fill: "var(--c-done)" }, "sorted"));
+      }
+      if (f.pendingFrom <= N) {
+        const x = L.x0 + f.pendingFrom * L.cw - 1;
+        g.appendChild(Forge.svg("line", { x1: x, y1: L.arrY - 22, x2: x, y2: L.arrY + 22, stroke: "var(--ember)", "stroke-width": 2.5 }));
+        g.appendChild(Forge.svg("text", { x: x + 4, y: L.arrY - 24, "font-size": 10, fill: "var(--muted)" }, "input still waiting"));
+      }
+      if (N === 0) g.appendChild(Forge.svg("text", { x: L.W / 2, y: 80, "text-anchor": "middle", fill: "var(--muted)" }, "(empty heap)"));
+    },
+  });
+  const code = codes.show(MODE + (MAX ? "+" : "-"), listing(MODE));
+  code.highlight(f.line);
+  const keys = Object.keys(f.ctr).join("|");
+  if (keys !== ctrKeys) { $("ctr").innerHTML = ""; ctr = Forge.counters($("ctr"), f.ctr); ctrKeys = keys; }
+  ctr.set(f.ctr);
+  say.say(f.text);
+}
+
+const player = Forge.player($("player"), { frames: [], render: (f, i) => { render(f); pred.update(f, i); } });
+
+/* -------------------------------------------------------------- controls */
+function heapify(keys) {
+  const R = Recorder(initial(keys));
+  const n = keys.length, H = R.H;
+  for (let i = n >> 1; i >= 1; i--) {
+    let k = i; const v = H[k];
+    while (2 * k <= n) { let j = 2 * k; if (j < n && above(H[j + 1].v, H[j].v)) j++; if (!above(H[j].v, v.v)) break; H[k] = H[j]; k = j; }
+    H[k] = v;
+  }
+  return H;
+}
+function run() {
+  pred.reset();
+  LAYOUT = null;
+  view.reset();
+  $("pqRow").hidden = MODE !== "pq";
+  let frames;
+  if (MODE === "bottomup") frames = recBottomUp(KEYS);
+  else if (MODE === "topdown") frames = recTopDown(KEYS);
+  else if (MODE === "heapsort") frames = recHeapsort(KEYS);
+  else { PQ = heapify(KEYS); pqLog = []; $("pqLog").textContent = ""; frames = recPQReady(); }
+  player.load(frames);
+}
+function readKeys() {
+  const a = FX.nums($("inp").value).map((x) => Math.round(x)).slice(0, 20);
+  if (a.length) KEYS = a;
+  $("inp").value = KEYS.join(", ");
+}
+$("load").onclick = () => { readKeys(); run(); };
+$("inp").addEventListener("keydown", (e) => { if (e.key === "Enter") { readKeys(); run(); } });
+$("rand").onclick = () => {
+  KEYS = Forge.randArray(7 + Math.floor(Math.random() * 7), 1, 99);
+  $("inp").value = KEYS.join(", ");
+  run();
+};
+$("book").onclick = () => { KEYS = [2, 9, 7, 6, 5, 8]; $("inp").value = KEYS.join(", "); run(); };
+$("mode").onchange = (e) => { MODE = e.target.value; readKeys(); run(); };
+function setMax(v) {
+  MAX = v;
+  $("maxBtn").classList.toggle("on", v); $("minBtn").classList.toggle("on", !v);
+  $("maxBtn").setAttribute("aria-pressed", v); $("minBtn").setAttribute("aria-pressed", !v);
+  run();
+}
+$("maxBtn").onclick = () => setMax(true);
+$("minBtn").onclick = () => setMax(false);
+$("pqIns").onclick = () => {
+  const x = Math.round(Number($("pqVal").value));
+  if (!Number.isFinite(x)) return;
+  if (PQ.length > 31) { say.say("The playground holds at most 31 keys. Delete some first."); return; }
+  pred.reset();
+  const r = recPQInsert(x);
+  PQ = r.H;
+  pqLog.push("+" + x);
+  $("pqLog").textContent = "log: " + pqLog.slice(-8).join("  ");
+  player.load(r.frames);
+  $("pqVal").value = Math.floor(Math.random() * 99) + 1;
+};
+$("pqDel").onclick = () => {
+  if (PQ.length <= 1) { say.say("The queue is empty: nothing to delete."); return; }
+  pred.reset();
+  const r = recPQDelete();
+  PQ = r.H;
+  pqLog.push("−" + r.root);
+  $("pqLog").textContent = "log: " + pqLog.slice(-8).join("  ");
+  player.load(r.frames);
+};
+$("pqReset").onclick = () => { readKeys(); run(); };
+
+run();
+</script>
+</body>
+</html>

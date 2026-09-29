@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strongly Connected Components · Algorithm Forge</title>
+<meta name="description" content="Strongly Connected Components (SCC) step by step: Kosaraju's two passes (finish order, transpose graph) and Tarjan's low-link values, with components colored and the condensation DAG.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  #stage { cursor: pointer; }
+  .hint { font-size: 0.8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 14 · Advanced Graphs</div>
+    <h1>Strongly Connected Components (SCC)</h1>
+    <p class="lead muted">Group the vertices of a directed graph so that inside a group everyone can reach everyone. Kosaraju does it with two Depth-First Search (DFS) passes; Tarjan does it in one pass with low-link values. Collapse each group and a Directed Acyclic Graph (DAG) appears.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="algo"><option value="kosaraju">Kosaraju (two passes)</option><option value="tarjan">Tarjan (one pass, low-link)</option></select>
+      </label>
+      <label class="field">Vertices n <input type="number" id="n" min="2" max="10" value="8" style="width:70px"></label>
+      <label class="field" style="flex:1;min-width:0">Directed edges "u v" (order = neighbor order)
+        <input type="text" id="edges" value="0 1, 1 2, 2 0, 2 3, 3 4, 4 5, 5 3, 6 5, 6 7, 7 6" style="width:100%">
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="run">Run</button>
+      <button class="btn" id="lesson">Lesson graph</button>
+      <button class="btn" id="rand">Random graph</button>
+      <button class="btn" id="dag">A DAG (every SCC is one vertex)</button>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+    <p class="hint" style="margin:8px 0 0">Click a vertex, then another, to add or remove that directed edge.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Directed graph with strongly connected components"></svg>
+      <div class="legend" id="legend">
+        <span><i style="background:var(--c-active)"></i>current vertex</span>
+        <span><i style="background:transparent;border:2px solid var(--c-compare)"></i>on the DFS path (in progress)</span>
+        <span><i style="background:var(--c-dim)"></i>finished, no component yet</span>
+        <span><i style="background:var(--ember)"></i>DFS tree edge</span>
+        <span><i style="background:var(--c-compare)"></i>edge being examined</span>
+        <span>🎨 other fills = one color per component</span>
+      </div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+      <div class="panel">
+        <div class="panel-title">Condensation DAG (each component collapsed to one node)</div>
+        <svg class="stage" id="dagsvg" role="img" aria-label="Condensation DAG"></svg>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li><b>Kosaraju.</b> Pass 1 runs DFS on the graph and writes each vertex into the <i>finish order</i> strip when its DFS call ends (the small <code>f=</code> number). Then every arrow flips (the transpose). Pass 2 takes vertices from the <b>end</b> of the finish order; each DFS on the flipped graph paints exactly one component.</li>
+      <li><b>Tarjan.</b> Each vertex shows <code>idx/low</code>: its discovery number and the smallest discovery number it can reach through its DFS subtree plus one edge back to a vertex still on the stack. The stack strip shows vertices not yet assigned. When a vertex finishes with <code>low = idx</code> it is the root of a component: pop down to it.</li>
+      <li>Dashed gray edges are ignored: they lead into a component that is already finished.</li>
+      <li>The <b>condensation</b> below draws one node per component with an arrow wherever some edge crosses between two components. It never has a cycle: if two components could reach each other, they would be one component.</li>
+      <li><b>Counters:</b> both algorithms visit each vertex and examine each edge a constant number of times: O(V + E).</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Lesson graph, Kosaraju: the finish order is <code>5 4 3 2 1 0 7 6</code>. Pass 2 starts at 6 and finds {6, 7}, then {0, 1, 2}, then {3, 4, 5}.</li>
+      <li>Same graph, Tarjan: final <code>low</code> values are 0 0 0 3 3 3 6 6, and components come out as {3, 4, 5}, {0, 1, 2}, {6, 7}, which is <b>reverse topological order</b> of the condensation.</li>
+      <li>Click 5 then 1 to add edge 5 → 1. Now 0…5 all reach each other: two components merge into one, and the condensation shrinks.</li>
+      <li>Press <b>A DAG</b>: every vertex is its own component, and Kosaraju's pass-2 order is a topological order.</li>
+      <li>Kosaraju: what goes wrong if pass 2 used the <i>original</i> graph? Try it in your head on the lesson graph: a DFS from 6 would leak into {3, 4, 5}. That's why the transpose matters.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/14-advanced-graphs/README.md#build-card-5--strongly-connected-components-scc-kosaraju-and-tarjan">📖 Lesson 14 · Build Card 5</a>
+      <a class="btn" href="../arena/index.html?chapter=14">🏟️ Chapter 14 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=scc-count">🧩 Arena: scc-count</a>
+      <a class="btn" href="../arena/problem.html?id=course-schedule">🧩 Arena: course-schedule</a>
+      <a class="btn" href="graph-traversal.html">🎮 DFS / Breadth-First Search (BFS) traversal</a>
+      <a class="btn" href="topo-sort.html">🎮 Topological sort</a>
+      <a class="btn" href="shortest-paths-plus.html">🎮 Shortest Paths+</a>
+      <a class="btn" href="union-find.html">🎮 Union-Find</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Strongly Connected Components", chapter: "Ch 14 · Advanced Graphs" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+const CC = ["var(--c-done)", "var(--c-pivot)", "var(--ember)", "#2ec4b6", "var(--c-swap)", "#f78fb3", "#9ccc65", "#a3b1c6", "#e0a800", "#6fa8dc"];
+
+/* ---------------- Predict helper (local) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to continue.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+/* ---------------- graph input ---------------- */
+const LESSON = "0 1, 1 2, 2 0, 2 3, 3 4, 4 5, 5 3, 6 5, 6 7, 7 6";
+const LESSON_POS = [[90, 150], [210, 60], [210, 250], [380, 170], [510, 60], [520, 280], [690, 270], [690, 90]];
+let n = 8, edges = [], pos = [], useLessonPos = true;
+function parseEdges(txt, n) {
+  const out = [], re = /(\d+)\s*(?:->|→|>|\s)\s*(\d+)/g;
+  let m;
+  while ((m = re.exec(txt))) { const u = +m[1], v = +m[2]; if (u < n && v < n && u !== v && !out.some((e) => e[0] === u && e[1] === v)) out.push([u, v]); }
+  return out.slice(0, 30);
+}
+function layoutPositions() {
+  if (useLessonPos && n === 8) { pos = LESSON_POS.map((p) => p.slice()); return; }
+  pos = Array.from({ length: n }, (_, i) => { const a = -Math.PI / 2 + (2 * Math.PI * i) / n; return [390 + 290 * Math.cos(a), 170 + 130 * Math.sin(a)]; });
+}
+const adjOf = (E) => { const a = Array.from({ length: n }, () => []); E.forEach(([u, v]) => a[u].push(v)); return a; };
+
+/* ---------------- pseudocode ---------------- */
+const KOS = [
+  "ALGORITHM Kosaraju(adj[0..n-1])",
+  "    visited ← array(n, false)",
+  "    order ← empty list",
+  "    for v ← 0 to n - 1 do                // pass 1 on G",
+  "        if not visited[v] then DFS1(v)",
+  "    radj ← adj with every edge reversed   // the transpose",
+  "    comp ← array(n, -1)",
+  "    c ← 0",
+  "    for each v in order, last to first do  // decreasing finish",
+  "        if comp[v] = -1 then",
+  "            DFS2(v, c)                  // pass 2 on the transpose",
+  "            c ← c + 1",
+  "    return comp",
+  "ALGORITHM DFS1(v)",
+  "    visited[v] ← true",
+  "    for each w in adj[v] do",
+  "        if not visited[w] then DFS1(w)",
+  "    append(order, v)                    // v finishes",
+  "ALGORITHM DFS2(v, c)",
+  "    comp[v] ← c",
+  "    for each w in radj[v] do",
+  "        if comp[w] = -1 then DFS2(w, c)",
+];
+const TAR = [
+  "ALGORITHM TarjanSCC(adj[0..n-1])",
+  "    // idx, low, onStack, S, counter, comps are shared with Visit",
+  "    idx ← array(n, -1)",
+  "    low ← array(n, 0)",
+  "    onStack ← array(n, false)",
+  "    S ← empty stack",
+  "    counter ← 0",
+  "    comps ← empty list",
+  "    for v ← 0 to n - 1 do",
+  "        if idx[v] = -1 then",
+  "            Visit(v)",
+  "    return comps",
+  "ALGORITHM Visit(v)",
+  "    idx[v] ← counter",
+  "    low[v] ← counter",
+  "    counter ← counter + 1",
+  "    push(S, v)",
+  "    onStack[v] ← true",
+  "    for each w in adj[v] do",
+  "        if idx[w] = -1 then",
+  "            Visit(w)",
+  "            low[v] ← min(low[v], low[w])",
+  "        else if onStack[w] then",
+  "            low[v] ← min(low[v], idx[w])",
+  "    if low[v] = idx[v] then",
+  "        C ← empty list",
+  "        repeat",
+  "            w ← pop(S)",
+  "            onStack[w] ← false",
+  "            append(C, w)",
+  "        until w = v",
+  "        append(comps, C)",
+];
+
+/* ---------------- 1. RECORD ---------------- */
+function recordKosaraju() {
+  const adj = adjOf(edges), radj = adjOf(edges.map(([u, v]) => [v, u]));
+  const frames = [], visited = Array(n).fill(false), order = [], fin = Array(n).fill(null), comp = Array(n).fill(-1), comps = [];
+  const inProg = new Set(), tree = {};
+  let vis = 0, ex = 0, flipped = false;
+  const counters = () => ({ "vertices visited": vis, "edges examined": ex, "SCCs found": comps.length, "V + E": n + edges.length });
+  const push = (line, text, extra) => {
+    const ns = {};
+    for (let v = 0; v < n; v++) if (visited[v] && !inProg.has(v) && comp[v] < 0) ns[v] = "dim";
+    inProg.forEach((v) => (ns[v] = "prog"));
+    frames.push(Object.assign({ ns, comp: comp.slice(), comps: comps.map((c) => c.slice()), es: Object.assign({}, tree), flipped, notes: fin.map((f) => (f == null ? null : "f=" + f)), strip: { label: "finish order", items: order.slice() }, line, text, c: counters() }, extra || {}, { ns: Object.assign(ns, (extra && extra.ns) || {}) }));
+  };
+  push(3, `Pass 1: DFS on the original graph from vertex 0, 1, 2, … recording the order in which vertices <b>finish</b>.`);
+  const dfs1 = (v) => {
+    visited[v] = true; vis++; inProg.add(v);
+    push(14, `Visit ${v}.`, { ns: { [v]: "active" } });
+    adj[v].forEach((w) => {
+      ex++;
+      if (!visited[w]) { tree[v + ">" + w] = "tree"; push(16, `Edge ${v}→${w}: ${w} is new, go deeper.`, { ns: { [v]: "active" }, es: Object.assign({}, tree, { [v + ">" + w]: "compare" }) }); dfs1(w); push(15, `Back at ${v}.`, { ns: { [v]: "active" } }); }
+      else push(16, `Edge ${v}→${w}: ${w} was already visited, skip.`, { ns: { [v]: "active" }, es: Object.assign({}, tree, { [v + ">" + w]: "compare" }) });
+    });
+    inProg.delete(v); order.push(v); fin[v] = order.length;
+    push(17, `${v} finishes: it is #${order.length} in the finish order.`, { ns: { [v]: "active" } });
+  };
+  for (let v = 0; v < n; v++) if (!visited[v]) { push(4, `Vertex ${v} is unvisited: start a DFS there.`, { ns: { [v]: "active" } }); dfs1(v); }
+  for (const k in tree) delete tree[k];
+  flipped = true;
+  const last = order[order.length - 1];
+  const opts = [...new Set([last, order[0], 0, order[Math.floor(order.length / 2)]])].slice(0, 4).sort((a, b) => a - b);
+  push(5, `Finish order: ${order.join(" ")}. Now reverse every edge (the transpose). Components stay the same, but edges between components now point the other way.`, {
+    ask: { id: "kos-" + edges.join(";"), q: "Pass 2 starts from which vertex?", options: opts, answer: last, why: `It takes vertices in <b>decreasing</b> finish time, so it starts with the last one to finish, ${last}. That vertex lies in a "source" component of the condensation, which becomes a sink once the edges are reversed, so the DFS can't leak out.` },
+  });
+  push(5, `Transpose ready. Pass 2: take vertices from the end of the finish order: ${order.slice().reverse().join(", ")}.`);
+  for (let k = order.length - 1; k >= 0; k--) {
+    const s = order[k];
+    if (comp[s] >= 0) { push(9, `${s} already belongs to component ${comp[s] + 1}: skip it.`, { ns: { [s]: "active" } }); continue; }
+    const c = comps.length, members = [];
+    comps.push(members);
+    push(10, `${s} has no component yet: DFS from it on the <b>reversed</b> graph collects component ${c + 1}.`, { ns: { [s]: "active" } });
+    const dfs2 = (v) => {
+      comp[v] = c; members.push(v); vis++;
+      push(19, `comp[${v}] ← ${c + 1}.`, { ns: { [v]: "active" } });
+      radj[v].forEach((w) => {
+        ex++;
+        if (comp[w] === -1) { push(21, `Reversed edge ${v}→${w} (original ${w}→${v}): ${w} joins component ${c + 1}.`, { ns: { [v]: "active" }, es: { [w + ">" + v]: "compare" } }); dfs2(w); }
+        else push(21, `Reversed edge ${v}→${w}: ${w} is already in component ${comp[w] + 1}${comp[w] === c ? "" : " (a finished one): don't cross"}.`, { ns: { [v]: "active" }, es: { [w + ">" + v]: comp[w] === c ? "compare" : "ignored" } });
+      });
+    };
+    dfs2(s);
+    push(11, `Component ${c + 1} = {${members.slice().sort((a, b) => a - b).join(", ")}}.`);
+  }
+  flipped = false;
+  push(12, `Done: ${comps.length} strongly connected component${comps.length > 1 ? "s" : ""}. Kosaraju lists them in <b>topological order</b> of the condensation (sources first). Total work O(V + E) = ${n} + ${edges.length}.`, { final: true });
+  return frames;
+}
+function recordTarjan() {
+  const adj = adjOf(edges);
+  const frames = [], idx = Array(n).fill(-1), low = Array(n).fill(0), on = Array(n).fill(false), St = [], comps = [], comp = Array(n).fill(-1), tree = {};
+  let counter = 0, vis = 0, ex = 0, asks = 3;
+  const inProg = new Set();
+  const counters = () => ({ "vertices visited": vis, "edges examined": ex, "SCCs found": comps.length, "V + E": n + edges.length });
+  const push = (line, text, extra) => {
+    const ns = {};
+    for (let v = 0; v < n; v++) if (idx[v] >= 0 && comp[v] < 0) ns[v] = inProg.has(v) ? "prog" : "dim";
+    frames.push(Object.assign({ comp: comp.slice(), comps: comps.map((c) => c.slice()), es: Object.assign({}, tree), flipped: false, notes: idx.map((x, v) => (x < 0 ? null : `${x}/${low[v]}`)), strip: { label: "stack S", items: St.slice() }, line, text, c: counters() }, extra || {}, { ns: Object.assign(ns, (extra && extra.ns) || {}) }));
+  };
+  push(8, "Tarjan: one DFS. Each vertex gets idx (discovery number) and low (the smallest idx it can reach while staying inside unfinished territory).");
+  const visit = (v) => {
+    idx[v] = low[v] = counter++; vis++; St.push(v); on[v] = true; inProg.add(v);
+    push(16, `Visit ${v}: idx = low = ${idx[v]}; push ${v} on the stack.`, { ns: { [v]: "active" } });
+    adj[v].forEach((w) => {
+      ex++;
+      if (idx[w] === -1) {
+        tree[v + ">" + w] = "tree";
+        push(19, `Edge ${v}→${w}: ${w} is unvisited, recurse.`, { ns: { [v]: "active" }, es: Object.assign({}, tree, { [v + ">" + w]: "compare" }) });
+        visit(w);
+        const old = low[v];
+        low[v] = Math.min(low[v], low[w]);
+        push(21, `Back at ${v}: low[${v}] = min(${old}, low[${w}] = ${low[w]}) = ${low[v]}.`, { ns: { [v]: "active" } });
+      } else if (on[w]) {
+        const old = low[v];
+        low[v] = Math.min(low[v], idx[w]);
+        push(23, `Edge ${v}→${w}: ${w} is on the stack (an ancestor-side vertex of the same unfinished region): low[${v}] = min(${old}, idx[${w}] = ${idx[w]}) = ${low[v]}.`, { ns: { [v]: "active", [w]: "prog" }, es: Object.assign({}, tree, { [v + ">" + w]: "compare" }) });
+      } else {
+        push(22, `Edge ${v}→${w}: ${w} is already in a finished component, so ignore it.`, { ns: { [v]: "active" }, es: Object.assign({}, tree, { [v + ">" + w]: "ignored" }) });
+      }
+    });
+    const isRoot = low[v] === idx[v];
+    if (asks > 0) { asks--; push(24, `${v} has examined all its edges: idx[${v}] = ${idx[v]}, low[${v}] = ${low[v]}.`, { ns: { [v]: "active" }, ask: { id: `tar-${v}-${edges.join(";")}`, q: `Is <b>${v}</b> the root of a component (does low[${v}] equal idx[${v}])?`, options: ["yes", "no"], answer: isRoot ? "yes" : "no", why: isRoot ? `low = idx = ${idx[v]}: nothing in ${v}'s subtree reaches above ${v}, so ${v} and everything above it on the stack form a component.` : `low[${v}] = ${low[v]} &lt; idx[${v}] = ${idx[v]}: its subtree reaches an earlier vertex still on the stack, so ${v} belongs to that vertex's component.` } }); }
+    inProg.delete(v);
+    if (isRoot) {
+      const C = [], c = comps.length;
+      comps.push(C);
+      push(24, `low[${v}] = idx[${v}] = ${idx[v]}: ${v} is the root of a component. Pop the stack down to ${v}.`, { ns: { [v]: "active" } });
+      let w;
+      do { w = St.pop(); on[w] = false; C.push(w); comp[w] = c; push(27, `Pop ${w} → component ${c + 1}.`, { ns: { [w]: "active" } }); } while (w !== v);
+      push(31, `Component ${c + 1} = {${C.slice().sort((a, b) => a - b).join(", ")}}.`);
+    } else push(24, `low[${v}] = ${low[v]} &lt; idx[${v}] = ${idx[v]}: ${v} is not a root; it stays on the stack for an earlier vertex's component.`, { ns: { [v]: "active" } });
+  };
+  for (let v = 0; v < n; v++) if (idx[v] === -1) { push(10, `Vertex ${v} is unvisited: Visit(${v}).`, { ns: { [v]: "active" } }); visit(v); }
+  push(11, `Done: ${comps.length} component${comps.length > 1 ? "s" : ""}, found in <b>reverse topological order</b> of the condensation (sinks first). Final low: ${low.join(" ")}.`, { final: true });
+  return frames;
+}
+
+/* ---------------- 2. RENDER ---------------- */
+const stage = $("stage"), dagsvg = $("dagsvg");
+let code, ctr, pending = null;
+const say = Forge.narrate($("say"));
+function arrowDefs(svg, pre) {
+  const d = S("defs");
+  [["m", pre === "dag-" ? "var(--ink-2)" : "var(--line-2)"], ["tree", "var(--ember)"], ["compare", COL.compare], ["ignored", "var(--c-dim)"]].forEach(([k, c]) => d.appendChild(S("marker", { id: pre + k, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" }, S("path", { d: "M0 0 L10 5 L0 10 z", fill: c }))));
+  svg.appendChild(d);
+}
+function render(f, i) {
+  const W = 780, H = 400, R = 21;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  arrowDefs(stage, "scc-");
+  const set = new Set(edges.map(([u, v]) => u + ">" + v));
+  edges.forEach(([u0, v0]) => {
+    const [u, v] = f.flipped ? [v0, u0] : [u0, v0];
+    const st = f.es[u0 + ">" + v0];
+    const a = pos[u], b = pos[v];
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const curve = set.has(v0 + ">" + u0) ? 24 : 0;
+    const x1 = a[0] + (dx / L) * R + nx * curve * 0.3, y1 = a[1] + (dy / L) * R + ny * curve * 0.3;
+    const x2 = b[0] - (dx / L) * (R + 3) + nx * curve * 0.3, y2 = b[1] - (dy / L) * (R + 3) + ny * curve * 0.3;
+    const mx = (a[0] + b[0]) / 2 + nx * curve, my = (a[1] + b[1]) / 2 + ny * curve;
+    const col = st === "tree" ? "var(--ember)" : st === "compare" ? COL.compare : st === "ignored" ? "var(--c-dim)" : "var(--line-2)";
+    stage.appendChild(S("path", { d: curve ? `M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}` : `M${x1} ${y1} L${x2} ${y2}`, fill: "none", stroke: col, "stroke-width": st && st !== "ignored" ? 3.2 : 1.8, "stroke-dasharray": st === "ignored" ? "6 5" : null, "marker-end": `url(#scc-${st || "m"})` }));
+  });
+  if (f.flipped) stage.appendChild(S("text", { x: W - 12, y: 22, "text-anchor": "end", "font-size": 12, "font-weight": 700, fill: "var(--c-pivot)" }, "TRANSPOSE: all edges reversed"));
+  for (let v = 0; v < n; v++) {
+    const p = pos[v], st = f.ns[v], c = f.comp[v];
+    let fill = "var(--panel-2)", stroke = "var(--line-2)", sw = 2, ink = "var(--ink)";
+    if (c >= 0) { fill = CC[c % CC.length]; stroke = fill; ink = "#0d1117"; }
+    else if (st === "dim") { fill = "var(--c-dim)"; stroke = "var(--c-dim)"; }
+    else if (st === "prog") { stroke = COL.compare; sw = 3.5; }
+    if (st === "active") { if (c < 0) { fill = COL.active; ink = "#0d1117"; } stroke = COL.active; sw = 4; }
+    const g = S("g", { "data-v": v, style: "cursor:pointer" });
+    if (pending === v) g.appendChild(S("circle", { cx: p[0], cy: p[1], r: R + 7, fill: "none", stroke: "var(--steel)", "stroke-width": 2, "stroke-dasharray": "4 3" }));
+    if (st === "active" && c >= 0) g.appendChild(S("circle", { cx: p[0], cy: p[1], r: R + 5, fill: "none", stroke: COL.active, "stroke-width": 3 }));
+    g.appendChild(S("circle", { cx: p[0], cy: p[1], r: R, fill, stroke, "stroke-width": sw }));
+    g.appendChild(S("text", { x: p[0], y: p[1] + 5, "text-anchor": "middle", "font-size": 15, "font-weight": 700, fill: ink }, String(v)));
+    if (f.notes[v]) g.appendChild(S("text", { x: p[0], y: p[1] + (p[1] > 200 ? R + 17 : -R - 8), "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: "var(--ember-2)" }, f.notes[v]));
+    stage.appendChild(g);
+  }
+  // strip (finish order / stack)
+  const sy = H - 34;
+  stage.appendChild(S("text", { x: 12, y: sy + 18, "font-size": 12, fill: "var(--muted)" }, f.strip.label + ":"));
+  f.strip.items.forEach((v, k) => {
+    const x = 120 + k * 34;
+    stage.appendChild(S("rect", { x, y: sy, width: 30, height: 26, rx: 5, fill: f.comp[v] >= 0 ? CC[f.comp[v] % CC.length] : "var(--panel)", stroke: "var(--line-2)" }));
+    stage.appendChild(S("text", { x: x + 15, y: sy + 18, "text-anchor": "middle", "font-size": 13, "font-weight": 700, fill: f.comp[v] >= 0 ? "#0d1117" : "var(--ink)" }, String(v)));
+  });
+  if (f.strip.label === "stack S" && f.strip.items.length) stage.appendChild(S("text", { x: 120 + f.strip.items.length * 34 + 4, y: sy + 18, "font-size": 11, fill: "var(--muted)" }, "← top"));
+  renderDag(f);
+  code.highlight(f.line);
+  ctr.set(f.c);
+  say.say(f.text);
+  predict.show(f, i);
+}
+function renderDag(f) {
+  const comps = f.comps.filter((c) => c.length);
+  const W = 780, H = 130;
+  dagsvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  dagsvg.innerHTML = "";
+  arrowDefs(dagsvg, "dag-");
+  if (!comps.length) { dagsvg.appendChild(S("text", { x: 16, y: 70, "font-size": 13, fill: "var(--muted)" }, "Components appear here as they are found.")); return; }
+  const cid = {}; f.comps.forEach((c, k) => c.forEach((v) => (cid[v] = k)));
+  const K = f.comps.length, dag = new Set();
+  edges.forEach(([u, v]) => { if (cid[u] != null && cid[v] != null && cid[u] !== cid[v]) dag.add(cid[u] + ">" + cid[v]); });
+  // topological order (Kahn) of the found components
+  const indeg = Array(K).fill(0); dag.forEach((e) => indeg[+e.split(">")[1]]++);
+  const q = []; for (let k = 0; k < K; k++) if (!indeg[k]) q.push(k);
+  const topo = [];
+  while (q.length) { q.sort((a, b) => a - b); const k = q.shift(); topo.push(k); dag.forEach((e) => { const [a, b] = e.split(">").map(Number); if (a === k && --indeg[b] === 0) q.push(b); }); }
+  const px = {}, gapx = (W - 140) / Math.max(1, topo.length - 1);
+  topo.forEach((k, j) => (px[k] = [topo.length === 1 ? W / 2 : 70 + j * gapx, j % 2 ? 90 : 42]));
+  const lab = (k) => "{" + f.comps[k].slice().sort((a, b) => a - b).join(",") + "}";
+  const hw = (k) => Math.max(44, lab(k).length * 8 + 12) / 2;
+  // distance from a pill's center to its border along direction (ux, uy)
+  const edgeOff = (k, ux, uy) => Math.min(hw(k) / Math.max(1e-6, Math.abs(ux)), 15 / Math.max(1e-6, Math.abs(uy)));
+  dag.forEach((e) => {
+    const [a, b] = e.split(">").map(Number), A = px[a], B = px[b];
+    const dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const oa = edgeOff(a, ux, uy) + 2, ob = edgeOff(b, ux, uy) + 4;
+    dagsvg.appendChild(S("line", { x1: A[0] + ux * oa, y1: A[1] + uy * oa, x2: B[0] - ux * ob, y2: B[1] - uy * ob, stroke: "var(--ink-2)", "stroke-width": 2, "marker-end": "url(#dag-m)" }));
+  });
+  topo.forEach((k) => {
+    const p = px[k], label = lab(k);
+    const w = hw(k) * 2;
+    dagsvg.appendChild(S("rect", { x: p[0] - w / 2, y: p[1] - 15, width: w, height: 30, rx: 15, fill: CC[k % CC.length] }));
+    dagsvg.appendChild(S("text", { x: p[0], y: p[1] + 5, "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: "#0d1117" }, label));
+  });
+}
+
+/* ---------------- controls ---------------- */
+function load() {
+  n = Math.max(2, Math.min(10, +$("n").value || 8));
+  $("n").value = n;
+  edges = parseEdges($("edges").value, n);
+  layoutPositions();
+  const algo = $("algo").value;
+  $("code").innerHTML = ""; $("ctr").innerHTML = "";
+  code = Forge.code($("code"), algo === "kosaraju" ? KOS : TAR);
+  ctr = Forge.counters($("ctr"), { "vertices visited": 0, "edges examined": 0, "SCCs found": 0, "V + E": 0 });
+  predict.reset();
+  player.load(algo === "kosaraju" ? recordKosaraju() : recordTarjan());
+}
+player = Forge.player($("player"), { frames: [], render });
+$("run").onclick = load;
+$("algo").onchange = load;
+$("n").onchange = () => { useLessonPos = false; load(); };
+$("edges").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+$("lesson").onclick = () => { $("n").value = 8; $("edges").value = LESSON; useLessonPos = true; load(); };
+$("dag").onclick = () => { $("n").value = 7; useLessonPos = false; $("edges").value = "0 1, 0 2, 1 3, 2 3, 3 4, 2 5, 5 6, 4 6"; load(); };
+$("rand").onclick = () => {
+  const k = 7 + Math.floor(Math.random() * 3), E = [];
+  // a few random cycles plus random extra edges
+  const perm = Array.from({ length: k }, (_, i) => i).sort(() => Math.random() - 0.5);
+  let i = 0;
+  while (i < k) { const len = Math.min(k - i, 1 + Math.floor(Math.random() * 3)); const grp = perm.slice(i, i + len); if (len > 1) grp.forEach((v, j) => E.push(`${v} ${grp[(j + 1) % len]}`)); i += len; }
+  for (let t = 0; t < Math.ceil(k * 0.6); t++) { const u = Math.floor(Math.random() * k), v = Math.floor(Math.random() * k); if (u !== v) E.push(`${u} ${v}`); }
+  $("n").value = k; useLessonPos = false; $("edges").value = E.join(", ");
+  load();
+};
+stage.addEventListener("click", (e) => {
+  const g = e.target.closest("g[data-v]");
+  if (!g) { if (pending != null) { pending = null; player.go(player.index); } return; }
+  const v = +g.dataset.v;
+  if (pending == null) { pending = v; player.go(player.index); return; }
+  if (pending !== v) {
+    const k = edges.findIndex((x) => x[0] === pending && x[1] === v);
+    if (k >= 0) edges.splice(k, 1); else edges.push([pending, v]);
+    $("edges").value = edges.map((x) => x.join(" ")).join(", ");
+  }
+  pending = null;
+  const keep = pos;
+  load();
+  pos = keep;
+  player.go(player.frames.length - 1);
+});
+load();
+</script>
+</body>
+</html>

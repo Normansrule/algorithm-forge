@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450" width="900" height="450" role="img" aria-labelledby="ttl dsc">
+<title id="ttl">The Algorithm Forge learning loop</title>
+<desc id="dsc">Seven steps in a loop - Learn, See, Blocks, Write pseudocode, Auto-check, Nudge, Senior twist - with a token travelling around it.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}.m{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace}.e{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif}@keyframes k0{0%,10.36%{opacity:1}12.5%,100%{opacity:0}}.k0{animation:k0 14.0s ease-in-out infinite}@keyframes k1{0%,12.5%{opacity:1}14.29%,100%{opacity:0}}.k1{animation:k1 14.0s ease-in-out infinite}@keyframes k2{0%,13.57%,26.79%,100%{opacity:0}15%,24.64%{opacity:1}}.k2{animation:k2 14.0s ease-in-out infinite}@keyframes k3{0%,14.29%,28.57%,100%{opacity:0}16.07%,26.79%{opacity:1}}.k3{animation:k3 14.0s ease-in-out infinite}@keyframes k4{0%,27.86%,41.07%,100%{opacity:0}29.29%,38.93%{opacity:1}}.k4{animation:k4 14.0s ease-in-out infinite}@keyframes k5{0%,28.57%,42.86%,100%{opacity:0}30.36%,41.07%{opacity:1}}.k5{animation:k5 14.0s ease-in-out infinite}@keyframes k6{0%,42.14%,55.36%,100%{opacity:0}43.57%,53.21%{opacity:1}}.k6{animation:k6 14.0s ease-in-out infinite}@keyframes k7{0%,42.86%,57.14%,100%{opacity:0}44.64%,55.36%{opacity:1}}.k7{animation:k7 14.0s ease-in-out infinite}@keyframes k8{0%,56.43%,69.64%,100%{opacity:0}57.86%,67.5%{opacity:1}}.k8{animation:k8 14.0s ease-in-out infinite}@keyframes k9{0%,57.14%,71.43%,100%{opacity:0}58.93%,69.64%{opacity:1}}.k9{animation:k9 14.0s ease-in-out infinite}@keyframes k10{0%,70.71%,83.93%,100%{opacity:0}72.14%,81.79%{opacity:1}}.k10{animation:k10 14.0s ease-in-out infinite}@keyframes k11{0%,71.43%,85.71%,100%{opacity:0}73.21%,83.93%{opacity:1}}.k11{animation:k11 14.0s ease-in-out infinite}@keyframes k12{0%,85%,98.21%,100%{opacity:0}86.43%,96.07%{opacity:1}}.k12{animation:k12 14.0s ease-in-out infinite}@keyframes k13{0%,85.71%,100%{opacity:0}87.5%,98.21%{opacity:1}}.k13{animation:k13 14.0s ease-in-out infinite}</style>
+<defs><linearGradient id="bgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#121823"/><stop offset="1" stop-color="#0d1117"/></linearGradient><radialGradient id="glow" cx=".12" cy="0" r=".7"><stop offset="0" stop-color="#ff8a3d" stop-opacity=".10"/><stop offset="1" stop-color="#ff8a3d" stop-opacity="0"/></radialGradient></defs>
+<rect x=".5" y=".5" width="899" height="449" rx="18" fill="url(#bgG)" stroke="#2a3448"/>
+<rect x=".5" y=".5" width="899" height="449" rx="18" fill="url(#glow)"/>
+<text x="28" y="38" font-size="11" fill="#ff8a3d" font-weight="700" letter-spacing="1.4">HOW IT WORKS</text>
+<text x="28" y="63" font-size="20" fill="#e8edf5" font-weight="800">One loop, for every algorithm</text>
+<g transform="translate(850,14)" opacity=".8"><rect x="0" y="11" width="5" height="10" rx="1.2" fill="#5ab0ff"/><rect x="7" y="7" width="5" height="14" rx="1.2" fill="#5ab0ff" opacity=".8"/><rect x="14" y="2" width="5" height="19" rx="1.2" fill="#ff8a3d"/><text x="-7" y="17" font-size="12" font-weight="700" fill="#7f8ba3" text-anchor="end">Algorithm Forge</text></g>
+<path d="M450,118A330,132 0 1 1 450,382A330,132 0 1 1 450,118" fill="none" stroke="#36425b" stroke-width="2"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(557.59,125.21) rotate(7.88)"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(757.37,201.96) rotate(45.77)"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(664.32,350.37) rotate(161.18)"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(450.74,382) rotate(179.97)"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(236.25,350.57) rotate(-161.18)"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(142.36,202.23) rotate(-45.77)"/>
+<path d="M-5,-6L3,0L-5,6" fill="none" stroke="#7f8ba3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(341.71,125.31) rotate(-7.88)"/>
+<g><circle r="15" fill="#ff8a3d" opacity=".3"/><circle r="8" fill="#ff8a3d" stroke="#0d1117" stroke-width="2"/><animateMotion dur="14s" repeatCount="indefinite" calcMode="linear" keyPoints="0.0000;0.0000;0.1429;0.1429;0.2857;0.2857;0.4286;0.4286;0.5714;0.5714;0.7143;0.7143;0.8571;0.8571;1.0000" keyTimes="0.0000;0.1000;0.1429;0.2429;0.2857;0.3857;0.4286;0.5286;0.5714;0.6714;0.7143;0.8143;0.8571;0.9571;1.0000" path="M450,118A330,132 0 1 1 450,382A330,132 0 1 1 450,118"/></g>
+<circle cx="450" cy="118" r="38" fill="#5ab0ff" fill-opacity=".16" stroke="#5ab0ff" stroke-width="2.5" class="k0"/>
+<circle cx="450" cy="118" r="29" fill="#1c2536" stroke="#5ab0ff" stroke-opacity=".75" stroke-width="2"/>
+<text x="450" y="126.5" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">📖</text>
+<rect x="415.5" y="54" width="69" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="427.5" y="70" font-size="12" fill="#5ab0ff" font-weight="800">1</text>
+<text x="440.5" y="70" font-size="13" fill="#e8edf5" font-weight="700">Learn</text>
+<g class="k1">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">📖</tspan>  <tspan fill="#5ab0ff">1 · Learn</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">Read the lesson's Build Card: the problem,</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">a one-line story, where it shows up for real.</text>
+</g>
+<circle cx="663.75" cy="149.43" r="38" fill="#c38bff" fill-opacity=".16" stroke="#c38bff" stroke-width="2.5" class="k2"/>
+<circle cx="663.75" cy="149.43" r="29" fill="#1c2536" stroke="#c38bff" stroke-opacity=".75" stroke-width="2"/>
+<text x="663.75" y="157.93" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">👀</text>
+<rect x="637.05" y="85.43" width="53.4" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="649.05" y="101.43" font-size="12" fill="#c38bff" font-weight="800">2</text>
+<text x="662.05" y="101.43" font-size="13" fill="#e8edf5" font-weight="700">See</text>
+<g class="k3">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">👀</tspan>  <tspan fill="#c38bff">2 · See</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">Run the simulation on your own input — step</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">forward and back; every frame says why.</text>
+</g>
+<circle cx="757.64" cy="297.77" r="38" fill="#ff8a3d" fill-opacity=".16" stroke="#ff8a3d" stroke-width="2.5" class="k4"/>
+<circle cx="757.64" cy="297.77" r="29" fill="#1c2536" stroke="#ff8a3d" stroke-opacity=".75" stroke-width="2"/>
+<text x="757.64" y="306.27" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">🧱</text>
+<rect x="719.24" y="337.77" width="76.8" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="731.24" y="353.77" font-size="12" fill="#ff8a3d" font-weight="800">3</text>
+<text x="744.24" y="353.77" font-size="13" fill="#e8edf5" font-weight="700">Blocks</text>
+<g class="k5">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">🧱</tspan>  <tspan fill="#ff8a3d">3 · Blocks</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">Snap shuffled pseudocode blocks into order:</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">the order and the indentation are the puzzle.</text>
+</g>
+<circle cx="558.29" cy="374.69" r="38" fill="#ffd24d" fill-opacity=".16" stroke="#ffd24d" stroke-width="2.5" class="k6"/>
+<circle cx="558.29" cy="374.69" r="29" fill="#1c2536" stroke="#ffd24d" stroke-opacity=".75" stroke-width="2"/>
+<text x="558.29" y="383.19" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">✍️</text>
+<rect x="480.89" y="414.69" width="154.8" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="492.89" y="430.69" font-size="12" fill="#ffd24d" font-weight="800">4</text>
+<text x="505.89" y="430.69" font-size="13" fill="#e8edf5" font-weight="700">Write pseudocode</text>
+<g class="k7">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">✍️</tspan>  <tspan fill="#ffd24d">4 · Write pseudocode</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">Now write it from a blank page, in</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">Levitin-style Forge Pseudocode.</text>
+</g>
+<circle cx="342.41" cy="374.79" r="38" fill="#3ddc97" fill-opacity=".16" stroke="#3ddc97" stroke-width="2.5" class="k8"/>
+<circle cx="342.41" cy="374.79" r="29" fill="#1c2536" stroke="#3ddc97" stroke-opacity=".75" stroke-width="2"/>
+<text x="342.41" y="383.29" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">✅</text>
+<rect x="288.41" y="414.79" width="108" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="300.41" y="430.79" font-size="12" fill="#3ddc97" font-weight="800">5</text>
+<text x="313.41" y="430.79" font-size="13" fill="#e8edf5" font-weight="700">Auto-check</text>
+<g class="k9">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">✅</tspan>  <tspan fill="#3ddc97">5 · Auto-check</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">The Arena really runs it: hidden tests, plus a</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">count of basic operations to check the Θ-class.</text>
+</g>
+<circle cx="142.63" cy="298.04" r="38" fill="#ffb07a" fill-opacity=".16" stroke="#ffb07a" stroke-width="2.5" class="k10"/>
+<circle cx="142.63" cy="298.04" r="29" fill="#1c2536" stroke="#ffb07a" stroke-opacity=".75" stroke-width="2"/>
+<text x="142.63" y="306.54" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">💡</text>
+<rect x="108.13" y="338.04" width="69" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="120.13" y="354.04" font-size="12" fill="#ffb07a" font-weight="800">6</text>
+<text x="133.13" y="354.04" font-size="13" fill="#e8edf5" font-weight="700">Nudge</text>
+<g class="k11">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">💡</tspan>  <tspan fill="#ffb07a">6 · Nudge</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">Wrong? You get a targeted hint, not the answer —</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">“Start maxval at A[0], not 0.”</text>
+</g>
+<circle cx="235.68" cy="149.63" r="38" fill="#ff5d73" fill-opacity=".16" stroke="#ff5d73" stroke-width="2.5" class="k12"/>
+<circle cx="235.68" cy="149.63" r="29" fill="#1c2536" stroke="#ff5d73" stroke-opacity=".75" stroke-width="2"/>
+<text x="235.68" y="158.13" font-size="23" fill="#e8edf5" text-anchor="middle" class="e">🧑‍💻</text>
+<rect x="173.88" y="85.63" width="123.6" height="23" rx="11.5" fill="#121823" stroke="#36425b"/>
+<text x="185.88" y="101.63" font-size="12" fill="#ff5d73" font-weight="800">7</text>
+<text x="198.88" y="101.63" font-size="13" fill="#e8edf5" font-weight="700">Senior twist</text>
+<g class="k13">
+<text x="450" y="206" font-size="20" fill="#e8edf5" font-weight="800" text-anchor="middle"><tspan class="e">🧑‍💻</tspan>  <tspan fill="#ff5d73">7 · Senior twist</tspan></text>
+<text x="450" y="236" font-size="14" fill="#b4bfd1" text-anchor="middle">Solved it? Take the follow-up an experienced</text>
+<text x="450" y="257" font-size="14" fill="#b4bfd1" text-anchor="middle">engineer would ask next. Then loop again.</text>
+</g>
+<text x="450" y="298" font-size="12" fill="#7f8ba3" text-anchor="middle">↺ repeat for every algorithm  ·  stuck? step back one — usually to the picture</text>
+</svg>

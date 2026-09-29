@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closest Pair &amp; Convex Hull · Algorithm Forge</title>
+<meta name="description" content="Click to place points, then compare brute force with divide-and-conquer for the closest-pair and convex-hull problems, counting distance computations and orientation tests.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .seg .btn.on { background: var(--ember-soft); border-color: var(--ember); color: var(--ember); }
+  .ask-q { font-weight: 600; margin-bottom: 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  .links a { font-weight: 600; }
+  #practice { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.85rem; font-weight: 600; }
+  #stage { cursor: crosshair; touch-action: manipulation; }
+  #summary { width: 100%; }
+  #summary tr.cur td { background: var(--ember-soft); }
+  .linkish { background: none; border: 0; padding: 0; color: var(--steel); font: 700 0.82rem var(--mono); cursor: pointer; text-align: left; }
+  .linkish:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 3 · Brute Force and Chapter 5 · Divide-and-Conquer</div>
+    <h1>Closest Pair &amp; Convex Hull</h1>
+    <p class="lead muted">Two classic geometry problems, each solved twice: the obvious brute-force way, then by divide-and-conquer. Place your own points and count the work.</p>
+  </header>
+
+  <section class="panel stack" style="margin-top:16px">
+    <div class="row">
+      <span class="small muted" style="font-weight:600">Algorithm</span>
+      <div class="seg row" id="algs" role="group" aria-label="Algorithm"></div>
+    </div>
+    <div class="row">
+      <label class="field"><span>Points n = <span id="nval">12</span></span><input type="range" id="n" min="3" max="40" value="12" aria-label="Number of random points"></label>
+      <button class="btn sm" id="rand">🎲 Random</button>
+      <button class="btn sm" id="circle">On a circle</button>
+      <button class="btn sm" id="cluster">Clusters</button>
+      <button class="btn sm" id="clear">Clear</button>
+      <span class="small muted">Click the stage to add a point; click a point to remove it.</span>
+    </div>
+    <div class="small" id="msg" style="color:var(--warn);min-height:1.2em"></div>
+    <div id="practice"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Points in the plane. Click to add or remove points."></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">All four on these points</div>
+        <div class="scroll-x">
+          <table class="t" id="summary">
+            <thead><tr><th style="text-align:left">algorithm</th><th>basic operation</th><th>count</th><th>bound</th></tr></thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="codeHost"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctrHost"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel">
+        <div class="panel-title">🤔 Predict <span class="chip" id="predictScore" style="margin-left:auto">0 / 0 right</span></div>
+        <label class="small"><input type="checkbox" id="predictOn" checked> Pause and quiz me at key moments</label>
+        <div id="predictBox" class="small" style="margin-top:8px"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <p><b>Points</b> are labelled p1, p2, … from left to right. The thick green segment is the closest pair found so far; thick green edges are hull edges already confirmed. A dashed yellow segment is the pair being measured right now.</p>
+      <p><b>Closest pair, divide-and-conquer.</b> The light blue band is the current subproblem, the orange dashed line is the dividing line x = m, and the purple band is the strip of width 2d around it. For a point in the strip, the blue box is the region (d high) where a closer partner could still be; points above it are never checked.</p>
+      <p><b>Convex hull.</b> The grey dashed line is the line being tested. In brute force, blue points are on its left and yellow points on its right: points on both sides mean "not an edge". In Quickhull, the red triangle is a pmax triangle: points inside it are eliminated (grey) for good.</p>
+      <p class="small muted"><b>Basic operations.</b> Closest pair counts squared-distance computations (Levitin avoids square roots inside the loops). Convex hull counts orientation tests: the sign of the determinant x1y2 + x3y1 + x2y3 − x3y2 − x2y1 − x1y3, which says which side of a line a point is on.</p>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Quadratic versus n log n.</b> With n = 40 random points, compare the squared-distance counts in the table: brute force is always n(n−1)/2 = 780; divide-and-conquer usually needs fewer than 60.</li>
+        <li><b>The strip is thin.</b> Step through divide-and-conquer and watch the strip checks: each strip point is compared with only a few neighbours above it, never more than a handful. Why can't there be more? (Levitin Exercise 5.5.2.)</li>
+        <li><b>Quickhull's bad day.</b> Press "On a circle": every point is on the hull, nothing is ever eliminated, and the orientation tests climb. Then press "Clusters": many points die inside the first triangles.</li>
+        <li><b>Brute-force hull by hand.</b> Clear the stage and click 5 points: 4 corners of a square and 1 in the middle. Predict how many of the 10 segments are hull edges (4), then step through.</li>
+        <li><b>Early exit.</b> In brute-force hull, a segment through the middle of the cloud is rejected after only a few tests, while a real hull edge needs all n − 2. How close is the count to the n(n−1)(n−2)/2 bound?</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="links">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/03-brute-force/README.md">📘 Ch 3 lesson: Brute Force (closest pair, convex hull)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/05-divide-and-conquer/README.md">📘 Ch 5 lesson: Divide-and-Conquer</a>
+      <a href="../arena/index.html?chapter=3">⚔️ Arena: Ch 3</a>
+      <a href="../arena/index.html?chapter=5">⚔️ Arena: Ch 5</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="../arena/problem.html?id=closest-pair-brute">closest-pair-brute</a>
+      <a href="../arena/problem.html?id=convex-hull-brute">convex-hull-brute</a>
+      <a href="../arena/problem.html?id=closest-pair-1d-presort">closest-pair-1d-presort</a>
+      <a href="../arena/problem.html?id=min-distance-pairs">min-distance-pairs</a>
+    </div>
+    <div class="links" style="margin-top:10px">
+      <a href="sorting-studio.html?alg=merge">📊 Sim: Sorting Studio (mergesort, quicksort)</a>
+      <a href="recurrence-lab.html">🔁 Sim: Recurrence lab (Master Theorem)</a>
+      <a href="karatsuba-strassen.html">✖️ Sim: Karatsuba &amp; Strassen</a>
+      <a href="exhaustive-search.html">🔍 Sim: Exhaustive search</a>
+    </div>
+  </section>
+</main>
+<script>Forge.page({ title: "Closest Pair & Convex Hull", chapter: "Ch 3 & 5 · Geometry" });</script>
+<script src="js/closest-pair-hull.js"></script>
+</body>
+</html>

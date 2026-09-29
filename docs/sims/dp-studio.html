@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DP Table Studio · Algorithm Forge</title>
+<meta name="description" content="Watch dynamic programming tables fill cell by cell: coin-row, change-making, robot coin collection, 0/1 knapsack (bottom-up and memory function), binomial coefficients, longest common subsequence and edit distance, with tracebacks.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  label.field { max-width: 100%; }
+  label.field[hidden] { display: none; }
+  select { max-width: 100%; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  .dp-inputs { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+  .dp-inputs input[type="text"] { width: 100%; max-width: 280px; }
+  .dp-inputs label.field { flex: 0 1 auto; }
+  .stage-scroll { overflow-x: auto; border-radius: var(--radius); }
+  .stage-scroll .stage { min-width: 0; }
+  .formula { font-family: var(--mono); font-size: 0.88rem; min-height: 1.6em; overflow-wrap: anywhere; }
+  .result { font-size: 0.92rem; }
+  .result .align { font-family: var(--mono); white-space: pre; overflow-x: auto; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-top: 6px; line-height: 1.35; }
+  .ask[hidden] { display: none; }
+  .ask { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ask input { width: 90px; }
+  .board-ed { display: inline-grid; gap: 3px; }
+  .board-ed button { width: 30px; height: 30px; padding: 0; border-radius: 6px; border: 1px solid var(--line-2); background: var(--bg-2); color: var(--ink); font: 700 0.9rem var(--mono); cursor: pointer; }
+  .board-ed button.coin { background: color-mix(in srgb, var(--c-compare) 40%, var(--bg-2)); }
+  .board-ed button.wall { background: var(--c-dim); color: var(--ink-2); }
+  .blurb { color: var(--ink-2); font-size: 0.92rem; margin: 10px 0 0; }
+  .go-deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  .go-deeper a { display: inline-flex; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 8 · Dynamic Programming</div>
+    <h1>DP Table Studio</h1>
+    <p class="lead muted">Dynamic Programming (DP) solves each small subproblem once, writes the answer in a table, and builds bigger answers from smaller ones. Pick a problem, watch every cell read the cells it depends on, then trace back through the table to recover the actual choices.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row" style="margin-bottom:12px">
+      <label class="field">Problem
+        <select id="prob" aria-label="Choose a dynamic programming problem">
+          <option value="coinrow">Coin-row (Levitin §8.1)</option>
+          <option value="change">Change-making, any coins (§8.1)</option>
+          <option value="robot">Robot coin collection (§8.1)</option>
+          <option value="knap">0/1 knapsack, bottom-up (§8.2)</option>
+          <option value="mf">0/1 knapsack, memory function (§8.2)</option>
+          <option value="binom">Binomial coefficient / Pascal (§8.1 Ex 9)</option>
+          <option value="lcs">Longest Common Subsequence (LCS)</option>
+          <option value="edit">Edit distance</option>
+        </select>
+      </label>
+      <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predictMode"> 🤔 Predict each cell before it is revealed</label>
+      <span class="chip" id="score">predictions: 0 / 0</span>
+    </div>
+    <div class="dp-inputs" id="inputs"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="load">Load &amp; run</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn ghost" id="reset">Textbook example</button>
+    </div>
+    <p class="blurb" id="blurb"></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage-scroll"><svg class="stage" id="stage" role="img" aria-label="Dynamic programming table"></svg></div>
+      <div class="callout steel formula" id="formula" aria-live="polite">&nbsp;</div>
+      <div class="callout ask" id="ask" hidden>
+        <b>🤔 Predict:</b> <span id="askQ"></span>
+        <input id="askIn" type="text" inputmode="numeric" aria-label="Your prediction">
+        <button class="btn sm primary" id="askGo">Check</button>
+        <span id="askFb" class="small"></span>
+      </div>
+      <div class="result" id="result"></div>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>cell being filled</span>
+        <span><i style="background:var(--c-compare)"></i>cells it reads</span>
+        <span><i style="background:var(--ember)"></i>winning choice (arrow)</span>
+        <span><i style="background:var(--muted)"></i>losing choice (dashed arrow)</span>
+        <span><i style="background:var(--c-done)"></i>traceback / optimal answer</span>
+        <span><i style="background:var(--c-pivot)"></i>retrieved, not recomputed</span>
+        <span><i style="background:var(--c-dim)"></i>never computed / blocked</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>The <b>grid is the DP table</b>. Row and column headers show what each index means (an amount, a capacity, a character, an item with its weight and value).</li>
+        <li>The <b style="color:var(--c-active)">blue cell</b> is being filled right now. The <b style="color:var(--c-compare)">yellow cells</b> are the smaller subproblems it reads. Arrows point from those cells into the new one: the <b style="color:var(--ember)">solid orange arrow</b> is the option that won the max/min, <span class="muted">dashed grey arrows</span> are options that lost.</li>
+        <li>The formula strip under the table plugs the real numbers into the recurrence, so you can check the arithmetic yourself.</li>
+        <li>After the table is full, the <b style="color:var(--c-done)">green traceback</b> walks backwards from the goal cell and recovers the choices (coins, items, path, common letters, or edit operations).</li>
+        <li>Memory-function mode: <b style="color:var(--c-pivot)">purple</b> cells were looked up instead of recomputed; grey “—” cells were never needed at all.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Coin-row:</b> load <code>5, 1, 2, 10, 6, 2</code>. Before playing, guess the best total. (Expect F = 0, 5, 5, 7, 15, 15, 17 and coins 5 + 10 + 2.)</li>
+        <li><b>Change-making:</b> coins <code>1, 3, 4</code>, amount 6. A greedy cashier gives 4 + 1 + 1; watch the table find 3 + 3 (F[6] = 2). Then try coins <code>2, 5</code>: which amounts stay ∞?</li>
+        <li><b>Knapsack vs memory function:</b> run the W = 5 example both ways. Bottom-up fills all 20 inner cells; the memory function computes only 11 and looks up F[1, 2] once. Where are the “—” cells?</li>
+        <li><b>Robot:</b> click board cells to add coins or walls (click cycles empty → coin → wall). Can you build a board with a unique optimal path? One where walls make the goal unreachable?</li>
+        <li><b>Edit distance:</b> KITTEN → SITTING needs 3 operations. Turn on 🤔 Predict and fill the table yourself; the score chip tracks how many cells you got right.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="go-deeper">
+      <a class="btn sm" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/08-dynamic-programming/README.md">📖 Lesson 8: Dynamic Programming</a>
+      <a class="btn sm" href="../arena/index.html?chapter=8">🏟️ Arena: Chapter 8 problems</a>
+      <a class="btn sm" href="../arena/problem.html?id=coin-row">coin-row</a>
+      <a class="btn sm" href="../arena/problem.html?id=change-making-dp">change-making-dp</a>
+      <a class="btn sm" href="../arena/problem.html?id=robot-coin-collection">robot-coin-collection</a>
+      <a class="btn sm" href="../arena/problem.html?id=knapsack-dp">knapsack-dp</a>
+      <a class="btn sm" href="../arena/problem.html?id=knapsack-items">knapsack-items</a>
+      <a class="btn sm" href="../arena/problem.html?id=knapsack-memory-function">knapsack-memory-function</a>
+      <a class="btn sm" href="../arena/problem.html?id=binomial-coefficient">binomial-coefficient</a>
+      <a class="btn sm" href="../arena/problem.html?id=lcs-length">lcs-length</a>
+      <a class="btn sm" href="../arena/problem.html?id=edit-distance">edit-distance</a>
+      <a class="btn sm" href="optimal-bst.html">Sim: Optimal Binary Search Tree (BST)</a>
+      <a class="btn sm" href="warshall-floyd.html">Sim: Warshall &amp; Floyd</a>
+      <a class="btn sm" href="greedy-choices.html">Sim: greedy vs DP change-making</a>
+      <a class="btn sm" href="fibonacci.html">Sim: Fibonacci (top-down vs bottom-up)</a>
+    </div>
+  </section>
+</main>
+<script src="js/dp-studio.js"></script>
+</body>
+</html>

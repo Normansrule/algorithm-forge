@@ -1,0 +1,16 @@
+Data: 54 runs over 18 sizes (1000..9500), 3 runs per size
+
+COMPARISONS
+  one-constant fit        C(n) ~ 0.25045 n^2
+  quadratic fit           C(n) ~ 0.25176 n^2 + -14.980 n + 34615.1
+  log-log slope           1.9970
+  mean C(n)/n^2 at n=9500  0.25234
+  theory                  E[C(n)] = n(n-1)/4 + (n-1) - (H_n - 1)  ->  ~0.25 n^2
+  prediction n=10000:  theory 25,007,490.2   one-constant fit 25,044,678   quadratic fit 25,060,951
+
+TIME (uninstrumented insertion sort, per-size median, milliseconds)
+  one-constant fit        T(n) ~ 1.1380e-05 n^2 ms
+  quadratic fit           T(n) ~ 1.0806e-05 n^2 + 6.4514e-03 n + -14.4642
+  log-log slope           2.0736
+  prediction n=10000:  one-constant fit 1138.003 ms   quadratic fit 1130.660 ms
+  implied time per comparison  45.520 ns   (T/C with C ~ n^2/4)

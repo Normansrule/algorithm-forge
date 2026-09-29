@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Union-Find · Algorithm Forge</title>
+<meta name="description" content="Interactive union-find (disjoint sets): quick-find vs quick-union, union by size or rank, and path compression flattening the forest, with cost counters and amortized intuition.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<style>
+  .predict { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .predict .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .predict .btn.right { border-color: var(--c-done); background: color-mix(in srgb, var(--c-done) 24%, transparent); opacity: 1; }
+  .predict .btn.wrong { border-color: var(--c-swap); background: color-mix(in srgb, var(--c-swap) 20%, transparent); opacity: 1; }
+  .oplog { max-height: 220px; overflow-y: auto; display: grid; gap: 3px; font-family: var(--mono); font-size: 0.8rem; }
+  .oplog button { display: grid; grid-template-columns: 2.6em minmax(0, 8.5em) 1fr 3.2em; gap: 8px; align-items: center; text-align: left; background: var(--bg-2); border: 1px solid var(--line); border-radius: 7px; padding: 3px 8px; color: var(--ink-2); font: inherit; cursor: pointer; }
+  .oplog button.on { border-color: var(--ember); color: var(--ink); background: var(--ember-soft); }
+  .oplog .bar { height: 8px; border-radius: 4px; background: var(--c-bar); min-width: 2px; }
+  .oplog button.on .bar { background: var(--ember); }
+  .deeper { display: flex; flex-wrap: wrap; gap: 8px; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .row > label.field[style*="flex:1"] { flex-basis: 100%; } }
+  label.field { max-width: 100%; min-width: 0; }
+  select, input[type="text"] { max-width: 100%; }
+  #stage { cursor: pointer; }
+  .hint { font-size: 0.8rem; color: var(--muted); }
+  table.t { width: 100%; }
+  table.t td:first-child { text-align: left; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 13 · Advanced Data Structures</div>
+    <h1>Union-Find (Disjoint Sets)</h1>
+    <p class="lead muted">Merge groups and ask "same group?" Compare quick-find with quick-union, then watch union by size/rank and path compression flatten the forest until each operation costs almost nothing.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Structure
+        <select id="structure">
+          <option value="qu">Quick-union (forest of parent pointers)</option>
+          <option value="qf">Quick-find (id[] array of representatives)</option>
+        </select>
+      </label>
+      <label class="field">Linking rule
+        <select id="rule">
+          <option value="size">Union by size</option>
+          <option value="rank">Union by rank</option>
+          <option value="naive">Naive (second root under first)</option>
+        </select>
+      </label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px;margin-top:16px"><input type="checkbox" id="compress" checked> Path compression</label>
+      <label class="field">n
+        <input type="number" id="n" min="2" max="16" value="8" style="width:70px">
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field" style="flex:1;min-width:0">Operations (union(a,b) / find(x), or u a b / f x)
+        <input type="text" id="ops" value="union(0,1), union(2,3), union(0,2), union(4,5), union(6,7), union(4,6), union(3,5), find(7)" style="width:100%">
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="run">Run</button>
+      <button class="btn" id="rand">Random</button>
+      <button class="btn" id="presetLesson">Lesson trace</button>
+      <button class="btn" id="presetChain">Worst-case chain</button>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="pausePredict" checked> 🤔 Pause to predict</label>
+    </div>
+    <p class="hint" style="margin:8px 0 0">Tip: click a node, then another node, to add <code>union</code> of the two. Click the same node twice to add <code>find</code>.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Forest of union-find trees with the parent array below"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>start node</span>
+        <span><i style="background:var(--c-compare)"></i>walked (pointer read)</span>
+        <span><i style="background:var(--c-done)"></i>root found</span>
+        <span><i style="background:var(--c-swap)"></i>pointer rewritten</span>
+        <span><i style="background:var(--c-pivot)"></i>roots being linked</span>
+        <span><i style="background:transparent;border:2px solid var(--ember)"></i>a root (set representative)</span>
+      </div>
+      <div id="player"></div>
+      <div class="predict" id="predict" hidden></div>
+      <div class="panel">
+        <div class="panel-title">Operation log · cost of each operation</div>
+        <div id="avg" class="small muted" style="margin-bottom:8px"></div>
+        <div class="oplog" id="oplog"></div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Why is it "almost constant"? The α(n) intuition</h2>
+    <p>Union by size alone keeps every tree at height ≤ log<sub>2</sub> n: a node gets one level deeper only when its tree is hung under a tree at least as big, so its group at least doubles each time (Levitin §9.2). Path compression then makes every node on a walked path point straight at the root, so the next walk is short. Together, any sequence of m operations costs O(m·α(n)), where α is the inverse Ackermann function. It grows so slowly that α(n) ≤ 4 for any n you could ever store.</p>
+    <p>A friendlier cousin is the iterated logarithm log* n: how many times you press "log<sub>2</sub>" before reaching 1. The easier bound O(log* n) per operation (Hopcroft and Ullman) is already tiny:</p>
+    <div class="scroll-x"><table class="t" style="max-width:520px">
+      <tr><th>n</th><th>2</th><th>4</th><th>16</th><th>65,536</th><th>2<sup>65,536</sup></th></tr>
+      <tr><td>log* n</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+    </table></div>
+    <p style="margin-top:12px">Race every variant on a big input (no animation, just the totals). "Work" counts parent/id entries read while walking plus entries written, the same unit as the counters above.</p>
+    <div class="row">
+      <label class="field">Workload
+        <select id="raceLoad">
+          <option value="chain">Chain unions union(i+1, i), then random finds</option>
+          <option value="random">Random unions and finds</option>
+        </select>
+      </label>
+      <label class="field">n
+        <select id="raceN"><option>1000</option><option selected>4000</option><option>16000</option></select>
+      </label>
+      <button class="btn steel" id="race">Race all variants</button>
+    </div>
+    <div id="raceOut" class="scroll-x" style="margin-top:12px"></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li><b>The forest</b> (top): each arrow points from a node to its parent. A node with an orange ring is a <b>root</b>, the representative ("boss") of its set. Under each root you see its size (or rank).</li>
+      <li><b>The array</b> (bottom) is what the computer actually stores: <code>parent[i]</code> for quick-union or <code>id[i]</code> for quick-find. Quick-find is drawn as flat stars because every element stores its representative directly.</li>
+      <li><b>Colors:</b> blue = where a find starts, yellow = pointers walked, green = the root that was found, red = entries rewritten (a link, a relabel, or a path-compression shortcut), purple = the two roots about to be linked.</li>
+      <li><b>Counters:</b> <i>reads</i> = parent/id entries read while walking, <i>writes</i> = entries changed. Work per op = (reads + writes) / operations; that's the amortized cost you can see.</li>
+      <li><b>Operation log:</b> one bar per operation; click a row to jump to it. Expensive operations become rare once the forest is flat.</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li>Keep the lesson trace with union by size + path compression and run it. The parent array should end as <code>0 0 0 0 0 4 0 0</code>: the final <code>find(7)</code> walks 7 → 6 → 4 → 0 and then rewires 7 and 6 straight to 0.</li>
+      <li>Press <b>Worst-case chain</b>, choose <b>Naive</b> linking and switch compression off. The tree becomes a single path of height n − 1, and each <code>find(0)</code> reads n entries. Now turn on compression: the first find is still expensive, the next ones cost 2 reads.</li>
+      <li>Same chain, but <b>Quick-find + Naive</b>: every union relabels the whole growing group, 1 + 2 + … + (n − 1) = n(n − 1)/2 writes. Switch to union by size: each union relabels only one element.</li>
+      <li>Turn on union by size with compression off and click nodes to build the tallest tree you can. You can't beat height log<sub>2</sub> n (height 3 for n = 8, 4 for n = 16).</li>
+      <li>In the race, compare "Quick-union naive" with "size + compression" on the chain workload: work per operation drops from about a thousand to about 3. Then try the random workload: naive quick-union still grows trees hundreds of levels tall, while size/rank keeps them to a handful of levels. Quick-find that relabels the smaller group is cheap here too, because each of its finds is a single read.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="deeper">
+      <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/13-advanced-data-structures/README.md#build-card-2--union-find-disjoint-sets">📖 Lesson 13 · Build Card 2</a>
+      <a class="btn" href="../arena/index.html?chapter=13">🏟️ Chapter 13 Arena</a>
+      <a class="btn" href="../arena/problem.html?id=union-find-ops">🧩 Arena: union-find-ops</a>
+      <a class="btn" href="../arena/problem.html?id=quick-union-find">🧩 Arena: quick-union-find</a>
+      <a class="btn" href="greedy-graphs.html">🎮 Kruskal's algorithm (greedy-graphs)</a>
+      <a class="btn" href="amortized.html">🎮 Amortized analysis</a>
+      <a class="btn" href="scc.html">🎮 Strongly connected components</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "Union-Find", chapter: "Ch 13 · Advanced Data Structures" });
+const $ = (id) => document.getElementById(id);
+const el = Forge.el, S = Forge.svg;
+const COL = { compare: "var(--c-compare)", swap: "var(--c-swap)", done: "var(--c-done)", active: "var(--c-active)", pivot: "var(--c-pivot)", dim: "var(--c-dim)" };
+
+/* ---------------- Predict helper (local: the kit has no predict widget) ---------------- */
+let player;
+const predict = (() => {
+  const box = $("predict");
+  let answered = new Set();
+  return {
+    reset() { answered = new Set(); },
+    show(f, i) {
+      if (!f.ask) { box.hidden = true; box.innerHTML = ""; return; }
+      const key = f.ask.id != null ? f.ask.id : "f" + i;
+      box.hidden = false; box.innerHTML = "";
+      const out = el("div", { class: "small", style: { marginTop: "8px" } });
+      const opts = el("div", { class: "opts" });
+      const reveal = (choice, btn) => {
+        answered.add(key);
+        [...opts.children].forEach((b) => { b.disabled = true; if (b.dataset.v === String(f.ask.answer)) b.classList.add("right"); });
+        if (btn && String(choice) !== String(f.ask.answer)) btn.classList.add("wrong");
+        const ok = choice == null || String(choice) === String(f.ask.answer);
+        out.innerHTML = (choice == null ? "" : ok ? "<b>✅ Right.</b> " : `<b>Not quite:</b> the answer is <b>${f.ask.answer}</b>. `) + (f.ask.why || "") + " Press ▶| to see it happen.";
+      };
+      f.ask.options.forEach((o) => opts.appendChild(el("button", { class: "btn sm", "data-v": String(o), onclick: (e) => reveal(o, e.currentTarget) }, String(o))));
+      box.append(el("div", { class: "panel-title" }, "🤔 Predict"), el("div", { html: f.ask.q }), opts, out);
+      if (answered.has(key)) reveal(null, null);
+      else if ($("pausePredict").checked && player) player.pause();
+    },
+  };
+})();
+
+/* ---------------- parsing ---------------- */
+function parseOps(text, n) {
+  const ops = [];
+  const re = /(union|u|find|f)\s*\(?\s*(\d+)\s*(?:[,\s]\s*(\d+))?\s*\)?|(\d+)\s*-\s*(\d+)/gi;
+  let m;
+  while ((m = re.exec(text))) {
+    if (m[4] != null) ops.push({ t: "u", a: +m[4], b: +m[5] });
+    else if (/^u/i.test(m[1]) && m[3] != null) ops.push({ t: "u", a: +m[2], b: +m[3] });
+    else ops.push({ t: "f", a: +m[2] });
+  }
+  return ops.filter((o) => o.a < n && (o.t === "f" || o.b < n)).slice(0, 60);
+}
+const opLabel = (o) => (o.t === "u" ? `union(${o.a},${o.b})` : `find(${o.a})`);
+
+/* ---------------- pseudocode per variant ---------------- */
+function codeLines(cfg) {
+  if (cfg.structure === "qf") {
+    return [
+      "ALGORITHM Find(x)                // quick-find",
+      "    return id[x]",
+      "ALGORITHM Union(a, b)",
+      "    ra ← id[a]",
+      "    rb ← id[b]",
+      "    if ra = rb then return false",
+      cfg.rule === "naive" ? "    // naive: always relabel b's group" : "    if size[ra] < size[rb] then swap ra and rb",
+      "    for each x in list[rb] do       // members of rb's group",
+      "        id[x] ← ra",
+      "    size[ra] ← size[ra] + size[rb]",
+      "    return true",
+    ];
+  }
+  const L = [
+    "ALGORITHM Find(x)",
+    "    root ← x",
+    "    while parent[root] ≠ root do",
+    "        root ← parent[root]",
+    cfg.compress ? "    while parent[x] ≠ root do       // path compression" : "    // (path compression is off)",
+    cfg.compress ? "        next ← parent[x]" : "    //   while parent[x] ≠ root do ...",
+    cfg.compress ? "        parent[x] ← root" : "    //       parent[x] ← root",
+    cfg.compress ? "        x ← next" : "    //       x ← next",
+    "    return root",
+    "ALGORITHM Union(a, b)",
+    "    ra ← Find(a)",
+    "    rb ← Find(b)",
+    "    if ra = rb then return false",
+  ];
+  if (cfg.rule === "size") L.push("    if size[ra] < size[rb] then swap ra and rb", "    parent[rb] ← ra", "    size[ra] ← size[ra] + size[rb]");
+  else if (cfg.rule === "rank") L.push("    if rank[ra] < rank[rb] then swap ra and rb", "    parent[rb] ← ra", "    if rank[ra] = rank[rb] then rank[ra] ← rank[ra] + 1");
+  else L.push("    // naive: no size check", "    parent[rb] ← ra", "    // (nothing else to update)");
+  L.push("    return true");
+  return L;
+}
+// line numbers (quick-union)
+const QU = { findHead: 0, rootInit: 1, whileRoot: 2, hop: 3, cWhile: 4, cWrite: 6, ret: 8, uHead: 9, fa: 10, fb: 11, same: 12, cmp: 13, link: 14, upd: 15, uret: 16 };
+const QF = { find: 1, ra: 3, rb: 4, same: 5, cmp: 6, loop: 7, write: 8, upd: 9, ret: 10 };
+
+/* ---------------- 1. RECORD ---------------- */
+function record(n, ops, cfg) {
+  const P = Array.from({ length: n }, (_, i) => i), SZ = Array(n).fill(1), RK = Array(n).fill(0);
+  const members = Array.from({ length: n }, (_, i) => [i]);
+  const frames = [], costs = [], opStart = [];
+  let reads = 0, writes = 0, k = -1, opReads = 0, opWrites = 0;
+  const height = () => { let h = 0; for (let i = 0; i < n; i++) { let d = 0, x = i; while (P[x] !== x) { x = P[x]; d++; } h = Math.max(h, d); } return h; };
+  const comps = () => P.filter((p, i) => p === i).length;
+  const push = (line, text, hl, ask) => frames.push({
+    P: P.slice(), SZ: SZ.slice(), RK: RK.slice(), line, text, hl: hl || {}, ask,
+    reads, writes, k, costs: costs.concat(k >= 0 && costs.length === k ? [opReads + opWrites] : []), h: height(), comps: comps(),
+  });
+  const R = (x) => { reads++; opReads++; };
+  const W = () => { writes++; opWrites++; };
+  const lines = cfg.structure === "qf" ? QF : QU;
+  push(cfg.structure === "qf" ? 0 : QU.findHead, `Start: ${n} singleton sets. Every element is its own ${cfg.structure === "qf" ? "representative (id[i] = i)" : "root (parent[i] = i)"}.`);
+
+  // quick-union find with frames; returns root
+  function quFind(x, extra, who) {
+    const path = [x];
+    let root = x;
+    const nodes = () => { const o = {}; path.forEach((v) => (o[v] = "compare")); o[x] = "active"; return o; };
+    push([QU.rootInit].concat(extra), `${who}find(${x}): start at node ${x}.`, { nodes: { [x]: "active" }, cells: { [x]: "active" } });
+    R(root);
+    while (P[root] !== root) {
+      const from = root;
+      root = P[root];
+      path.push(root);
+      R(root);
+      push([QU.hop].concat(extra), `parent[${from}] = ${root}, so step up to ${root}.`, { nodes: nodes(), cells: { [from]: "compare" }, edges: { [from]: "compare" } });
+    }
+    const nd = nodes(); nd[root] = "done";
+    push([QU.whileRoot].concat(extra), `parent[${root}] = ${root}: ${root} is the root. The walk read ${path.length} entr${path.length === 1 ? "y" : "ies"}.`, { nodes: nd, cells: { [root]: "done" } });
+    if (cfg.compress) {
+      let y = x, changed = 0;
+      while (P[y] !== root) {
+        const next = P[y];
+        P[y] = root; W(); changed++;
+        const nd2 = nodes(); nd2[root] = "done"; nd2[y] = "swap";
+        push([QU.cWrite].concat(extra), `Path compression: point ${y} straight at the root ${root} (it used to point at ${next}). Future finds from ${y} take one hop.`, { nodes: nd2, cells: { [y]: "swap" }, edges: { [y]: "swap" } });
+        y = next;
+      }
+      if (!changed && path.length > 2) push([QU.cWhile].concat(extra), "Nothing to compress.", { nodes: nd });
+    }
+    return root;
+  }
+
+  ops.forEach((op, idx) => {
+    k = idx; opReads = 0; opWrites = 0; opStart.push(frames.length);
+    if (cfg.structure === "qf") {
+      if (op.t === "f") {
+        R(); push(QF.find, `find(${op.a}): read id[${op.a}] = ${P[op.a]}. One array read, always: that's the whole point of quick-find.`, { nodes: { [op.a]: "active", [P[op.a]]: "done" }, cells: { [op.a]: "done" } });
+      } else {
+        const { a, b } = op;
+        R(); push(QF.ra, `union(${a},${b}): ra ← id[${a}] = ${P[a]}.`, { nodes: { [a]: "active", [P[a]]: "done" }, cells: { [a]: "compare" } });
+        R(); push(QF.rb, `rb ← id[${b}] = ${P[b]}.`, { nodes: { [b]: "active", [P[b]]: "done" }, cells: { [b]: "compare" } });
+        let ra = P[a], rb = P[b];
+        if (ra === rb) {
+          push(QF.same, `Both have representative ${ra}: already in the same set, nothing to do.`, { nodes: { [ra]: "done" } });
+        } else {
+          let swapped = false;
+          if (cfg.rule !== "naive" && SZ[ra] < SZ[rb]) { [ra, rb] = [rb, ra]; swapped = true; }
+          const why = cfg.rule === "naive"
+            ? `Naive rule: b's group (led by ${rb}) is always relabeled, whatever its size.`
+            : `Union by size: relabel the smaller group. Sizes are ${SZ[ra]} (rep ${ra}) and ${SZ[rb]} (rep ${rb})${SZ[ra] === SZ[rb] ? "; on a tie a's group stays" : ""}.`;
+          push(QF.cmp, `Which representative survives? The other group's members all get relabeled.`, { nodes: { [ra]: "pivot", [rb]: "pivot" } },
+            { q: `union(${a},${b}) in quick-find: which representative survives (the other group gets relabeled)?`, options: [...new Set([P[a], P[b]])], answer: ra, why });
+          push(QF.cmp, (swapped ? "Swap: " : "") + why + ` ${rb}'s group (${SZ[rb]} element${SZ[rb] > 1 ? "s" : ""}) will be relabeled to ${ra}.`, { nodes: { [ra]: "done", [rb]: "pivot" } });
+          const moving = members[rb].slice();
+          moving.forEach((x) => {
+            P[x] = ra; W();
+            push(QF.write, `id[${x}] ← ${ra}. Each relabel is one write; a big group means a slow union.`, { nodes: { [x]: "swap", [ra]: "done" }, cells: { [x]: "swap" } });
+          });
+          members[ra] = members[ra].concat(moving); members[rb] = [];
+          SZ[ra] += SZ[rb];
+          push(QF.upd, `Merged: set ${ra} now has ${SZ[ra]} elements. This union cost ${opReads} reads + ${opWrites} writes.`, { nodes: { [ra]: "done" } });
+        }
+      }
+    } else {
+      if (op.t === "f") {
+        const r = quFind(op.a, [], "");
+        const nd = {}; nd[r] = "done";
+        push(QU.ret, `find(${op.a}) returns ${r}. Cost of this find: ${opReads} reads + ${opWrites} writes.`, { nodes: nd });
+      } else {
+        const { a, b } = op;
+        const ra0 = quFind(a, [QU.fa], `union(${a},${b}): first `);
+        const rb0 = quFind(b, [QU.fb], "Next ");
+        let ra = ra0, rb = rb0;
+        if (ra === rb) {
+          push(QU.same, `Both finds reached root ${ra}: ${a} and ${b} are already in the same set. Nothing to link.`, { nodes: { [ra]: "done" } });
+        } else {
+          let swapped = false;
+          if (cfg.rule === "size" && SZ[ra] < SZ[rb]) { [ra, rb] = [rb, ra]; swapped = true; }
+          if (cfg.rule === "rank" && RK[ra] < RK[rb]) { [ra, rb] = [rb, ra]; swapped = true; }
+          const why = cfg.rule === "naive"
+            ? `Naive linking always hangs the second root (${rb0}) under the first (${ra0}), even if that makes a tall tree.`
+            : cfg.rule === "size"
+              ? `Union by size: the smaller tree goes under the bigger one. Sizes: ${ra0} has ${SZ[ra0]}, ${rb0} has ${SZ[rb0]}${SZ[ra0] === SZ[rb0] ? " (tie: the first root stays)" : ""}.`
+              : `Union by rank: the tree with the smaller rank goes under. Ranks: ${ra0} has ${RK[ra0]}, ${rb0} has ${RK[rb0]}${RK[ra0] === RK[rb0] ? " (tie: the first root stays, and its rank grows by 1)" : ""}.`;
+          push(QU.cmp, `Roots ${ra0} and ${rb0} differ. Which one becomes the parent?`, { nodes: { [ra0]: "pivot", [rb0]: "pivot" } },
+            { q: `Linking roots <b>${ra0}</b> and <b>${rb0}</b>: which one stays the root?`, options: [ra0, rb0], answer: ra, why });
+          push(QU.cmp, (swapped ? "Swap them. " : "") + why, { nodes: { [ra]: "done", [rb]: "pivot" } });
+          P[rb] = ra; W();
+          push(QU.link, `parent[${rb}] ← ${ra}: tree ${rb} now hangs under ${ra}.`, { nodes: { [ra]: "done", [rb]: "swap" }, cells: { [rb]: "swap" }, edges: { [rb]: "swap" } });
+          SZ[ra] += SZ[rb];
+          let rankNote = "";
+          if (cfg.rule === "rank" && RK[ra] === RK[rb]) { RK[ra]++; rankNote = ` Ranks were equal, so rank[${ra}] grows to ${RK[ra]}.`; }
+          push(QU.upd, `Set ${ra} now has ${SZ[ra]} elements.${rankNote} This union cost ${opReads} reads + ${opWrites} writes.`, { nodes: { [ra]: "done" } });
+        }
+      }
+    }
+    costs.push(opReads + opWrites);
+    frames[frames.length - 1].costs = costs.slice();
+  });
+  const total = reads + writes;
+  push(cfg.structure === "qf" ? QF.ret : QU.uret, ops.length
+    ? `Done: ${ops.length} operations cost ${reads} reads + ${writes} writes = ${total} work, <b>${(total / ops.length).toFixed(2)} per operation</b>. ${comps()} set${comps() > 1 ? "s" : ""} remain; tallest tree has height ${height()}.`
+    : "No operations given. Type some, or click nodes on the stage.");
+  frames[frames.length - 1].k = -1;
+  return { frames, opStart };
+}
+
+/* ---------------- 2. RENDER ---------------- */
+const stage = $("stage");
+let code, lines;
+const ctr = Forge.counters($("ctr"), { reads: 0, writes: 0, "work / op": "0", "tallest tree": 0, sets: 0 });
+const say = Forge.narrate($("say"));
+let run = null, pending = null;
+
+function layout(P, n) {
+  const kids = Array.from({ length: n }, () => []);
+  const roots = [];
+  for (let i = 0; i < n; i++) (P[i] === i ? roots : kids[P[i]]).push(i);
+  const wid = [];
+  const width = (v) => (wid[v] = kids[v].length ? kids[v].reduce((s, c) => s + width(c), 0) : 1);
+  roots.forEach(width);
+  const pos = [];
+  let maxD = 0;
+  const place = (v, d, left) => {
+    maxD = Math.max(maxD, d);
+    if (!kids[v].length) { pos[v] = { u: left + 0.5, d }; return; }
+    let x = left;
+    kids[v].forEach((c) => { place(c, d + 1, x); x += wid[c]; });
+    pos[v] = { u: (pos[kids[v][0]].u + pos[kids[v][kids[v].length - 1]].u) / 2, d };
+  };
+  let x = 0;
+  const GAP = 0.35;
+  roots.forEach((r, j) => { place(r, 0, x); x += wid[r] + GAP; });
+  return { pos, units: x - GAP, maxD, roots };
+}
+
+function render(f, i) {
+  const cfg = run.cfg, n = f.P.length;
+  const W = 760, lay = layout(f.P, n);
+  const unit = Math.min(64, (W - 40) / Math.max(1, lay.units));
+  const rowH = Math.max(30, Math.min(64, 320 / Math.max(1, lay.maxD)));
+  const r = Math.max(8, Math.min(17, unit * 0.4, rowH * 0.36));
+  const FH = 34 + lay.maxD * rowH + 46;
+  const cellW = Math.min(44, (W - 60) / n), ax0 = (W - cellW * n) / 2 + 14, ay = FH + 26;
+  const H = ay + cellW + 22;
+  stage.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  stage.innerHTML = "";
+  stage.appendChild(S("defs", null, S("marker", { id: "uf-arr", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" }, S("path", { d: "M0 0 L10 5 L0 10 z", fill: "var(--line-2)" })),
+    ...["compare", "swap"].map((s) => S("marker", { id: "uf-arr-" + s, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" }, S("path", { d: "M0 0 L10 5 L0 10 z", fill: COL[s] })))));
+  const ox = (W - unit * lay.units) / 2;
+  const P = (v) => ({ x: ox + lay.pos[v].u * unit, y: 34 + lay.pos[v].d * rowH });
+  const hl = f.hl || {};
+  // edges child -> parent
+  for (let v = 0; v < n; v++) {
+    if (f.P[v] === v) continue;
+    const a = P(v), b = P(f.P[v]);
+    const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+    const st = (hl.edges || {})[v];
+    stage.appendChild(S("line", { x1: a.x + (dx / L) * r, y1: a.y + (dy / L) * r, x2: b.x - (dx / L) * (r + 2), y2: b.y - (dy / L) * (r + 2), stroke: st ? COL[st] : "var(--line-2)", "stroke-width": st ? 3 : 2, "marker-end": `url(#uf-arr${st ? "-" + st : ""})` }));
+  }
+  for (let v = 0; v < n; v++) {
+    const p = P(v), st = (hl.nodes || {})[v], isRoot = f.P[v] === v;
+    const g = S("g", { "data-id": v, style: "cursor:pointer" });
+    if (pending === v) g.appendChild(S("circle", { cx: p.x, cy: p.y, r: r + 6, fill: "none", stroke: "var(--steel)", "stroke-width": 2, "stroke-dasharray": "4 3" }));
+    g.appendChild(S("circle", { cx: p.x, cy: p.y, r, fill: st ? COL[st] : "var(--panel-2)", stroke: isRoot ? "var(--ember)" : st ? COL[st] : "var(--line-2)", "stroke-width": isRoot ? 3 : 2 }));
+    g.appendChild(S("text", { x: p.x, y: p.y + r * 0.32, "text-anchor": "middle", "font-size": Math.max(9, r * 0.85), "font-weight": 700, fill: st && st !== "dim" ? "#0d1117" : "var(--ink)" }, String(v)));
+    if (isRoot && (cfg.structure === "qf" || cfg.rule !== "naive") && f.SZ[v] > 1) {
+      const note = cfg.structure === "qu" && cfg.rule === "rank" ? `rank ${f.RK[v]}` : `size ${f.SZ[v]}`;
+      g.appendChild(S("text", { x: p.x, y: p.y - r - 6, "text-anchor": "middle", "font-size": 10, fill: "var(--ember-2)" }, note));
+    }
+    stage.appendChild(g);
+  }
+  // array row
+  stage.appendChild(S("text", { x: ax0 - 8, y: ay + cellW * 0.62, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" }, cfg.structure === "qf" ? "id" : "parent"));
+  for (let v = 0; v < n; v++) {
+    const x = ax0 + v * cellW, st = (hl.cells || {})[v];
+    stage.appendChild(S("text", { x: x + cellW / 2, y: ay - 6, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, String(v)));
+    stage.appendChild(S("rect", { x: x + 1, y: ay, width: cellW - 2, height: cellW - 2, rx: 5, fill: st ? COL[st] : "var(--panel)", stroke: st ? COL[st] : "var(--line-2)" }));
+    stage.appendChild(S("text", { x: x + cellW / 2, y: ay + cellW * 0.62, "text-anchor": "middle", "font-size": Math.min(15, cellW * 0.42), "font-weight": 700, fill: st ? "#0d1117" : "var(--ink)" }, String(f.P[v])));
+  }
+  code.highlight(f.line);
+  const total = f.reads + f.writes, done = f.costs.length;
+  ctr.set({ reads: f.reads, writes: f.writes, "work / op": done ? (total / done).toFixed(2) : "—", "tallest tree": f.h, sets: f.comps });
+  say.say(f.text);
+  predict.show(f, i);
+  // op log highlight
+  [...$("oplog").children].forEach((b, j) => b.classList.toggle("on", j === f.k));
+  const on = $("oplog").children[f.k];
+  if (on && player && player.index === i) { const box = $("oplog"); if (on.offsetTop < box.scrollTop || on.offsetTop > box.scrollTop + box.clientHeight - 24) box.scrollTop = on.offsetTop - 60; }
+  $("avg").innerHTML = done ? `${done} of ${run.ops.length} operations done · total work ${total} · <b>average ${(total / done).toFixed(2)} per operation</b> · most expensive so far ${Math.max(...f.costs)}` : "Operations appear here as they run.";
+}
+
+function buildLog() {
+  const box = $("oplog");
+  box.innerHTML = "";
+  const last = run.frames[run.frames.length - 1].costs;
+  const mx = Math.max(1, ...last);
+  run.ops.forEach((o, j) => {
+    box.appendChild(el("button", { title: `Jump to ${opLabel(o)}`, onclick: () => player.go(run.opStart[j]) },
+      el("span", { class: "muted" }, "#" + (j + 1)), el("span", null, opLabel(o)),
+      el("span", null, el("div", { class: "bar", style: { width: (100 * last[j]) / mx + "%" } })), el("span", { style: { textAlign: "right" } }, String(last[j]))));
+  });
+}
+
+/* ---------------- controls ---------------- */
+function cfgNow() {
+  const structure = $("structure").value;
+  let rule = $("rule").value;
+  if (structure === "qf" && rule === "rank") rule = "size";
+  return { structure, rule, compress: structure === "qu" && $("compress").checked };
+}
+function syncControls() {
+  const qf = $("structure").value === "qf";
+  $("compress").disabled = qf;
+  $("rule").querySelector('option[value="rank"]').disabled = qf;
+  if (qf && $("rule").value === "rank") $("rule").value = "size";
+}
+function load(jumpToOp) {
+  syncControls();
+  const n = Math.max(2, Math.min(16, +$("n").value || 8));
+  $("n").value = n;
+  const cfg = cfgNow();
+  const ops = parseOps($("ops").value, n);
+  const rec = record(n, ops, cfg);
+  run = { cfg, ops, n, ...rec };
+  lines = codeLines(cfg);
+  $("code").innerHTML = "";
+  code = Forge.code($("code"), lines);
+  predict.reset();
+  buildLog();
+  player.load(rec.frames);
+  if (jumpToOp != null && rec.opStart[jumpToOp] != null) player.go(rec.opStart[jumpToOp]);
+}
+player = Forge.player($("player"), { frames: [], render });
+$("run").onclick = () => load();
+["structure", "rule", "compress"].forEach((id) => ($(id).onchange = () => load()));
+$("n").onchange = () => load();
+$("presetLesson").onclick = () => {
+  $("n").value = 8; $("structure").value = "qu"; $("rule").value = "size"; $("compress").checked = true;
+  $("ops").value = "union(0,1), union(2,3), union(0,2), union(4,5), union(6,7), union(4,6), union(3,5), find(7)";
+  load();
+};
+$("presetChain").onclick = () => {
+  const n = 10; $("n").value = n;
+  const ops = [];
+  for (let i = 0; i < n - 1; i++) ops.push(`union(${i + 1},${i})`);
+  ops.push("find(0)", "find(0)", "find(1)");
+  $("ops").value = ops.join(", ");
+  load();
+};
+$("rand").onclick = () => {
+  const n = 6 + Math.floor(Math.random() * 7), rnd = Math.random;
+  $("n").value = n;
+  const ops = [];
+  for (let j = 0; j < n + 2; j++) {
+    const a = Math.floor(rnd() * n), b = Math.floor(rnd() * n);
+    ops.push(rnd() < 0.72 && a !== b ? `union(${a},${b})` : `find(${a})`);
+  }
+  $("ops").value = ops.join(", ");
+  load();
+};
+stage.addEventListener("click", (e) => {
+  const g = e.target.closest("g[data-id]");
+  if (!g) return;
+  const v = +g.dataset.id;
+  if (pending == null) { pending = v; player.go(player.index); return; }
+  const add = pending === v ? `find(${v})` : `union(${pending},${v})`;
+  pending = null;
+  const cur = $("ops").value.trim();
+  $("ops").value = cur ? cur + ", " + add : add;
+  load(parseOps($("ops").value, +$("n").value).length - 1);
+});
+
+/* ---------------- race (no animation) ---------------- */
+function raceOne(n, ops, structure, rule, compress) {
+  const P = Array.from({ length: n }, (_, i) => i), SZ = Array(n).fill(1), RK = Array(n).fill(0);
+  const members = structure === "qf" ? Array.from({ length: n }, (_, i) => [i]) : null;
+  let work = 0;
+  const find = (x) => {
+    if (structure === "qf") { work++; return P[x]; }
+    let root = x; work++;
+    while (P[root] !== root) { root = P[root]; work++; }
+    if (compress) while (P[x] !== root) { const nx = P[x]; P[x] = root; work++; x = nx; }
+    return root;
+  };
+  for (const o of ops) {
+    if (o.t === "f") { find(o.a); continue; }
+    let ra = find(o.a), rb = find(o.b);
+    if (ra === rb) continue;
+    if (rule === "size" && SZ[ra] < SZ[rb]) [ra, rb] = [rb, ra];
+    if (rule === "rank" && RK[ra] < RK[rb]) [ra, rb] = [rb, ra];
+    if (structure === "qf") { for (const x of members[rb]) { P[x] = ra; work++; } members[ra] = members[ra].concat(members[rb]); members[rb] = []; }
+    else { P[rb] = ra; work++; if (rule === "rank" && RK[ra] === RK[rb]) RK[ra]++; }
+    SZ[ra] += SZ[rb];
+  }
+  let h = 0;
+  if (structure === "qu") { const depth = new Int32Array(n).fill(-1); const d = (v) => { if (depth[v] >= 0) return depth[v]; let x = v, k = 0; while (P[x] !== x) { x = P[x]; k++; } return (depth[v] = k); }; for (let i = 0; i < n; i++) h = Math.max(h, d(i)); }
+  else h = 1;
+  return { work, h };
+}
+$("race").onclick = () => {
+  const n = +$("raceN").value, rnd = Forge.rng(42), ops = [];
+  if ($("raceLoad").value === "chain") {
+    for (let i = 0; i < n - 1; i++) ops.push({ t: "u", a: i + 1, b: i });
+    for (let j = 0; j < n; j++) ops.push({ t: "f", a: Math.floor(rnd() * n) });
+  } else {
+    for (let j = 0; j < 2 * n; j++) { const a = Math.floor(rnd() * n), b = Math.floor(rnd() * n); ops.push(rnd() < 0.5 ? { t: "u", a, b } : { t: "f", a }); }
+  }
+  const variants = [
+    ["Quick-find, naive relabel", "qf", "naive", false],
+    ["Quick-find, relabel smaller group", "qf", "size", false],
+    ["Quick-union, naive", "qu", "naive", false],
+    ["Quick-union, naive + compression", "qu", "naive", true],
+    ["Quick-union, by size", "qu", "size", false],
+    ["Quick-union, by rank", "qu", "rank", false],
+    ["Quick-union, by size + compression", "qu", "size", true],
+    ["Quick-union, by rank + compression", "qu", "rank", true],
+  ];
+  const rows = variants.map(([name, s, r, c]) => ({ name, ...raceOne(n, ops, s, r, c), qf: s === "qf" }));
+  const best = Math.min(...rows.map((x) => x.work));
+  $("raceOut").innerHTML = "";
+  $("raceOut").appendChild(el("table", { class: "t" },
+    el("tr", null, el("th", null, "Variant"), el("th", null, "Total work"), el("th", null, "Work / op"), el("th", null, "Final tallest tree")),
+    rows.map((x) => el("tr", null, el("td", null, x.name), el("td", { class: x.work === best ? "done" : "" }, x.work.toLocaleString()), el("td", null, (x.work / ops.length).toFixed(2)), el("td", null, x.qf ? "1 (always flat)" : String(x.h))))));
+  $("raceOut").appendChild(el("p", { class: "small muted", style: { marginTop: "8px" } }, `${ops.length.toLocaleString()} operations on n = ${n.toLocaleString()}. log₂ n ≈ ${Math.log2(n).toFixed(1)}; union by size/rank never lets a tree grow taller than that.`));
+};
+
+$("ops").addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+load();
+</script>
+</body>
+</html>

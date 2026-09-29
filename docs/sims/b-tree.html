@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B-Tree Lab · Algorithm Forge</title>
+<meta name="description" content="Insert keys into a B-tree of order m (3 to 6), watch node splits and root growth, follow search paths, and see why height means disk accesses.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 420px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .field select, .field input[type="text"] { max-width: 100%; }
+  label.field { max-width: 100%; }
+  #hchart { width: 100%; display: block; }
+  .disk { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+  .disk .counter .v { font-size: 1.1rem; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 7 · Space and Time Trade-Offs</div>
+    <h1>B-Tree Lab</h1>
+    <p class="lead muted">A B-tree packs many keys into each node so the tree stays very short. On a disk, every node you visit is one page read, so height is the cost that matters. Insert keys, watch full nodes split, and see the tree grow at the root.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field"><span>Order m = <b id="mLabel">4</b></span>
+        <input id="m" type="range" min="3" max="6" value="4" style="width:140px" aria-label="Order m">
+      </label>
+      <label class="field">Variant
+        <select id="variant">
+          <option value="plus">Levitin §7.4: records in leaves (B+-tree style)</option>
+          <option value="classic">Classic B-tree: keys in every node</option>
+        </select>
+      </label>
+      <label class="field">Keys to insert, in order
+        <input id="inp" type="text" value="15, 42, 8, 23, 4, 16, 31, 50, 27, 35" style="min-width:220px">
+      </label>
+      <button class="btn primary" id="build">Build</button>
+      <button class="btn" id="rand">Random 15</button>
+      <button class="btn" id="asc">Ascending 1..20</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field">One key <input id="key" type="number" value="27" style="width:90px"></label>
+      <button class="btn steel" id="ins">Insert</button>
+      <button class="btn steel" id="find">Search</button>
+      <button class="btn" id="grow">+10 random keys</button>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="The B-tree"></svg>
+      <div class="legend">
+        <span><i style="background:var(--ember)"></i>key being inserted / searched</span>
+        <span><i style="background:var(--c-active)"></i>node read from disk</span>
+        <span><i style="background:var(--c-compare)"></i>key compared</span>
+        <span><i style="background:var(--c-swap)"></i>overflowing node</span>
+        <span><i style="background:var(--c-pivot)"></i>key sent up to the parent</span>
+        <span><i style="background:var(--c-done)"></i>found / placed</span>
+      </div>
+      <div id="player"></div>
+      <div class="panel">
+        <div class="panel-title">Height as keys arrive</div>
+        <svg id="hchart" role="img" aria-label="Tree height after each insertion, with the upper bound"></svg>
+        <div class="legend" style="margin-top:4px">
+          <span><svg width="24" height="10" style="vertical-align:middle;margin-right:5px"><line x1="1" y1="5" x2="23" y2="5" stroke="var(--c-active)" stroke-width="2.5"/></svg>height h of your tree</span>
+          <span><svg width="24" height="10" style="vertical-align:middle;margin-right:5px"><line x1="1" y1="5" x2="23" y2="5" stroke="var(--ember)" stroke-width="2" stroke-dasharray="6 4"/></svg>upper bound ⌊log<sub>⌈m/2⌉</sub>((n+1)/4)⌋ + 1</span>
+        </div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Disk accesses at real scale</h2>
+    <p class="small muted" style="margin:0">Real B-trees use orders in the hundreds, because one node is sized to one disk page. Pick a file size and an order to see the worst-case height (Levitin inequality 7.7) and the page reads it implies, next to a perfectly balanced binary tree.</p>
+    <div class="row" style="margin-top:10px">
+      <label class="field"><span>Records N = 10^<b id="eLabel">8</b></span> <input id="e" type="range" min="3" max="10" value="8" style="width:160px" aria-label="Exponent of N"></label>
+      <label class="field">Order m
+        <select id="bigm"><option>16</option><option selected>50</option><option>100</option><option>250</option><option>1000</option></select>
+      </label>
+    </div>
+    <div class="disk" id="disk"></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>Order m</dt>
+      <dd>A node may have at most m children. Every node except the root must have at least ⌈m/2⌉ children, and all leaves sit on the same level. Order 3 is exactly a 2-3 tree.</dd>
+      <dt>Two variants</dt>
+      <dd>Levitin's version keeps every record in the leaves (at most m − 1 per leaf here); the upper nodes only hold signposts: each separator equals the smallest key in the subtree to its right. When a leaf splits, the separator is <i>copied</i> up. When an internal node splits, its middle key <i>moves</i> up. The classic B-tree stores each key exactly once, in any node, and always moves the middle key up.</dd>
+      <dt>Disk reads</dt>
+      <dd>Every blue node on a search path is one page read. A search reads h + 1 nodes. The row labels on the left of the tree count them.</dd>
+      <dt>Growth at the top</dt>
+      <dd>The only way the tree gets taller is a split of the root, which creates a new root one level up. That is why the leaves always stay level.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Lesson trace.</b> Build the default keys with m = 4 (Levitin variant). After 35 the root splits: the new root holds 31, its children hold 15, 23 and 42, and the leaves are (4, 8) (15, 16) (23, 27) (31, 35) (42, 50). Search 27: three disk reads.</li>
+      <li><b>Order vs height.</b> Press “Ascending 1..20” with m = 3, then m = 6. Height drops from 3 (m = 3) to 2 (m = 4) to 1 (m = 6). Bigger nodes mean fewer levels.</li>
+      <li><b>Copy vs move.</b> Switch to the classic variant and rebuild the default keys. Count the keys in the whole tree: every key appears once. In the Levitin variant, separators are duplicates of leaf keys.</li>
+      <li><b>Predict splits.</b> Before each insertion, answer the prompt: will this key cause a split? A split happens exactly when the target leaf is already full.</li>
+      <li><b>Scale.</b> In the disk panel set N = 10^8 and try m = 50, 100, 250. The height bound is 6, 5 and 4 (at most 7, 6 and 5 page reads, and in practice the top levels sit in memory), while a perfectly balanced binary tree has 27 levels.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/07-space-time-tradeoffs/README.md">📖 Lesson: Chapter 7 Space and Time Trade-Offs</a>
+      <a href="../arena/index.html?chapter=7">🏟️ Arena: Chapter 7 problems</a>
+      <a href="../arena/problem.html?id=open-hashing-chains">Arena: open-hashing-chains</a>
+      <a href="search-trees.html">🎮 Search Trees (2-3 trees = order 3)</a>
+      <a href="hashing.html">🎮 Hashing Lab</a>
+      <a href="segment-tree.html">🎮 Segment Tree</a>
+    </div>
+  </section>
+</main>
+<script>
+Forge.page({ title: "B-Tree Lab", chapter: "Ch 7 · Space and Time Trade-Offs" });
+const $ = (id) => document.getElementById(id);
+const view = FX.treeView($("stage"));
+const codes = FX.codeSwitch($("code"));
+const say = Forge.narrate($("say"));
+const pred = FX.predict($("pred"), () => player);
+let ctr = null, ctrKeys = "";
+
+let M = 4, VAR = "plus", CUR = null, HIST = [], uid = 1;
+const DEFAULT = [15, 42, 8, 23, 4, 16, 31, 50, 27, 35];
+
+const LISTS = {
+  "plus-insert": [
+    "ALGORITHM BTreeInsert(root, K)   // records in leaves",
+    "    leaf ← the leaf where BTreeSearch(root, K) ends",
+    "    insert K into leaf in sorted position",
+    "    node ← leaf",
+    "    while node overflows do",
+    "        // leaf: more than m − 1 keys; inner: more than m children",
+    "        split node into halves L and R",
+    "        if node is a leaf then sep ← smallest key of R  // copy",
+    "        else sep ← middle key of node                   // move",
+    "        if node is the root then",
+    "            root ← new node holding sep over L and R",
+    "        else",
+    "            insert sep and a pointer to R into the parent",
+    "        node ← node's parent",
+  ],
+  "plus-search": [
+    "ALGORITHM BTreeSearch(root, K)",
+    "    node ← root                     // disk read",
+    "    while node is not a leaf do",
+    "        i ← number of keys in node that are ≤ K",
+    "        node ← node.child[i]        // disk read",
+    "    return K is among node's keys",
+  ],
+  "classic-insert": [
+    "ALGORITHM BTreeInsert(root, K)   // keys in every node",
+    "    leaf ← the leaf where a search for K ends",
+    "    insert K into leaf in sorted position",
+    "    node ← leaf",
+    "    while node has m keys do       // at most m − 1 allowed",
+    "        split: left half, middle key, right half",
+    "        if node is the root then",
+    "            root ← new node holding the middle key",
+    "        else",
+    "            move the middle key up into the parent",
+    "        node ← node's parent",
+  ],
+  "classic-search": [
+    "ALGORITHM BTreeSearch(node, K)",
+    "    while node ≠ null do            // disk read",
+    "        i ← first position with K ≤ node.key[i]",
+    "        if node.key[i] = K then return found",
+    "        node ← node.child[i]",
+    "    return not found",
+  ],
+};
+/* line indices per listing */
+const LN = {
+  plus: { desc: [1], place: 2, over: [4, 5], split: 6, sepLeaf: 7, sepIn: 8, root: [9, 10], up: [11, 12], sDesc: [2, 3, 4], sLeaf: 5, sStart: 1 },
+  classic: { desc: [1], place: 2, over: [4], split: 5, sepLeaf: 5, sepIn: 5, root: [6, 7], up: [8, 9], sDesc: [1, 2, 4], sLeaf: 3, sStart: 1 },
+};
+
+/* ------------------------------------------------------------- helpers */
+const node = (keys, kids) => ({ id: "b" + uid++, keys, kids: kids || [] });
+const clone = (t) => (t ? JSON.parse(JSON.stringify(t)) : null);
+const isLeaf = (t) => !t.kids.length;
+function height(t) { let h = 0; while (t && t.kids.length) { t = t.kids[0]; h++; } return t ? h : -1; }
+function stats(t) {
+  let nodes = 0, all = 0, rec = 0;
+  (function w(x) { if (!x) return; nodes++; all += x.keys.length; if (isLeaf(x)) rec += x.keys.length; x.kids.forEach(w); })(t);
+  return { nodes, all, rec: VAR === "plus" ? rec : all };
+}
+function bound(nAll) {
+  const b = Math.ceil(M / 2);
+  if (nAll < 1) return 0;
+  return Math.max(0, Math.floor(Math.log((nAll + 1) / 4) / Math.log(b) + 1e-9)) + 1;
+}
+const leafCap = () => M - 1;
+const bisectRight = (a, k) => { let i = 0; while (i < a.length && a[i] <= k) i++; return i; };
+
+/* ------------------------------------------------------------- recorder */
+function Rec() {
+  const R = {
+    tree: clone(CUR), frames: [], splits: 0, reads: 0, cmp: 0, asks: 0, hist: HIST.slice(),
+    push(code, line, st, text, extra) {
+      R.frames.push(Object.assign({ tree: clone(R.tree), code, line, st: st || {}, keySt: {}, ghost: null, text, ask: null, splits: R.splits, reads: R.reads, cmp: R.cmp, hist: R.hist.slice() }, extra || {}));
+    },
+  };
+  return R;
+}
+function childIndex(t, K) {
+  if (VAR === "plus") return bisectRight(t.keys, K);
+  let i = 0; while (i < t.keys.length && K > t.keys[i]) i++; return i;
+}
+/* descend from the root to a leaf, recording one frame per node read */
+function descend(R, K, code, forInsert) {
+  const ln = LN[VAR];
+  const path = [];
+  let t = R.tree;
+  while (t) {
+    path.push(t);
+    R.reads++;
+    const leaf = isLeaf(t);
+    const cmpSt = {};
+    let i;
+    if (VAR === "plus" && !leaf) {
+      i = bisectRight(t.keys, K);
+      for (let k = 0; k < Math.min(t.keys.length, i + 1); k++) { cmpSt[k] = "compare"; R.cmp++; }
+      const why = i === 0 ? `${K} < ${t.keys[0]}` : i === t.keys.length ? `${K} ≥ ${t.keys[i - 1]}` : `${t.keys[i - 1]} ≤ ${K} < ${t.keys[i]}`;
+      R.push(code, forInsert ? ln.desc : ln.sDesc, { [t.id]: "active" }, `Disk read ${R.reads}: node [${t.keys.join(", ")}]. ${why}, so follow child pointer ${i}.`, { ghost: { key: K, at: t.id }, keySt: { [t.id]: cmpSt } });
+      t = t.kids[i];
+      continue;
+    }
+    // leaf (either variant) or classic internal node: compare keys in order
+    i = 0;
+    let found = false;
+    while (i < t.keys.length) { R.cmp++; cmpSt[i] = "compare"; if (K === t.keys[i]) { found = true; cmpSt[i] = "done"; break; } if (K < t.keys[i]) break; i++; }
+    if (found) {
+      R.push(code, forInsert ? ln.desc : ln.sLeaf, { [t.id]: "active" }, `Disk read ${R.reads}: node [${t.keys.join(", ")}] contains ${K}.`, { ghost: { key: K, at: t.id }, keySt: { [t.id]: cmpSt } });
+      return { path, found: t };
+    }
+    if (leaf) {
+      R.push(code, forInsert ? ln.desc : ln.sLeaf, { [t.id]: "active" }, `Disk read ${R.reads}: leaf [${t.keys.join(", ")}]. ${K} is not here${forInsert ? `, so this is the leaf where it belongs` : ""}.`, { ghost: { key: K, at: t.id }, keySt: { [t.id]: cmpSt } });
+      return { path, found: null };
+    }
+    R.push(code, forInsert ? ln.desc : ln.sDesc, { [t.id]: "active" }, `Disk read ${R.reads}: node [${t.keys.join(", ")}]. ${K} is not here; go down child pointer ${i}.`, { ghost: { key: K, at: t.id }, keySt: { [t.id]: cmpSt } });
+    t = t.kids[i];
+  }
+  return { path, found: null };
+}
+function wouldSplit(K) {
+  if (!CURR_FOR_PRED) return false;
+  let t = CURR_FOR_PRED;
+  while (!isLeaf(t)) t = t.kids[childIndex(t, K)];
+  return t.keys.length >= (VAR === "plus" ? leafCap() : M - 1);
+}
+let CURR_FOR_PRED = null;
+
+function insert(R, K) {
+  const code = VAR + "-insert", ln = LN[VAR];
+  if (!R.tree) {
+    R.tree = node([K]);
+    R.push(code, ln.place, { [R.tree.id]: "done" }, `The tree is empty: ${K} becomes the only key of a one-node tree (the root is a leaf).`);
+    return;
+  }
+  CURR_FOR_PRED = R.tree;
+  const willSplit = wouldSplit(K);
+  let ask = null;
+  if (R.asks < 3) {
+    R.asks++;
+    ask = { q: `Will inserting <b>${K}</b> cause a split?`, opts: ["Yes, its leaf is full", "No, there is room"], ans: willSplit ? 0 : 1, why: willSplit ? `The target leaf already holds the maximum ${VAR === "plus" ? leafCap() : M - 1} keys.` : `The target leaf has a free slot.` };
+  }
+  const startReads = R.reads;
+  R.push(code, ln.desc, {}, `Insert <b>${K}</b>. First search for the leaf where it belongs.`, { ghost: { key: K, at: R.tree.id }, ask });
+  const { path, found } = descend(R, K, code, true);
+  if (found) { R.push(code, ln.desc, { [found.id]: "compare" }, `${K} is already stored; keys are distinct, so nothing changes.`); return; }
+  let t = path[path.length - 1];
+  t.keys.push(K); t.keys.sort((a, b) => a - b);
+  const cap = VAR === "plus" ? leafCap() : M - 1;
+  if (t.keys.length <= cap) {
+    R.push(code, ln.place, { [t.id]: "done" }, `The leaf has room (at most ${cap} keys): place ${K} in sorted order. Done after ${R.reads - startReads} disk read${R.reads - startReads > 1 ? "s" : ""} and no splits.`, { keySt: { [t.id]: { [t.keys.indexOf(K)]: "done" } } });
+    return;
+  }
+  R.push(code, [ln.place, ...ln.over], { [t.id]: "swap" }, `The leaf now holds ${t.keys.length} keys, one more than the ${cap} allowed. It overflows and must split.`, { keySt: { [t.id]: { [t.keys.indexOf(K)]: "done" } } });
+  let depth = path.length - 1;
+  for (;;) {
+    const leaf = isLeaf(t);
+    const overflow = leaf ? t.keys.length > cap : VAR === "plus" ? t.kids.length > M : t.keys.length > M - 1;
+    if (!overflow) break;
+    let right, sep, how;
+    if (VAR === "plus" && leaf) {
+      const cut = Math.ceil(t.keys.length / 2);
+      right = node(t.keys.slice(cut));
+      t.keys = t.keys.slice(0, cut);
+      sep = right.keys[0];
+      how = `The leaf splits into [${t.keys.join(", ")}] and [${right.keys.join(", ")}]. The smallest key of the right half, ${sep}, is <i>copied</i> up as a separator (the record itself stays in the leaf).`;
+    } else {
+      const mid = Math.floor(t.keys.length / 2);
+      sep = t.keys[mid];
+      right = node(t.keys.slice(mid + 1), t.kids.length ? t.kids.slice(mid + 1) : []);
+      t.kids = t.kids.length ? t.kids.slice(0, mid + 1) : [];
+      t.keys = t.keys.slice(0, mid);
+      how = `The node splits into [${t.keys.join(", ")}] and [${right.keys.join(", ")}], and the middle key ${sep} <i>moves</i> up.`;
+    }
+    R.splits++;
+    if (depth === 0) {
+      R.tree = node([sep], [t, right]);
+      R.push(code, [VAR === "plus" && leaf ? ln.sepLeaf : ln.sepIn, ...ln.root], { [R.tree.id]: "pivot", [t.id]: "done", [right.id]: "done" }, `${how} It was the root, so a new root holding ${sep} is created. The tree grew one level taller, at the top, so all leaves are still on one level.`,
+        { keySt: { [R.tree.id]: { 0: "pivot" } } });
+      break;
+    }
+    const parent = path[depth - 1];
+    const pos = parent.kids.indexOf(t);
+    parent.keys.splice(pos, 0, sep);
+    parent.kids.splice(pos + 1, 0, right);
+    const pOver = VAR === "plus" ? parent.kids.length > M : parent.keys.length > M - 1;
+    R.push(code, [VAR === "plus" && leaf ? ln.sepLeaf : ln.sepIn, ...ln.up], { [parent.id]: pOver ? "swap" : "active", [t.id]: "done", [right.id]: "done" },
+      `${how} ${sep} goes into the parent, which now has ${parent.kids.length} children.` + (pOver ? ` That is more than m = ${M}, so the parent overflows and splits too.` : ` That is within m = ${M}: done.`),
+      { keySt: { [parent.id]: { [parent.keys.indexOf(sep)]: "pivot" } } });
+    t = parent; depth--;
+  }
+}
+function search(R, K) {
+  const code = VAR + "-search", ln = LN[VAR];
+  if (!R.tree) { R.push(code, 0, {}, "The tree is empty."); return; }
+  let ask = null;
+  if (!isLeaf(R.tree)) {
+    const i = childIndex(R.tree, K), nk = R.tree.kids.length;
+    ask = { q: `At the root [${R.tree.keys.join(", ")}], which child pointer will the search for <b>${K}</b> follow?`, opts: Array.from({ length: nk }, (_, j) => "child " + j), ans: i, why: VAR === "plus" ? `Count the root keys that are ≤ ${K}: ${i}.` : `Pointer ${i} leads to the keys between the neighbors of ${K}${R.tree.keys.includes(K) ? " (unless the root itself holds it)" : ""}.` };
+    if (VAR === "classic" && R.tree.keys.includes(K)) ask = null;
+  }
+  R.push(code, ln.sStart, {}, `Search for <b>${K}</b>, counting disk reads (one per node).`, { ghost: { key: K, at: R.tree.id }, ask });
+  const r = descend(R, K, code, false);
+  const h = height(R.tree);
+  if (r.found) R.push(code, ln.sLeaf, { [r.found.id]: "done" }, `Found ${K} after ${R.reads} disk read${R.reads > 1 ? "s" : ""}. ${VAR === "plus" ? `In Levitin's version every search goes down to a leaf, so it always costs h + 1 = ${h + 1} reads.` : `The height is ${h}, so no search needs more than h + 1 = ${h + 1} reads.`}`);
+  else R.push(code, VAR === "plus" ? ln.sLeaf : 5, {}, `${K} is not in the tree. Cost: ${R.reads} disk read${R.reads > 1 ? "s" : ""} (the tree has height ${h}).`);
+}
+
+/* ---------------------------------------------------------------- render */
+function finalize(frames) {
+  let W = 380, depth = 0;
+  frames.forEach((f) => { if (f.tree) { const l = FX.layoutMulti(f.tree, 30, 14, 0, 1); W = Math.max(W, l.width + 110); depth = Math.max(depth, l.depth); } });
+  frames.forEach((f) => { f.W = W; f.H = 70 + Math.max(depth, 1) * 82 + 40; });
+  return frames;
+}
+function render(f) {
+  const nodes = [], edges = [], top = 58, gap = 82;
+  const t = f.tree;
+  let L = null;
+  if (t) {
+    L = FX.layoutMulti(t, 30, 14, top, gap);
+    const off = 70 + (f.W - 70 - L.width) / 2;
+    (function walk(n) {
+      const p = L.pos[n.id];
+      nodes.push({ id: n.id, x: p.x + off, y: p.y, keys: n.keys, cw: 30, h: 30, state: f.st[n.id] || null, keyState: f.keySt[n.id], fs: 12 });
+      n.kids.forEach((c, i) => { edges.push({ from: n.id, to: c.id, slot: i, state: f.st[c.id] === "active" && f.st[n.id] === "active" ? "active" : null }); walk(c); });
+    })(t);
+    if (f.ghost) {
+      const host = nodes.find((n) => n.id === f.ghost.at);
+      if (host) nodes.push({ id: "ghost", x: host.x - host.keys.length * 15 - 24, y: host.y - 28, label: f.ghost.key, state: "ember", r: 14, fs: 11 });
+    }
+  }
+  view.draw({
+    W: f.W, H: f.H, nodes, edges,
+    under(g) {
+      if (!t) { g.appendChild(Forge.svg("text", { x: f.W / 2, y: 90, "text-anchor": "middle", fill: "var(--muted)" }, "(empty tree)")); return; }
+      for (let d = 0; d <= L.depth; d++) {
+        g.appendChild(Forge.svg("text", { x: 10, y: top + d * gap + 4, "font-size": 11, fill: "var(--muted)" }, d === 0 ? "root" : d === L.depth ? "leaves" : "level " + d));
+        g.appendChild(Forge.svg("text", { x: 10, y: top + d * gap + 18, "font-size": 10, fill: "var(--muted)" }, "read " + (d + 1)));
+      }
+    },
+  });
+  codes.show(f.code, LISTS[f.code]).highlight(f.line);
+  const s = stats(t), h = t ? height(t) : "–";
+  const c = { "records n": s.rec, "height h": h, nodes: s.nodes, "splits (op)": f.splits, "disk reads (op)": f.reads, "bound on h": t ? bound(s.all) : "–" };
+  const keys = Object.keys(c).join("|");
+  if (keys !== ctrKeys) { $("ctr").innerHTML = ""; ctr = Forge.counters($("ctr"), c); ctrKeys = keys; }
+  ctr.set(c);
+  say.say(f.text);
+  drawHist(f.hist);
+}
+function drawHist(hist) {
+  const svg = $("hchart"), S = Forge.svg, W = 700, H = 150, pl = 34, pr = 12, pt = 12, pb = 28;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.innerHTML = "";
+  if (!hist.length) { svg.appendChild(S("text", { x: W / 2, y: H / 2, "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" }, "Insert keys to see the height grow.")); return; }
+  const nMax = Math.max(10, hist[hist.length - 1][0]);
+  const hMax = Math.max(3, ...hist.map((p) => Math.max(p[1], p[2])));
+  const X = (n) => pl + (n / nMax) * (W - pl - pr), Y = (v) => pt + (1 - v / hMax) * (H - pt - pb);
+  for (let v = 0; v <= hMax; v++) {
+    svg.appendChild(S("line", { x1: pl, x2: W - pr, y1: Y(v), y2: Y(v), stroke: "var(--line)" }));
+    svg.appendChild(S("text", { x: pl - 8, y: Y(v) + 4, "text-anchor": "end", "font-size": 11, fill: "var(--muted)" }, String(v)));
+  }
+  svg.appendChild(S("text", { x: (pl + W) / 2, y: H - 4, "text-anchor": "middle", "font-size": 11, fill: "var(--ink-2)" }, "records n"));
+  let dH = "", dB = "";
+  hist.forEach(([n, h, b], i) => {
+    const prev = hist[i - 1];
+    dH += i ? `L${X(n)} ${Y(prev[1])} L${X(n)} ${Y(h)}` : `M${X(n)} ${Y(h)}`;
+    dB += i ? `L${X(n)} ${Y(prev[2])} L${X(n)} ${Y(b)}` : `M${X(n)} ${Y(b)}`;
+  });
+  svg.appendChild(S("path", { d: dB, fill: "none", stroke: "var(--ember)", "stroke-width": 2, "stroke-dasharray": "6 4" }));
+  svg.appendChild(S("path", { d: dH, fill: "none", stroke: "var(--c-active)", "stroke-width": 2.5 }));
+  const last = hist[hist.length - 1];
+  svg.appendChild(S("circle", { cx: X(last[0]), cy: Y(last[1]), r: 4.5, fill: "var(--c-active)", stroke: "var(--panel)", "stroke-width": 2 }));
+}
+const player = Forge.player($("player"), { frames: [], render: (f, i) => { render(f); pred.update(f, i); } });
+
+/* ---------------------------------------------------------------- actions */
+function afterInsert(R) {
+  const s = stats(R.tree);
+  const h = height(R.tree);
+  if (!R.hist.length || R.hist[R.hist.length - 1][0] !== s.rec) R.hist.push([s.rec, h, bound(s.all)]);
+  R.frames[R.frames.length - 1].hist = R.hist.slice();
+}
+function play(R) {
+  CUR = clone(R.tree);
+  HIST = R.hist.slice();
+  pred.reset();
+  player.load(finalize(R.frames));
+}
+function build(keys) {
+  CUR = null; HIST = [];
+  view.reset();
+  const R = Rec();
+  R.push(VAR + "-insert", [], {}, `Build a B-tree of order m = ${M} (${VAR === "plus" ? `Levitin's version: records in leaves, at most ${M - 1} per leaf; inner nodes up to ${M} children` : `classic: at most ${M - 1} keys per node`}) by inserting ${keys.length} keys one at a time.`);
+  for (const k of keys) { R.reads = 0; insert(R, k); afterInsert(R); }
+  const s = stats(R.tree);
+  R.push(VAR + "-insert", [], {}, `Built: ${s.rec} records, ${s.nodes} nodes, height ${height(R.tree)}, ${R.splits} splits in total. Any search now costs at most ${height(R.tree) + 1} disk reads. Press ⏮ and ▶ to replay the build.`);
+  play(R);
+}
+function one(op, K) {
+  const R = Rec();
+  if (op === "ins") {
+    if (stats(CUR).rec >= 60) { say.say("The lab holds up to 60 keys. Build again to start over."); return; }
+    insert(R, K); afterInsert(R);
+  } else search(R, K);
+  play(R);
+}
+function readKeys() {
+  const seen = new Set();
+  const a = FX.nums($("inp").value).map((x) => Math.round(x)).filter((x) => !seen.has(x) && seen.add(x)).slice(0, 40);
+  $("inp").value = a.join(", ");
+  return a.length ? a : DEFAULT;
+}
+$("m").oninput = (e) => { M = +e.target.value; $("mLabel").textContent = M; };
+$("m").onchange = () => build(readKeys());
+$("variant").onchange = (e) => { VAR = e.target.value; ctrKeys = ""; codes.clear(); build(readKeys()); };
+$("build").onclick = () => build(readKeys());
+$("inp").addEventListener("keydown", (e) => { if (e.key === "Enter") build(readKeys()); });
+$("rand").onclick = () => { const s = new Set(); while (s.size < 15) s.add(1 + Math.floor(Math.random() * 99)); $("inp").value = [...s].join(", "); build([...s]); };
+$("asc").onclick = () => { const a = Array.from({ length: 20 }, (_, i) => i + 1); $("inp").value = a.join(", "); build(a); };
+$("ins").onclick = () => { const K = Math.round(Number($("key").value)); if (Number.isFinite(K)) one("ins", K); };
+$("find").onclick = () => { const K = Math.round(Number($("key").value)); if (Number.isFinite(K)) one("find", K); };
+$("key").addEventListener("keydown", (e) => { if (e.key === "Enter") $("find").click(); });
+$("grow").onclick = () => {
+  const have = new Set();
+  (function w(x) { if (!x) return; x.keys.forEach((k) => have.add(k)); x.kids.forEach(w); })(CUR);
+  const add = [];
+  while (add.length < 10 && have.size + add.length < 199) { const k = 1 + Math.floor(Math.random() * 199); if (!have.has(k) && !add.includes(k)) add.push(k); }
+  if (stats(CUR).rec + add.length > 60) { say.say("The lab holds up to 60 keys. Build again to start over."); return; }
+  const R = Rec();
+  R.push(VAR + "-insert", [], {}, `Insert 10 random keys: ${add.join(", ")}.`);
+  for (const k of add) { R.reads = 0; insert(R, k); afterInsert(R); }
+  R.push(VAR + "-insert", [], {}, `Now ${stats(R.tree).rec} records at height ${height(R.tree)}.`);
+  play(R);
+};
+
+/* disk-access calculator */
+function disk() {
+  const e = +$("e").value, m = +$("bigm").value, N = 10 ** e;
+  $("eLabel").textContent = e;
+  const b = Math.ceil(m / 2);
+  const hb = Math.floor(Math.log((N + 1) / 4) / Math.log(b) + 1e-9) + 1;
+  const bin = Math.ceil(Math.log2(N + 1));
+  const typical = Math.max(1, Math.ceil(Math.log(N) / Math.log(0.69 * m)));
+  const cell = (k, v, note) => `<div class="counter"><div class="k">${k}</div><div class="v">${v}</div><div class="small muted">${note}</div></div>`;
+  $("disk").innerHTML =
+    cell("B-tree height bound", hb, `h ≤ ⌊log<sub>${b}</sub>((N+1)/4)⌋ + 1`) +
+    cell("max page reads", hb + 1, "one per level: h + 1") +
+    cell("typical height", typical, "rough: nodes ~69% full, log<sub>0.69m</sub> N") +
+    cell("balanced binary tree", bin, "levels = ⌈log₂(N + 1)⌉ reads");
+}
+$("e").oninput = disk;
+$("bigm").onchange = disk;
+disk();
+build(DEFAULT);
+player.go(player.frames.length - 1);   // open on the finished tree; ⏮ replays the build
+</script>
+</body>
+</html>
