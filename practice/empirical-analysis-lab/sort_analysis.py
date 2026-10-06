@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""sort_analysis.py — Python twin of SortAnalysis.java (CSC 501 empirical-analysis project).
+"""sort_analysis.py — Python twin of SortAnalysis.java (empirical-analysis lab, Levitin §2.6).
 
 For each n in 1000, 1500, ..., 9500 it sorts TRIALS random arrays with insertion sort and records
 the CORRECT comparison count (every evaluation of A[j] > v), the count the original buggy counter
 would report, and the wall-clock time of an uninstrumented sort in milliseconds.
 
 Python is roughly 50-100x slower than Java here, so the default number of trials is 20 (to match
-the assignment) but you may want `--trials 3` while experimenting.
+the Java run) but you may want `--trials 3` while experimenting.
 
 Usage:
     python3 sort_analysis.py                          # 20 trials per size -> results/python/
@@ -42,7 +42,7 @@ def sort_analysis(a: list) -> int:
 
 
 def buggy_sort_analysis(a: list) -> int:
-    """The handout's original counter: counts only TRUE comparisons (i.e. shifts)."""
+    """The original counter from Levitin Exercise 2.6.1: counts only TRUE comparisons (i.e. shifts)."""
     count = 0
     for i in range(1, len(a)):
         v = a[i]

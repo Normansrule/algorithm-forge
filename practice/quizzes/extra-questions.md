@@ -2,7 +2,7 @@
 
 Forty more multiple-choice questions written for Algorithm Forge, in the same format as the
 [quiz bank](README.md). They also appear in the interactive quiz at
-<https://normansrule.github.io/algorithm-forge/quiz.html>, together with the course quizzes. Every numeric answer
+<https://normansrule.github.io/algorithm-forge/quiz.html>, together with the rest of the quiz bank. Every numeric answer
 was worked out by hand and checked with a short script.
 
 ---

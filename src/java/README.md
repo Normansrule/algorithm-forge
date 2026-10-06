@@ -5,7 +5,7 @@ plain Java 17 — no Maven, no Gradle, no libraries. Every class lives in the `a
 method's Javadoc gives the Levitin section and its running time.
 
 These files mirror the tested Python library in [`../python`](../python/README.md). Use whichever language
-your course or interview needs; the algorithms and their names line up.
+your project or interview needs; the algorithms and their names line up.
 
 ## Compile and run (Ubuntu, macOS, Windows Subsystem for Linux (WSL))
 

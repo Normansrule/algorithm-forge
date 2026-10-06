@@ -1,4 +1,4 @@
-# Lesson 13 · Advanced Data Structures (Beyond the Textbook)
+# Chapter 13 · Advanced Data Structures (Beyond the Textbook)
 
 > **Why this matters.** Levitin gives you the classic toolbox: arrays, linked lists, stacks, queues, heaps, Binary Search Trees (BSTs), Adelson-Velsky and Landis (AVL) trees, 2-3 trees, hash tables and B-trees (Levitin §1.4, §6.3, §6.4, §7.3, §7.4). Professional code leans on a second layer built from those parts: arrays that grow for free, sets that merge in almost constant time, trees that answer "sum of this range?" in $O(\log n)$, Least Recently Used (LRU) caches that forget the right thing, and storage engines (B+-trees and Log-Structured Merge trees (LSM-trees)) that survive billions of writes. This lesson builds that second layer, one card at a time.
 
@@ -1620,7 +1620,7 @@ class ToyLSM {
 - **Sedgewick & Wayne, *Algorithms*, 4th ed.**: [Section 1.5 Union-Find](https://algs4.cs.princeton.edu/15uf/) and [Section 3.3 Balanced Search Trees](https://algs4.cs.princeton.edu/33balanced/) (left-leaning red-black trees).
 - **cp-algorithms.com** pages: [Disjoint Set Union](https://cp-algorithms.com/data_structures/disjoint_set_union.html), [Fenwick Tree](https://cp-algorithms.com/data_structures/fenwick.html), [Segment Tree](https://cp-algorithms.com/data_structures/segment_tree.html), [Treap (Cartesian tree)](https://cp-algorithms.com/data_structures/treap.html).
 - **VisuAlgo** animations: [Union-Find Disjoint Sets](https://visualgo.net/en/ufds), [Fenwick Tree](https://visualgo.net/en/fenwicktree), [Segment Tree](https://visualgo.net/en/segmenttree).
-- **Massachusetts Institute of Technology (MIT) OpenCourseWare** [6.006 Introduction to Algorithms (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/) and [6.046J Design and Analysis of Algorithms (Spring 2015)](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/) (lectures on union-find, skip lists, amortization).
+- **Massachusetts Institute of Technology (MIT) OpenCourseWare** [6.006 Introduction to Algorithms (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/) and [6.046J Design and Analysis of Algorithms (Spring 2015)](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/) (video sessions on union-find, skip lists, amortization).
 - **William Fiset** (YouTube): data-structure playlists on union-find, Fenwick trees and segment trees.
 - **Martin Kleppmann, *Designing Data-Intensive Applications***, Chapter 3 "Storage and Retrieval": the clearest explanation of B-trees vs LSM-trees.
 - **Classic papers** (all in English): W. Pugh, "Skip Lists: A Probabilistic Alternative to Balanced Trees" (1990); R. E. Tarjan, "Efficiency of a Good But Not Linear Set Union Algorithm" (1975); P. Fenwick, "A New Data Structure for Cumulative Frequency Tables" (1994); P. O'Neil et al., "The Log-Structured Merge-Tree (LSM-Tree)" (1996).

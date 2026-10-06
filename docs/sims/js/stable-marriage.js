@@ -95,7 +95,7 @@
 
   const MEN = ["Bob", "Jim", "Tom", "Dan", "Sam"], WOMEN = ["Ann", "Lea", "Sue", "Eve", "Kim"];
   const PRESETS = {
-    course: "Bob: Lea Ann Sue\nJim: Lea Sue Ann\nTom: Sue Lea Ann\nAnn: Jim Tom Bob\nLea: Tom Bob Jim\nSue: Jim Tom Bob",
+    levitin: "Bob: Lea Ann Sue\nJim: Lea Sue Ann\nTom: Sue Lea Ann\nAnn: Jim Tom Bob\nLea: Tom Bob Jim\nSue: Jim Tom Bob",
     cyclic: "Bob: Ann Lea Sue\nJim: Lea Sue Ann\nTom: Sue Ann Lea\nAnn: Jim Tom Bob\nLea: Tom Bob Jim\nSue: Bob Jim Tom",
   };
   const LINES_M = [
@@ -345,6 +345,6 @@
   $("useW").onclick = () => { build = Array(inst.men.length).fill(-1); results.women.forEach(([m, w]) => (build[m] = w)); checkBuild(); };
   $("clearB").onclick = () => { build = Array(inst.men.length).fill(-1); checkBuild(); };
   $("allbox").addEventListener("toggle", () => { if ($("allbox").open) allTable(); });
-  $("prefs").value = PRESETS.course;
+  $("prefs").value = PRESETS.levitin;
   load();
 })();

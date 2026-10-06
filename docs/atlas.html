@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Algorithm Atlas · Algorithm Forge</title>
+<meta name="description" content="The Algorithm Atlas: for each family of algorithms, the ladder from the first easy idea through the classic textbook algorithm to what production systems ship and the newest research results.">
+<link rel="stylesheet" href="assets/css/forge.css">
+<link rel="stylesheet" href="atlas/atlas.css">
+<script src="assets/js/forge-kit.js"></script>
+</head>
+<body>
+<main class="wrap" id="atlas-root">
+
+  <section class="a-hero" aria-labelledby="a-title">
+    <div class="a-hero-text">
+      <h1 id="a-title"><span>From first idea</span> <span>to the research</span> <span>frontier</span></h1>
+      <p class="a-lead">Every family of algorithms has a ladder. The bottom rung is the idea you could invent with pencil and paper; the top rung is a result from the last few years. Pick a family and climb it one rung at a time: each step says what the previous one could not do.</p>
+      <p class="a-stats" id="hero-stats"></p>
+    </div>
+    <div class="a-hero-art">
+      <svg id="hero-art" viewBox="0 0 560 330" role="img" aria-label="A metro line climbing like a staircase through five numbered stations: first idea, classic, advanced, in production, research frontier.">
+        <defs>
+          <linearGradient id="a-heat" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" style="stop-color:var(--st-first)"/>
+            <stop offset=".3" style="stop-color:var(--st-classic)"/>
+            <stop offset=".52" style="stop-color:var(--st-advanced)"/>
+            <stop offset=".74" style="stop-color:var(--st-production)"/>
+            <stop offset="1" style="stop-color:var(--st-frontier)"/>
+          </linearGradient>
+          <linearGradient id="a-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style="stop-color:var(--st-production);stop-opacity:.16"/>
+            <stop offset="1" style="stop-color:var(--st-classic);stop-opacity:0"/>
+          </linearGradient>
+          <radialGradient id="a-glow">
+            <stop offset="0" style="stop-color:var(--st-frontier);stop-opacity:.55"/>
+            <stop offset="1" style="stop-color:var(--st-frontier);stop-opacity:0"/>
+          </radialGradient>
+        </defs>
+        <g class="ha-grid" aria-hidden="true">
+          <path d="M20 300H548M20 245H548M20 190H548M20 135H548M20 80H548"/>
+        </g>
+        <path class="ha-fill" d="M20 280H110L165 225H225L280 170H340L395 115H455L510 60H548V312H20Z" fill="url(#a-fill)"/>
+        <path class="ha-risers" d="M165 225V312M280 170V312M395 115V312M510 60V312" />
+        <path class="ha-line-bg" d="M20 280H110L165 225H225L280 170H340L395 115H455L510 60H548"/>
+        <path class="ha-line" pathLength="1" d="M20 280H110L165 225H225L280 170H340L395 115H455L510 60H548" stroke="url(#a-heat)"/>
+        <circle class="ha-glow" cx="510" cy="60" r="44" fill="url(#a-glow)"/>
+        <g class="ha-sparks" style="stroke:var(--st-frontier)">
+          <path d="M510 24v-10M538 38l7-7M482 38l-7-7M546 60h10"/>
+        </g>
+        <g class="ha-st" style="--sc:var(--st-first);--d:.15s"><circle cx="50" cy="280" r="14"/><text x="50" y="285">1</text><text class="ha-lbl" x="38" y="314" data-stage-label="0">First idea</text></g>
+        <g class="ha-st" style="--sc:var(--st-classic);--d:.45s"><circle cx="165" cy="225" r="14"/><text x="165" y="230">2</text><text class="ha-lbl" x="153" y="259" data-stage-label="1">Classic</text></g>
+        <g class="ha-st" style="--sc:var(--st-advanced);--d:.75s"><circle cx="280" cy="170" r="14"/><text x="280" y="175">3</text><text class="ha-lbl" x="268" y="204" data-stage-label="2">Advanced</text></g>
+        <g class="ha-st" style="--sc:var(--st-production);--d:1.05s"><circle cx="395" cy="115" r="14"/><text x="395" y="120">4</text><text class="ha-lbl" x="383" y="149" data-stage-label="3">In production</text></g>
+        <g class="ha-st ha-top" style="--sc:var(--st-frontier);--d:1.35s"><circle cx="510" cy="60" r="16"/><text x="510" y="65">5</text><text class="ha-lbl end" x="484" y="54" data-stage-label="4">Research frontier</text></g>
+      </svg>
+    </div>
+  </section>
+
+  <ol class="stage-legend" id="stage-legend" aria-label="The five stages, in order"></ol>
+
+  <p class="callout steel a-note" id="atlas-fixture-note" hidden>Showing three sample families while the full atlas data is being prepared.</p>
+  <p class="callout a-note" id="atlas-missing" role="alert" hidden></p>
+
+  <div class="toolbar" id="toolbar">
+    <div class="seg" role="group" aria-label="View">
+      <button type="button" data-view="families" aria-pressed="true">Families</button>
+      <button type="button" data-view="timeline" aria-pressed="false">Timeline</button>
+    </div>
+    <label class="search">
+      <span class="sr-only">Search families and algorithms</span>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l4 4"/></svg>
+      <input type="search" id="atlas-search" placeholder="Search: Dijkstra, hashing, sorting…" autocomplete="off">
+    </label>
+    <div class="st-chips" id="stage-chips" role="group" aria-label="Show stage"></div>
+  </div>
+
+  <section id="grid-view" aria-label="Algorithm families">
+    <p class="grid-count" id="grid-count" aria-live="polite"></p>
+    <div class="fam-grid" id="fam-grid"></div>
+    <div class="grid-empty" id="grid-empty" hidden>
+      <p>No family matches that search and stage.</p>
+      <button type="button" class="btn sm" onclick="document.getElementById('atlas-search').value='';document.getElementById('atlas-search').dispatchEvent(new Event('input'));document.querySelector('.st-chip[data-stage=all]').click()">Clear search and stage</button>
+    </div>
+  </section>
+
+  <section id="timeline-view" aria-labelledby="tl-title" hidden>
+    <div class="tl-head">
+      <div>
+        <h2 id="tl-title">Every rung on one timeline</h2>
+        <p class="muted">Each lane is one family; each dot is one rung placed at the year it was published or first shipped. The larger dots are research-frontier results.</p>
+      </div>
+      <div class="tl-legend" id="tl-legend"></div>
+    </div>
+    <div class="tl-chart panel" id="tl-chart"></div>
+    <p class="muted small" id="tl-note"></p>
+  </section>
+
+  <section id="family-view" aria-label="Family ladder" hidden></section>
+
+</main>
+<script>Forge.page({ title: "Algorithm Atlas" });</script>
+<script src="atlas/atlas-data.js"></script>
+<script src="atlas/atlas.js"></script>
+</body>
+</html>

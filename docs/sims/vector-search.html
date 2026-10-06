@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector Search · Algorithm Forge</title>
+<meta name="description" content="Nearest-neighbor search from brute force to HNSW: k-d tree branch-and-bound with pruned regions, locality-sensitive hashing with random hyperplanes, and a multi-layer HNSW graph searched layer by layer, with distance-computation counters and a recall versus speed table.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/vector-search-core.js"></script>
+<style>
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes .btn.on { background: var(--ember); border-color: var(--ember); color: #1b0f05; }
+  label.field { min-width: 0; max-width: 100%; }
+  .stage.square { max-width: 620px; margin: 0 auto; cursor: crosshair; touch-action: manipulation; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; }
+  .seg button { background: var(--panel-2); color: var(--ink-2); border: 0; padding: 6px 10px; font: 600 .82rem var(--font); cursor: pointer; }
+  .seg button.on { background: var(--steel); color: #04121f; }
+  .layers { display: flex; flex-direction: column-reverse; gap: 4px; font-family: var(--mono); font-size: .82rem; }
+  .layers .ly { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-radius: 6px; border: 1px solid transparent; }
+  .layers .ly.on { border-color: var(--ember); background: var(--ember-soft); }
+  .layers .ly .bar { height: 10px; border-radius: 3px; background: var(--c-bar); }
+  table.t.bench td, table.t.bench th { text-align: right; }
+  table.t.bench td:first-child, table.t.bench th:first-child { text-align: left; }
+  table.t.bench td.good { color: var(--c-done); font-weight: 700; }
+  table.t.bench td.meh { color: var(--warn); font-weight: 700; }
+  .dbar { display: inline-block; height: 8px; border-radius: 3px; background: var(--steel); vertical-align: middle; margin-left: 6px; }
+  .refs li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 18 · The Frontier</div>
+    <h1>Nearest-neighbor search: from brute force to HNSW</h1>
+    <p class="lead muted">Search engines, recommenders and Retrieval-Augmented Generation (RAG) systems turn items into vectors and ask "which stored vectors are closest to this one?" Four ways to answer, from checking everything to a Hierarchical Navigable Small World (HNSW) graph — and the price each one pays.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="modes" role="tablist" aria-label="Method">
+      <button class="btn on" data-mode="brute" role="tab">Brute force</button>
+      <button class="btn" data-mode="kd" role="tab">k-d tree</button>
+      <button class="btn" data-mode="lsh" role="tab">Locality-sensitive hashing (LSH)</button>
+      <button class="btn" data-mode="hnsw" role="tab">HNSW graph</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field">Points n = <b id="nOut">150</b><input type="range" id="n" min="10" max="400" value="150" style="width:140px"></label>
+      <label class="field">Seed <input type="number" id="seed" value="3" style="width:80px"></label>
+      <button class="btn" id="regen">Random clusters</button>
+      <button class="btn" id="clear">Clear points</button>
+      <label class="field">k (neighbors)
+        <select id="k"><option>1</option><option selected>3</option><option>5</option></select>
+      </label>
+      <span class="field" style="gap:4px">Clicking the plane
+        <span class="seg" role="group" aria-label="Click action"><button id="clickQ" class="on" type="button">moves the query</button><button id="clickP" type="button">adds a point</button></span>
+      </span>
+    </div>
+    <div class="row" id="optKd" style="margin-top:10px" hidden>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="kdBuild" checked> show the build (splits appear level by level)</label>
+    </div>
+    <div class="row" id="optLsh" style="margin-top:10px" hidden>
+      <label class="field">Lines per table K = <b id="KOut">8</b><input type="range" id="K" min="1" max="12" value="8" style="width:130px"></label>
+      <label class="field">Tables L = <b id="LOut">3</b><input type="range" id="L" min="1" max="8" value="3" style="width:110px"></label>
+      <span class="small muted">Each line contributes one bit; points with the same K bits share a bucket.</span>
+    </div>
+    <div class="row" id="optHnsw" style="margin-top:10px" hidden>
+      <label class="field">M (links per node) = <b id="MOut">6</b><input type="range" id="M" min="2" max="12" value="6" style="width:120px"></label>
+      <label class="field">efConstruction = <b id="efCOut">32</b><input type="range" id="efC" min="2" max="100" value="32" style="width:120px"></label>
+      <label class="field">ef (search) = <b id="efOut">10</b><input type="range" id="ef" min="1" max="64" value="10" style="width:120px"></label>
+      <label class="field">View layer
+        <select id="layerView"><option value="auto">follow the search</option></select>
+      </label>
+      <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="hnswAnim"> animate the build</label>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage square" id="stage" role="img" aria-label="Points in the plane with the query and search progress"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel" id="predictHost"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="layerPanel" hidden><div class="panel-title">HNSW layers (top = sparsest)</div><div class="layers" id="layers"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Recall vs speed, over many queries</h2>
+    <p class="muted small" style="margin-top:0"><b>Recall@k</b> = the fraction of the true k nearest neighbors a method returns (brute force is the answer key). <b>Distances / query</b> is the average number of distance computations — the expensive step when vectors have hundreds of dimensions. Uses the k, K, L, M, efConstruction and ef settings above, and 200 queries drawn near the data (seeded, so the numbers repeat).</p>
+    <div class="row">
+      <label class="field">Data
+        <select id="benchData">
+          <option value="here">The points above (2 dimensions)</option>
+          <option value="16">1,000 clustered points in 16 dimensions</option>
+          <option value="64">1,000 clustered points in 64 dimensions</option>
+        </select>
+      </label>
+      <button class="btn steel" id="benchGo">Run 200 queries</button>
+      <span class="small muted" id="benchNote"></span>
+    </div>
+    <div class="scroll-x" style="margin-top:12px"><table class="t bench" id="bench"></table></div>
+    <div class="callout steel" style="margin-top:14px">
+      <b>Why vector databases use graphs and quantization.</b> In 2 dimensions a k-d tree prunes almost everything. As the dimension grows, the query's ball crosses nearly every split line, so the tree ends up checking most points (switch the data to 64 dimensions and watch its column). Data-independent LSH needs many tables, and many candidates, to reach high recall. Graph indexes such as HNSW keep the number of distance computations small even in high dimensions, at the cost of a slower build, extra memory for links, and recall slightly below 100% (raise <i>ef</i> to buy it back). That is why libraries and databases such as Faiss, pgvector, and most dedicated vector databases offer HNSW. The other big family, used when vectors don't fit in memory, is <b>quantization</b>: an inverted file (IVF) groups vectors by their nearest of a few thousand centroids and searches only the closest groups, and product quantization (PQ) compresses each vector to a few bytes so distances can be approximated from lookup tables.
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li>The <b>orange crosshair</b> is the query q. <b>Green</b> points joined to q by lines are the current k best. <b>Yellow</b> points had their distance computed; every yellow point costs one unit in the "distances" counter. On the last frame, a <b>red ring</b> marks a true nearest neighbor the method missed.</li>
+      <li><b>k-d tree:</b> each line splits a region in half at a median point (vertical lines split on x, horizontal on y). The dashed circle is the current k-th best distance. If the circle doesn't reach a split line, everything on the other side is skipped: those regions turn grey.</li>
+      <li><b>LSH:</b> the lines of one table cut the plane into cells; a cell is a bucket. The tinted polygon is q's cell, purple points share it. Candidates (yellow) are the union over all L tables; only they get a distance computation.</li>
+      <li><b>HNSW:</b> every point is on layer 0; a point reaches layer ℓ with probability (1/M)<sup>ℓ</sup>, so upper layers are sparse "highways". The search starts at the top, walks greedily to the closest node it can reach, drops a layer, and repeats. On layer 0 it keeps a list W of the best <i>ef</i> nodes (green) and a queue of candidates to expand (purple rings). Blue = the node being expanded.</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Brute force is the baseline.</b> With n = 150, k = 3, brute force always computes exactly 150 distances. Every other method is trying to beat that number without losing recall.</li>
+      <li><b>Watch pruning.</b> In k-d tree mode, put the query inside a dense cluster. Most of the plane turns grey and the search computes only 10–25 distances. Then put the query in an empty corner: the circle is large, it crosses many lines, and the count goes up.</li>
+      <li><b>Tune LSH.</b> Set L = 1 and drag K from 1 to 12. Few lines means huge buckets (many candidates, high recall); many lines means tiny buckets that often miss the true neighbor. Then raise L: each extra table is another chance to catch it. Check the table: what K and L reach 100% recall, and how many candidates does it cost?</li>
+      <li><b>Turn the ef dial.</b> Choose the 64-dimension data and set ef = 1: with seed 3, HNSW finds about 79% of the true neighbors while computing distances to about 6% of the points. Set ef = 32: about 99% recall for about 15%. ef is picked at query time, with no rebuild. Now try M = 2: the graph is too sparse to navigate, and recall collapses whatever ef you choose.</li>
+      <li><b>The curse of dimensionality.</b> Run the benchmark on the 2-D points, then on 64 dimensions. The k-d tree goes from checking about an eighth of the points to checking almost all of them (still exact, but no faster than brute force). HNSW stays near 10%.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson 18 · The Frontier</a>
+      <a href="../atlas.html#vector-search">🗺️ Atlas · Vector search ladder</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena Level 7 · Frontier</a>
+      <a href="closest-pair-hull.html">🎮 Closest pair (brute force vs divide-and-conquer)</a>
+      <a href="hashing.html">🎮 Hashing</a>
+      <a href="bloom-filter.html">🎮 Bloom filter</a>
+      <a href="sorting-evolution.html">🎮 Sorting evolution</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>J. L. Bentley, "Multidimensional binary search trees used for associative searching", <i>Communications of the ACM</i> 18(9), 1975 — the k-d tree. J. H. Friedman, J. L. Bentley, R. A. Finkel, "An algorithm for finding best matches in logarithmic expected time", <i>ACM Transactions on Mathematical Software</i> 3(3), 1977 — branch-and-bound nearest-neighbor search.</li>
+      <li>P. Indyk, R. Motwani, "Approximate nearest neighbors: towards removing the curse of dimensionality", Symposium on Theory of Computing (STOC) 1998; M. Charikar, "Similarity estimation techniques from rounding algorithms", STOC 2002 — locality-sensitive hashing and random-hyperplane hashing. (This page adds a random offset to each hyperplane so the lines cross the data instead of all passing through the origin.)</li>
+      <li>Yu. A. Malkov, D. A. Yashunin, "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs", <a href="https://arxiv.org/abs/1603.09320">arXiv:1603.09320</a> — insertion with mL = 1/ln M, SEARCH-LAYER, the neighbor-selection heuristic, and Mmax0 = 2M, all as implemented here.</li>
+      <li>H. Jégou, M. Douze, C. Schmid, "Product quantization for nearest neighbor search", <i>IEEE Transactions on Pattern Analysis and Machine Intelligence</i> 33(1), 2011. M. Douze et al., "The Faiss library", <a href="https://arxiv.org/abs/2401.08281">arXiv:2401.08281</a>; <a href="https://github.com/facebookresearch/faiss">github.com/facebookresearch/faiss</a>.</li>
+      <li>pgvector — vector similarity search for PostgreSQL, with HNSW and IVFFlat indexes: <a href="https://github.com/pgvector/pgvector">github.com/pgvector/pgvector</a>.</li>
+      <li>A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed. — the closest-pair problem by brute force (§3.3) and divide-and-conquer (§5.5).</li>
+    </ul>
+  </section>
+</main>
+<script src="js/vector-search.js"></script>
+</body>
+</html>

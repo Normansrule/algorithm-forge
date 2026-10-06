@@ -1,4 +1,4 @@
-# 03 · Brute Force and Exhaustive Search
+# Chapter 3 · Brute Force and Exhaustive Search
 
 **Why this chapter matters.** Brute force means "just do what the definition says" — compare every pair, try every
 position, list every candidate. It is the first design strategy because it is the one you can *always* apply, and
@@ -197,7 +197,7 @@ $$C(n) = \sum_{i=0}^{n-2}\sum_{j=i+1}^{n-1}1 = \sum_{i=0}^{n-2}(n-1-i) = (n-1) +
 - **Stable?** **No.** Example: `[5ᵃ, 5ᵇ, 2]` → pass 0 swaps `5ᵃ` with `2` → `[2, 5ᵇ, 5ᵃ]`. The long-distance swap jumps
   an element over its equal twin.
 
-**Correctness (induction on $n$, as in the lecture).** Base: $n = 1$ is sorted. Step: for $n = k + 1$ the first pass
+**Correctness (induction on $n$).** Base: $n = 1$ is sorted. Step: for $n = k + 1$ the first pass
 puts the smallest element at `A[0]`; the remaining passes are exactly selection sort on the $k$ elements
 `A[1..k]`, which by hypothesis sorts them — and all of them are $\ge$ `A[0]`. So the whole array is sorted.
 
@@ -581,7 +581,7 @@ and many `indexOf` implementations use brute force for short patterns or as a fa
 
 ## Bonus — Brute-force polynomial evaluation
 
-From the lecture: evaluate $p(x) = a_n x^n + \dots + a_1 x + a_0$ at a point $x$.
+Levitin Exercise 3.1.4: evaluate $p(x) = a_n x^n + \dots + a_1 x + a_0$ at a point $x$.
 
 ```
 ALGORITHM PolyBruteForce(a[0..k], x)
@@ -1890,7 +1890,7 @@ $\lvert\text{level}(u) - \text{level}(v)\rvert \le 1$.
   search: <https://cp-algorithms.com/graph/breadth-first-search.html> · Convex hull construction:
   <https://cp-algorithms.com/geometry/convex-hull.html> · Finding the nearest pair of points:
   <https://cp-algorithms.com/geometry/nearest_points.html>
-- MIT (Massachusetts Institute of Technology) OpenCourseWare 6.006 (Spring 2020) — lectures on Breadth-First Search and Depth-First Search:
+- MIT (Massachusetts Institute of Technology) OpenCourseWare 6.006 (Spring 2020) — video sessions on Breadth-First Search and Depth-First Search:
   <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
 - William Fiset — *Graph Theory* playlist on YouTube (English; DFS, BFS, and many later graph algorithms).
 - Cormen, Leiserson, Rivest, and Stein (CLRS), *Introduction to Algorithms* — §22.2 Breadth-first search, §22.3 Depth-first search.

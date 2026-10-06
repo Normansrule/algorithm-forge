@@ -1,10 +1,10 @@
-# ✍️ Assignment 2 — Chapters 3–4, Worked Solutions
+# ✍️ Problem Set 2 — Brute Force and Decrease-and-Conquer (Levitin Ch 3–4), Worked Solutions
 
-CSC 501 · Levitin, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.
+Based on exercises from Levitin, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.
 
 Each problem is restated in our own words, followed by a step-by-step solution, Forge Pseudocode, a small trace, and
-a **"What the grader looks for"** checklist. Try each problem before opening the solution. Problems 9–10 are the
-extra graduate (CSC 501) problems.
+a **"Self-check"** list. Try each problem before opening the solution. Problems 9–10 are challenge
+problems.
 
 | # | Topic | Levitin exercise |
 |--:|-------|------------------|
@@ -58,12 +58,12 @@ involves numbers smaller than m.
 **Going further:** exponentiation by squaring (Levitin §6.5) computes $a^n \bmod m$ with only $\Theta(\log n) = \Theta(b)$
 multiplications. That is how cryptography handles 2048-bit exponents.
 
-**What the grader looks for:** ✅ both answers for (a), with "exponential in b" stated · ✅ the modular identity
+**Self-check:** ✅ both answers for (a), with "exponential in b" stated · ✅ the modular identity
 that justifies (b) · ✅ pseudocode that reduces inside the loop.
 
 ---
 
-## Problem 2 — Substrings that start with A and end with B (Levitin Exercise 3.2.8; the course handout numbers it 3.1.8)
+## Problem 2 — Substrings that start with A and end with B (Levitin Exercise 3.2.8)
 
 **Task in our words.** Count the substrings of a text that begin with the letter A and end with the letter B.
 (For example, a text like `CABAAXBYA` has 4 of them.) Give a brute-force algorithm and its efficiency class.
@@ -96,7 +96,7 @@ each see the B at position 6 (1 each). The A at position 8 sees none. Total **4*
 **Better (linear) algorithm, one pass:** keep `aSeen` = the number of A's so far. Each B completes one substring
 with every earlier A, so add `aSeen` whenever you meet a B. That is $\Theta(n)$. (Try it: it also gives 4.)
 
-**What the grader looks for:** ✅ the counting observation · ✅ a correct worst-case input and summation · ✅ Θ class ·
+**Self-check:** ✅ the counting observation · ✅ a correct worst-case input and summation · ✅ Θ class ·
 ✅ (bonus) the linear improvement.
 
 ---
@@ -139,7 +139,7 @@ $\Theta(\log n)$.
 **Trace:** villages at 1, 2, 6, 7, 15, so m = 8. The values D(i) are 14, 13, 9, **8**, 14, and the best spot is
 **7**, the village closest to 8. ✔
 
-**What the grader looks for:** ✅ "the farthest village is always an endpoint" · ✅ a correct argument, not only
+**Self-check:** ✅ "the farthest village is always an endpoint" · ✅ a correct argument, not only
 "pick the middle village" (the median can be wrong: here the median is 6, with D = 9) · ✅ the efficiency.
 
 ---
@@ -186,14 +186,14 @@ ALGORITHM Extend(k, sum, target, A[0..n-1], inB)
 
 **Efficiency.** The search tree has at most $2^{n}$ nodes (it is binary with depth n − 1), and each node does O(1)
 work, so the worst case is $O(2^n)$. A version that generates each subset and then **re-sums** it from scratch
-costs $O(n\cdot 2^n)$. That is the bound in the course key. Either way, the algorithm is exponential; the problem is
+costs $O(n\cdot 2^n)$, the bound most solutions quote. Either way, the algorithm is exponential; the problem is
 NP-complete (Levitin §11.3), so no polynomial algorithm is known.
 
 **Trace** `3 1 1 2 2 1`: S = 10 and the target is 5. With 3 in B, try adding 1 (sum 4), then 1 (sum 5). Target
 reached: B = {3, 1, 1} and the other side is {2, 2, 1}. Both sum to 5 ✔ (the algorithm was checked against a full
 subset enumeration on 3,000 random inputs).
 
-**What the grader looks for:** ✅ the odd-sum shortcut · ✅ some reduction of the search (symmetry, ≤ n/2 elements, or
+**Self-check:** ✅ the odd-sum shortcut · ✅ some reduction of the search (symmetry, ≤ n/2 elements, or
 pruning) with the count of subsets · ✅ an honest exponential efficiency class.
 
 ---
@@ -225,7 +225,7 @@ size is $\sum_{k} k\binom{n}{k} = n2^{n-1}$, which gives $\Theta(n\,2^n)$.
 
 **Trace** {a, b, c}: {∅} → {∅, a} → {∅, a, b, ab} → {∅, a, b, ab, c, ac, bc, abc}. 8 = $2^3$ ✔.
 
-**What the grader looks for:** ✅ the "without / with $a_n$" decrease-by-one structure · ✅ a recurrence for the
+**Self-check:** ✅ the "without / with $a_n$" decrease-by-one structure · ✅ a recurrence for the
 number of subsets · ✅ the efficiency class, with the counting convention stated.
 
 ---
@@ -236,8 +236,8 @@ number of subsets · ✅ the efficiency class, with the counting convention stat
 
 > **About the figures.** The textbook draws the two digraphs as figures, and those did not survive in our text copy.
 > Below we solve two **stand-in digraphs on the same vertex set a–g with the same character**: (a) is a DAG, and (b)
-> contains a directed cycle, which is the course key's verdict for (b). If your textbook's edges differ, apply exactly
-> the same steps to them. The method is what is graded.
+> contains a directed cycle, as the textbook's digraph (b) does. If your textbook's edges differ, apply exactly
+> the same steps to them. The method is what matters.
 
 **The algorithm.** Repeatedly find a **source** (a vertex with in-degree 0), output it, and delete it with all its
 outgoing edges. If vertices remain but none is a source, the digraph has a cycle and no topological order exists.
@@ -294,7 +294,7 @@ In words: d feeds a and c; a feeds b and c; b feeds e and g; c feeds f; g feeds 
 
 **No topological order exists:** the remaining vertices contain the directed cycle b → e → f → b.
 
-**What the grader looks for:** ✅ a table of sources and removals at every step · ✅ a final order checked against
+**Self-check:** ✅ a table of sources and removals at every step · ✅ a final order checked against
 every edge · ✅ for (b), the stopping condition "no source left" **and** an actual cycle named.
 
 ---
@@ -363,7 +363,7 @@ so **about 1.6 times fewer weighings**, independent of n.
 [4, 5] vs [6, 7], pile 2 is lighter → 2 coins, k = 1, [6] vs [7], coin 7 is lighter. **3 weighings** =
 $\lceil\log_3 10\rceil$ ✔.
 
-**What the grader looks for:** ✅ pile sizes that work for n mod 3 = 1 and n mod 3 = 2 · ✅ a recurrence with an
+**Self-check:** ✅ pile sizes that work for n mod 3 = 1 and n mod 3 = 2 · ✅ a recurrence with an
 initial condition · ✅ $\log_2 3 \approx 1.6$ as a constant ratio.
 
 ---
@@ -391,12 +391,12 @@ same problem, and how much smaller depends on the tree's shape, not on a fixed c
 **(b)** The number of steps equals the length of the rightmost path. Worst case: a right-skewed tree (keys inserted
 in increasing order), which gives $\Theta(n)$. For a balanced or random BST it is $\Theta(\log n)$ on average.
 
-**What the grader looks for:** ✅ the BST property as the reason · ✅ "variable-size decrease" with a justification ·
+**Self-check:** ✅ the BST property as the reason · ✅ "variable-size decrease" with a justification ·
 ✅ the worst-case shape.
 
 ---
 
-## Problem 9 (CSC 501) — Cross edges in a BFS tree (Levitin Exercise 3.5.5)
+## Problem 9 (challenge) — Cross edges in a BFS tree (Levitin Exercise 3.5.5)
 
 **Task in our words.** Prove that in a Breadth-First Search (BFS) forest of an undirected graph, a cross edge joins
 two vertices whose levels are equal or differ by exactly 1.
@@ -411,12 +411,12 @@ $$d(u) \le d(v) + 1 \le \text{level}(u) - 1 = d(u) - 1,$$
 a contradiction. The same argument with u and v swapped rules out level(v) ≥ level(u) + 2. So
 $|\text{level}(u) - \text{level}(v)| \le 1$. ∎
 
-**What the grader looks for:** ✅ stating that BFS levels are shortest-path distances · ✅ building the shorter path
+**Self-check:** ✅ stating that BFS levels are shortest-path distances · ✅ building the shorter path
 through the cross edge · ✅ handling both directions.
 
 ---
 
-## Problem 10 (CSC 501) — When a topological order exists (Levitin Exercise 4.2.2)
+## Problem 10 (challenge) — When a topological order exists (Levitin Exercise 4.2.2)
 
 **Task in our words.** (a) Prove that a digraph has a topological order if and only if it is a Directed Acyclic
 Graph (DAG). (b) What is the largest number of different topological orders a digraph with n vertices can have?
@@ -434,11 +434,11 @@ exactly the source-removal algorithm, so its correctness *is* the proof.
 **(b)** $n!$, achieved by the digraph with **no edges**, where every permutation is valid. It cannot be more,
 because a topological order is a permutation of the n vertices.
 
-**What the grader looks for:** ✅ both directions of the "if and only if" · ✅ the "a DAG has a source" lemma ·
+**Self-check:** ✅ both directions of the "if and only if" · ✅ the "a DAG has a source" lemma ·
 ✅ an example that achieves n!.
 
 ---
 
-⬅️ [Assignment 1](assignment-1.md) · [Practice home](../README.md) ·
+⬅️ [Problem Set 1](set-1-foundations.md) · [Practice home](../README.md) ·
 [Topological sort simulation](https://normansrule.github.io/algorithm-forge/sims/topo-sort.html) ·
 [Fake-coin in the Search Lab](https://normansrule.github.io/algorithm-forge/sims/search-lab.html)

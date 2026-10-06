@@ -192,6 +192,24 @@
     setTimeout(() => { live.textContent = msg; }, 30);
   };
 
+  /** A small, polite toast (bottom corner). {icon, title, text, cls, ms} */
+  let toastBox = null;
+  Arena.toast = function (o) {
+    if (!toastBox) { toastBox = el("div", { class: "a-toasts", role: "status", "aria-live": "polite" }); document.body.appendChild(toastBox); }
+    const close = el("button", { class: "toast-x", type: "button", "aria-label": "Dismiss" }, "×");
+    const t = el("div", { class: "a-toast " + (o.cls || "") },
+      el("span", { class: "toast-icon", "aria-hidden": "true" }, o.icon || "✨"),
+      el("div", { class: "toast-body" }, el("div", { class: "toast-title" }, o.title || ""), o.text ? el("div", { class: "toast-text small muted" }, o.text) : null),
+      close);
+    const bye = () => { t.classList.add("out"); setTimeout(() => t.remove(), 300); };
+    close.addEventListener("click", bye);
+    toastBox.appendChild(t);
+    let timer = setTimeout(bye, o.ms || 6000);
+    t.addEventListener("mouseenter", () => clearTimeout(timer));
+    t.addEventListener("mouseleave", () => { timer = setTimeout(bye, 2500); });
+    return t;
+  };
+
   Arena.download = function (name, text) {
     const blob = new Blob([text], { type: "application/json" });
     const a = el("a", { href: URL.createObjectURL(blob), download: name });

@@ -61,7 +61,7 @@ that best case is insertion sort's superpower (selection sort can't do it).</p>`
     output: { arg: 0 },
     tests: [
       { args: [[89, 45, 68, 90, 29, 34, 17]], expect: [17, 29, 34, 45, 68, 89, 90], explain: "The textbook example: 17 ends up sliding all the way to the front." },
-      { args: [[6, 4, 1, 8, 5]], expect: [1, 4, 5, 6, 8], explain: "The lecture example: the sorted prefix grows 6 | 4 6 | 1 4 6 | 1 4 6 8 | 1 4 5 6 8." },
+      { args: [[6, 4, 1, 8, 5]], expect: [1, 4, 5, 6, 8], explain: "A classic example: the sorted prefix grows 6 | 4 6 | 1 4 6 | 1 4 6 8 | 1 4 5 6 8." },
       { args: [[]], expect: [], explain: "An empty array is already sorted — don't touch A[0]!" },
       { args: [[5]], expect: [5] },
       { args: [[1, 2, 3, 4, 5]], expect: [1, 2, 3, 4, 5], explain: "Best case: every insertion stops after one comparison." },
@@ -541,7 +541,7 @@ around) until one survivor remains. Call the survivor's number <code>J(n)</code>
     level: 2, chapter: 4, difficulty: 1,
     topics: ["arithmetic", "decrease-by-a-constant-factor", "modular arithmetic", "recursion"],
     strategy: "Decrease-by-half",
-    source: "Levitin §4.1 formula (4.2) · Lecture 4",
+    source: "Levitin §4.1 formula (4.2)",
     summary: "Compute aⁿ mod m with Θ(log n) multiplications using aⁿ = (a^⌊n/2⌋)² (· a if n is odd).",
     statement: `
 <p>Multiplying a by itself n − 1 times is Θ(n) — hopeless when n has hundreds of digits, as in Rivest–Shamir–Adleman (RSA)
@@ -632,7 +632,7 @@ a⁰ = 1</pre>
     level: 2, chapter: 4, difficulty: 1,
     topics: ["trees", "binary search tree", "variable-size-decrease"],
     strategy: "Variable-size decrease",
-    source: "Levitin Exercise 4.5.7 · CSC 501 A2 Q8",
+    source: "Levitin Exercise 4.5.7 · Problem Set 2, Problem 8",
     summary: "Return the largest key of a Binary Search Tree (BST) by walking one path, not the whole tree.",
     statement: `
 <p>In a <b>Binary Search Tree (BST)</b> every key in a node's left subtree is smaller than the node's key and every key in its right
@@ -881,7 +881,7 @@ empty subtree = <code>null</code>). A <b>leaf</b> is a node whose two children a
     level: 2, chapter: 4, difficulty: 2,
     topics: ["decrease-by-a-constant-factor", "puzzles", "recurrences"],
     strategy: "Decrease-by-a-third",
-    source: "Levitin Exercise 4.4.10 · CSC 501 A2 Q7",
+    source: "Levitin Exercise 4.4.10 · Problem Set 2, Problem 7",
     summary: "Find the one lighter coin with a balance scale in ⌈log₃ n⌉ weighings by splitting into three piles.",
     statement: `
 <p>Among n identical-looking coins exactly one is fake and <b>lighter</b>. A balance scale tells you which of two groups is
@@ -999,7 +999,7 @@ def fake_coin(W):
     level: 2, chapter: 4, difficulty: 2,
     topics: ["selection", "partitioning", "variable-size-decrease", "median"],
     strategy: "Variable-size decrease (partition-based)",
-    source: "Levitin §4.5 · Lecture 4",
+    source: "Levitin §4.5",
     summary: "Find the k-th smallest element in average linear time using Lomuto partitioning.",
     statement: `
 <p>The <b>selection problem</b> asks for the k-th smallest element — the median when k = ⌈n/2⌉. Sorting first costs Θ(n log n).
@@ -1012,7 +1012,7 @@ You may rearrange <code>A</code>.</p>
     entry: "Quickselect",
     params: ["A", "k"],
     tests: [
-      { args: [[4, 1, 10, 9, 7, 12, 8, 2, 15], 5], expect: 8, explain: "The lecture trace: the median of 9 numbers is the 5th smallest, found after two partitions." },
+      { args: [[4, 1, 10, 9, 7, 12, 8, 2, 15], 5], expect: 8, explain: "The classic trace: the median of 9 numbers is the 5th smallest, found after two partitions." },
       { args: [[5], 1], expect: 5 },
       { args: [[3, 1, 2], 1], expect: 1, explain: "k = 1 is the minimum." },
       { args: [[3, 1, 2], 3], expect: 3, explain: "k = n is the maximum." },
@@ -1369,7 +1369,7 @@ ALGORITHM Merge(B[0..p-1], C[0..q-1], A[0..m-1])
     level: 2, chapter: 5, difficulty: 2,
     topics: ["merging", "two pointers", "sets"],
     strategy: "Merge (two pointers)",
-    source: "CSC 501 Midterm 1, Q1",
+    source: "Classic exam problem (Practice Exam 1, Problem B1) · compare Levitin Exercise 1.1.5",
     summary: "Merge two sorted sequences that may contain repeats into the sorted set A ∪ B in O(n) time.",
     statement: `
 <p>Two sorted sequences <code>A</code> and <code>B</code> may contain repeated entries (they are <i>not</i> sets). Compute the
@@ -1484,7 +1484,7 @@ every value that appears in A or B, each <b>exactly once</b>.</p>
     level: 2, chapter: 5, difficulty: 3,
     topics: ["sorting", "divide-and-conquer", "partitioning", "in-place"],
     strategy: "Divide-and-conquer",
-    source: "Levitin §5.2 · CSC 501 Midterm 1 sample Q5",
+    source: "Levitin §5.2 · Practice Exam 1, Problem A5",
     summary: "Partition around the first element with two scanning indexes, then sort both sides — in place.",
     statement: `
 <p>Quicksort divides by <b>value</b> instead of by position: pick a pivot <code>p = A[l]</code>, rearrange so everything left of
@@ -1601,7 +1601,7 @@ ALGORITHM HoarePartition(A[l..r])
       explain: "Partitioning n elements costs about n comparisons. Balanced splits give C(n) = 2C(n/2) + n → Θ(n log n) (best and average ≈ 1.39 n log₂ n); already-sorted input gives C(n) = C(n − 1) + n → n(n + 1)/2 − 1 ∈ Θ(n²). Only the recursion stack uses extra space.",
     },
     distractors: ["until A[i] > p", "swap A[l] and A[i]", "Quicksort(A[l..s])"],
-    followUp: "Production quicksorts add median-of-three (or random) pivots, switch to insertion sort for tiny subarrays, and recurse on the smaller side first to keep the stack O(log n) — introsort even falls back to heapsort. Midterm twist: write it without recursion using an explicit stack of (l, r) ranges.",
+    followUp: "Production quicksorts add median-of-three (or random) pivots, switch to insertion sort for tiny subarrays, and recurse on the smaller side first to keep the stack O(log n) — introsort even falls back to heapsort. Exam twist: write it without recursion using an explicit stack of (l, r) ranges.",
     complexity: "Θ(n log n) average, Θ(n²) worst",
     visual: "sims/sorting-studio.html",
     lesson: "lessons/05-divide-and-conquer/README.md",
@@ -1761,7 +1761,7 @@ ALGORITHM DFS(adj, v, state, order)
     level: 2, chapter: 4, difficulty: 1,
     topics: ["combinatorics", "subsets", "decrease-and-conquer", "recursion"],
     strategy: "Decrease-by-one",
-    source: "Levitin Exercise 4.1.4 · CSC 501 A2 Q5",
+    source: "Levitin Exercise 4.1.4 · Problem Set 2, Problem 5",
     summary: "Generate all 2ⁿ subsets: the subsets without the last element, plus each of them with it added.",
     statement: `
 <p>The <b>power set</b> of S is the set of all its subsets, from the empty set to S itself — exactly what exhaustive search
@@ -2440,7 +2440,7 @@ rearrange <code>A</code>.</p>
     level: 2, chapter: 5, difficulty: 3,
     topics: ["divide-and-conquer", "arithmetic", "recurrences", "Master Theorem"],
     strategy: "Divide-and-conquer",
-    source: "Levitin §5.4 · Lecture 5",
+    source: "Levitin §5.4",
     summary: "Multiply n-digit numbers with three half-size multiplications: M(n) = 3M(n/2) → n^1.585.",
     statement: `
 <p>Split two n-digit numbers into halves, <code>x = a₁·10^m + a₀</code> and <code>y = b₁·10^m + b₀</code> with m = n/2. Then</p>
@@ -2456,7 +2456,7 @@ Don't call helper algorithms inside the recursion — use <code>10 ^ m</code>, <
     entry: "Karatsuba",
     params: ["x", "y", "n"],
     tests: [
-      { args: [2135, 4014, 4], expect: 8569890, explain: "The lecture example: a₁ = 21, a₀ = 35, b₁ = 40, b₀ = 14 → c₂ = 840, c₀ = 490, c₁ = 56·54 − 840 − 490 = 1694." },
+      { args: [2135, 4014, 4], expect: 8569890, explain: "A worked example: a₁ = 21, a₀ = 35, b₁ = 40, b₀ = 14 → c₂ = 840, c₀ = 490, c₁ = 56·54 − 840 − 490 = 1694." },
       { args: [7, 8, 1], expect: 56, explain: "Base case: n = 1, multiply directly (1 call)." },
       { args: [12, 34, 2], expect: 408, explain: "c₂ = 1·3 = 3, c₀ = 2·4 = 8, c₁ = 3·7 − 3 − 8 = 10 → 300 + 100 + 8." },
       { args: [1234, 5678, 4], expect: 7006652 },
@@ -2660,19 +2660,19 @@ ALGORITHM Best(A, l, r)
   });
 
   /* =====================================================================
-     25. Midterm: T(n) = T(n/2) + log n — implement and count
+     25. Classic exam recurrence: T(n) = T(n/2) + log n — implement and count
      ===================================================================== */
   const hWork = (n) => (n === 1 ? 1 : hWork(Math.floor(n / 2)) + Math.floor(Math.log2(n)));
   ForgeProblems.add({
-    id: "midterm-recurrence-log",
-    title: "Professor H's Algorithm: T(n) = T(n/2) + log n",
+    id: "recurrence-halve-log",
+    title: "Halve-and-Log Algorithm: T(n) = T(n/2) + log n",
     level: 2, chapter: 4, difficulty: 2,
     topics: ["recurrences", "backward substitution", "decrease-by-a-constant-factor", "counting operations"],
     strategy: "Decrease-by-half (analysis)",
-    source: "CSC 501 Midterm 1, Q4 (adapted)",
+    source: "Classic exam problem (Practice Exam 1, Problem B4)",
     summary: "Implement a decrease-by-half algorithm whose combine step costs ⌊log₂ n⌋, and count its total work.",
     statement: `
-<p>Professor H's decrease-and-conquer algorithm reduces a problem of size n to one of size ⌊n/2⌋, solves that recursively, and
+<p>A decrease-and-conquer algorithm reduces a problem of size n to one of size ⌊n/2⌋, solves that recursively, and
 spends <b>⌊log₂ n⌋</b> time units on the decrease and combine steps together. Size 1 is solved in 1 unit. So its running time is</p>
 <pre>T(1) = 1,    T(n) = T(⌊n/2⌋) + ⌊log₂ n⌋   for n &gt; 1</pre>
 <p><b>Task:</b> implement the algorithm's <i>skeleton</i> and <b>count</b> its work: <code>HWork(n)</code> returns T(n). Model the
@@ -2744,7 +2744,7 @@ so T(n) ∈ Θ(log² n).</p>
       explain: "Backward substitution for n = 2^k: T(2^k) = T(2^(k−1)) + k = T(2^(k−2)) + (k − 1) + k = … = T(1) + 1 + 2 + … + k = 1 + k(k + 1)/2. With k = log₂ n this is Θ(log² n). (The Master Theorem does not apply directly, since f(n) = log n is not n^d.)",
     },
     distractors: ["while t ≥ 1 do", "return HWork(n - 1) + c", "return 0"],
-    followUp: "The same backward-substitution pattern solves T(n) = 2T(n/2) + n log n = Θ(n log² n) (the lecture's interview question). Senior habit: when a recurrence falls outside the Master Theorem, write out 3 levels, spot the sum, and verify empirically — exactly what this counter does.",
+    followUp: "The same backward-substitution pattern solves T(n) = 2T(n/2) + n log n = Θ(n log² n) (a classic interview question). Senior habit: when a recurrence falls outside the Master Theorem, write out 3 levels, spot the sum, and verify empirically — exactly what this counter does.",
     complexity: "T(n) ∈ Θ(log² n)",
     visual: "sims/recurrence-lab.html",
     lesson: "lessons/04-decrease-and-conquer/README.md",

@@ -5,7 +5,9 @@
 <p align="center">
   <a href="https://normansrule.github.io/algorithm-forge/"><b>🌐 Open the site</b></a> ·
   <a href="https://normansrule.github.io/algorithm-forge/arena/"><b>🏟️ Practice Arena</b></a> ·
-  <a href="https://normansrule.github.io/algorithm-forge/sims/"><b>👀 48 Simulations</b></a> ·
+  <a href="https://normansrule.github.io/algorithm-forge/sims/"><b>👀 59 Simulations</b></a> ·
+  <a href="https://normansrule.github.io/algorithm-forge/atlas.html"><b>🧭 Algorithm Atlas</b></a> ·
+  <a href="https://normansrule.github.io/algorithm-forge/playground.html"><b>🧪 Playground</b></a> ·
   <a href="https://normansrule.github.io/algorithm-forge/path.html"><b>🗺️ Learning Path</b></a> ·
   <a href="https://normansrule.github.io/algorithm-forge/cheatsheet.html"><b>📄 Cheat Sheet</b></a> ·
   <a href="https://normansrule.github.io/algorithm-forge/quiz.html"><b>🧠 Quiz</b></a>
@@ -13,9 +15,10 @@
 
 <p align="center">
   <a href="https://github.com/Normansrule/algorithm-forge/actions/workflows/ci.yml"><img alt="Continuous Integration (CI)" src="https://github.com/Normansrule/algorithm-forge/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="213 graded problems" src="https://img.shields.io/badge/Arena-213%20graded%20problems-ff7a45">
-  <img alt="48 simulations" src="https://img.shields.io/badge/simulations-48-5ab0ff">
-  <img alt="18 lessons" src="https://img.shields.io/badge/lessons-Ch%200%E2%80%9317-3ddc97">
+  <img alt="252 graded problems" src="https://img.shields.io/badge/Arena-252%20graded%20problems-ff7a45">
+  <img alt="59 simulations" src="https://img.shields.io/badge/simulations-59-5ab0ff">
+  <img alt="19 lessons" src="https://img.shields.io/badge/lessons-Ch%200%E2%80%9318-3ddc97">
+  <img alt="16 algorithm families" src="https://img.shields.io/badge/Atlas-16%20families%2C%20classic%20%E2%86%92%20frontier-4de1ff">
   <img alt="No install" src="https://img.shields.io/badge/runs%20in-the%20browser-8b5cf6">
   <img alt="MIT License" src="https://img.shields.io/badge/license-MIT-lightgrey">
 </p>
@@ -23,14 +26,15 @@
 # Algorithm Forge
 
 **Learn to build algorithms from nothing: see them move, arrange them in blocks, write them in pseudocode, get them
-checked automatically, and prove how fast they are.** Then keep climbing until you think like a senior software
-engineer and an algorithm designer.
+checked automatically, and prove how fast they are.** Then keep climbing, from your first loop to the algorithms
+inside today's standard libraries, databases, vector search engines and the newest research papers.
 
-The spine is Anany Levitin's *Introduction to the Design and Analysis of Algorithms* (3rd edition), all 12 chapters,
-including the sections a one-semester course usually skips. It is aligned with CSC 501 (Algorithm Analysis and
-Design) at California State University, Dominguez Hills (CSUDH). Five **Beyond** chapters then go past the book:
-advanced data structures, advanced graphs, interview and production patterns, randomized and amortized algorithms,
-and a senior engineer's playbook.
+The spine is Anany Levitin's *Introduction to the Design and Analysis of Algorithms* (3rd edition): all 12 chapters,
+including the sections that are often skipped. Five **Beyond** chapters then go past the book (advanced data
+structures, advanced graphs, interview and production patterns, randomized and amortized algorithms, a senior
+engineer's playbook), and **Chapter 18 — The Frontier** ends at the cutting edge: Timsort and pdqsort, cuckoo hashing
+and modern filters, HNSW vector search, HyperLogLog, almost-linear-time maximum flow, and the 2025 shortest-path result
+that broke Dijkstra's sorting barrier.
 
 > **Start here →** [`lessons/00-start-here`](lessons/00-start-here/README.md) (10 minutes), then open the
 > [Practice Arena](https://normansrule.github.io/algorithm-forge/arena/) and solve **Largest Element**. Nothing to install.
@@ -69,7 +73,7 @@ Different brains, same destination. Start wherever it clicks:
 
 <p align="center"><img src="assets/svg/arena-flow.svg" alt="Arena flow: write pseudocode, submit, get a nudge, fix, accepted with a growth chart" width="860"></p>
 
-You write **Forge Pseudocode**, the same notation as the textbook and the lectures. A built-in interpreter runs it:
+You write **Forge Pseudocode**, the same notation the textbook uses. A built-in interpreter runs it:
 
 ```text
 ALGORITHM BinarySearch(A[0..n-1], K)
@@ -91,13 +95,18 @@ notation you read is exactly the notation the Arena runs.
 | | |
 |---|---|
 | <img src="assets/img/arena-list.png" alt="Arena problem list grouped by level" width="430"> | <img src="assets/img/arena-accepted.png" alt="Accepted submission with efficiency growth chart" width="430"> |
-| **213 problems in 7 levels**, filterable by chapter, topic and status; your progress is saved in your browser. | **Accepted** — every test passed, and the growth check confirmed Θ(n). |
+| **252 problems in 8 levels**, filterable by chapter, topic and status; your progress is saved in your browser. | **Accepted** — every test passed, and the growth check confirmed Θ(n). |
 | <img src="assets/img/arena-visualize.png" alt="Visualize: stepping through your own pseudocode" width="430"> | <img src="assets/img/arena-blocks.png" alt="Blocks mode: Parsons puzzle" width="430"> |
 | **👁 Visualize** your own code: current line, variables, array cells with `i`/`j` pointer arrows, call stack. | **🧱 Blocks** (a Parsons puzzle): order and indent the lines. Great for a first pass on a new algorithm. |
 
-### Seven levels, from first loop to algorithm designer
+### Eight levels, from first loop to the research frontier
 
-<p align="center"><img src="assets/svg/levels.svg" alt="Levels 0 to 6 with problem counts" width="900"></p>
+<p align="center"><img src="assets/svg/levels.svg" alt="Levels 0 to 7 with problem counts" width="900"></p>
+
+**More ways to practice:** ⏱️ **Interview mode** (a countdown, hints locked until you finish or give up),
+☀️ a **daily challenge** with a streak counter, 🔁 a **spaced-repetition review queue** (re-solve in 1, 3 or 7 days),
+🏅 **badges**, and ⚖️ **compare with the reference**: after an Accepted, see your pseudocode next to the reference
+solution with a line diff and both solutions' operation counts.
 
 <!-- STARTERS:START -->
 | Level | Name | Problems | Try this first |
@@ -107,17 +116,65 @@ notation you read is exactly the notation the Arena runs.
 | 2 | **Decrease & Divide** — Shrink the problem, split the problem (Ch 4–5). | [27](https://normansrule.github.io/algorithm-forge/arena/?level=2) | [Insertion Sort](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=insertion-sort) |
 | 3 | **Transform & Space-Time** — Presort, heaps, hashing, smarter string search (Ch 6–7). | [26](https://normansrule.github.io/algorithm-forge/arena/?level=3) | [Element Uniqueness by Presorting](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=presort-uniqueness) |
 | 4 | **Dynamic Programming, Greedy & Iterative Improvement** — Tables, greedy choices, flows and matchings (Ch 8–10). | [38](https://normansrule.github.io/algorithm-forge/arena/?level=4) | [Climbing Stairs (Fibonacci in Disguise)](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=climbing-stairs) |
-| 5 | **Hard Problems & Senior Patterns** — Backtracking, approximation, Nondeterministic Polynomial (NP)-hard problems, and the patterns senior engineers reach for (Ch 11–17). | [52](https://normansrule.github.io/algorithm-forge/arena/?level=5) | [Verify a Conjunctive Normal Form (CNF) Certificate](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=sat-verify) |
-| 6 | **Expert: Algorithm Designer** — The hardest set: bitmask Dynamic Programming, linear-time string algorithms, graph cut structure, branch-and-bound, cache design (Ch 12–17). | [23](https://normansrule.github.io/algorithm-forge/arena/?level=6) | [Count–Min Sketch (with Conservative Update)](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=count-min-conservative) |
+| 5 | **Hard Problems & Senior Patterns** — Backtracking, approximation, Nondeterministic Polynomial (NP)-hard problems, and the patterns senior engineers reach for (Ch 11–17). | [56](https://normansrule.github.io/algorithm-forge/arena/?level=5) | [Verify a Conjunctive Normal Form (CNF) Certificate](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=sat-verify) |
+| 6 | **Expert: Algorithm Designer** — The hardest set: bitmask Dynamic Programming, linear-time string algorithms, graph cut structure, branch-and-bound, cache design (Ch 12–17). | [34](https://normansrule.github.io/algorithm-forge/arena/?level=6) | [Vector Clocks: Before, After or Concurrent?](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=vector-clocks-happens-before) |
+| 7 | **Modern Systems & Research Frontier** — The algorithms inside today's standard libraries, databases, vector search engines and distributed systems, and implementable cores of recent research results (Ch 18). | [24](https://normansrule.github.io/algorithm-forge/arena/?level=7) | [Misra–Gries Heavy Hitters](https://normansrule.github.io/algorithm-forge/arena/problem.html?id=misra-gries-heavy-hitters) |
 <!-- STARTERS:END -->
 
 ---
 
-## 🗺️ Course map — every chapter: lesson · simulations · practice
+## 🧭 From the classic to the cutting edge
+
+<p align="center"><img src="assets/svg/evolution.svg" alt="Evolution ladders: from the first idea to the research frontier" width="880"></p>
+
+The **[Algorithm Atlas](https://normansrule.github.io/algorithm-forge/atlas.html)** shows how each family of
+algorithms evolved, one rung at a time: what each rung added, what it couldn't do (the reason the next rung exists),
+where it runs today, and the paper behind it. Sixteen families, five stages each: **First idea → Classic → Advanced →
+In production → Research frontier**.
+
+| Family | First idea | … | Research frontier |
+|---|---|---|---|
+| Sorting | insertion sort Θ(n²) | mergesort, quicksort, introsort, Timsort / Powersort | pdqsort and Rust's driftsort / ipnsort |
+| Shortest paths | Breadth-First Search (BFS) | Dijkstra, Fibonacci heaps, A\*, contraction hierarchies | O(m log^{2/3} n) directed single-source shortest paths (Duan et al., STOC 2025) |
+| Maximum flow | Ford–Fulkerson | Edmonds–Karp, Dinic, push–relabel | m^{1+o(1)} almost-linear max flow (Chen et al., FOCS 2022) |
+| Hash tables | separate chaining | linear probing, Robin Hood, cuckoo, SwissTable | optimal open addressing without reordering (Farach-Colton, Krapivin, Kuszmaul) |
+| Vector search | brute force | k-d tree, Locality-Sensitive Hashing (LSH), product quantization | Hierarchical Navigable Small World (HNSW), DiskANN, RaBitQ |
+
+…plus searching, ordered dictionaries, Minimum Spanning Trees (MSTs), string indexing, membership filters, matrix and
+integer multiplication, distinct counting, the Traveling Salesman Problem (TSP), linear programming and consensus.
+Every frontier claim is cited in [`docs/atlas/atlas-data.js`](docs/atlas/atlas-data.js) and explained in
+[Chapter 18](lessons/18-the-frontier/README.md).
+
+### 🎮 Frontier simulations
+
+Watch the modern versions run, on your own input, with the same controls as every other simulation:
+
+<table>
+<tr><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/sorting-evolution.html"><img src="assets/img/sim-sorting-evolution.png" alt="Sorting evolution simulation"></a><br><sub><b>Sorting evolution</b>: Timsort runs and galloping, Powersort, introsort, pdqsort</sub></td><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/vector-search.html"><img src="assets/img/sim-vector-search.png" alt="Vector search simulation"></a><br><sub><b>Vector search</b>: k-d trees, Locality-Sensitive Hashing (LSH), Hierarchical Navigable Small World (HNSW) graphs</sub></td><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/cuckoo-filters.html"><img src="assets/img/sim-cuckoo-filters.png" alt="Cuckoo hashing & filters simulation"></a><br><sub><b>Cuckoo hashing & filters</b>: kick-out chains; Bloom vs cuckoo vs xor filters</sub></td></tr>
+<tr><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/streaming-sketches.html"><img src="assets/img/sim-streaming-sketches.png" alt="Counting in a stream simulation"></a><br><sub><b>Counting in a stream</b>: HyperLogLog, CVM, Count–Min and Misra–Gries in kilobytes</sub></td><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/shortest-path-frontier.html"><img src="assets/img/sim-shortest-path-frontier.png" alt="Shortest paths to 2025 simulation"></a><br><sub><b>Shortest paths to 2025</b>: heap Dijkstra, Dial, Δ-stepping and the FindPivots step</sub></td><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/flow-modern.html"><img src="assets/img/sim-flow-modern.png" alt="Maximum flow, modern simulation"></a><br><sub><b>Maximum flow, modern</b>: Dinic level graphs and push–relabel heights</sub></td></tr>
+<tr><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/suffix-structures.html"><img src="assets/img/sim-suffix-structures.png" alt="Indexing a text simulation"></a><br><sub><b>Indexing a text</b>: suffix array, LCP, Burrows–Wheeler Transform (BWT), FM-index search</sub></td><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/mst-modern.html"><img src="assets/img/sim-mst-modern.png" alt="Minimum spanning trees, modern simulation"></a><br><sub><b>Minimum spanning trees, modern</b>: Borůvka rounds and Filter-Kruskal</sub></td><td width="33%"><a href="https://normansrule.github.io/algorithm-forge/sims/raft-consensus.html"><img src="assets/img/sim-raft-consensus.png" alt="Raft consensus simulation"></a><br><sub><b>Raft consensus</b>: elections, log replication, crashes and partitions</sub></td></tr>
+</table>
+
+## 🧪 Playground — run any algorithm
+
+The **[Pseudocode Playground](https://normansrule.github.io/algorithm-forge/playground.html)** runs *any* Forge
+Pseudocode, not just Arena problems: paste an algorithm from a lesson (or pick one of 34 from the gallery), type the
+inputs, and **Run** it (result, printed output, ten operation counters), **Visualize** it step by step, or open the
+**Growth lab**, which runs it at n = 8, 16, …, 512, plots the operation count, and fits the efficiency class. Every
+program can be shared as a link.
+
+| | |
+|---|---|
+| <img src="assets/img/atlas.png" alt="Algorithm Atlas family view" width="430"> | <img src="assets/img/playground.png" alt="Playground growth lab" width="430"> |
+| **Atlas**: each rung's idea, limit, complexity, links and references. | **Playground**: run, visualize and measure any algorithm. |
+
+---
+
+## 🗺️ Chapter map — every chapter: lesson · simulations · practice
 
 Lessons open on GitHub; simulations and practice open on the live site.
 
-<!-- COURSE-MAP:START -->
+<!-- CHAPTER-MAP:START -->
 | # | Lesson | What you'll build | Simulations | Arena | Levitin |
 |---|---|---|---|---|---|
 | 0 | [Start Here](lessons/00-start-here/README.md) | How to learn here: the Build Card method, Forge Pseudocode, and picking your way in. | — | — | — |
@@ -129,18 +186,19 @@ Lessons open on GitHub; simulations and practice open on the live site.
 | 6 | [Transform-and-Conquer](lessons/06-transform-and-conquer/README.md) | Change the problem's shape until it becomes easy: presort, balance, heapify. | [Heap Lab](https://normansrule.github.io/algorithm-forge/sims/heap-lab.html) · [Search Trees](https://normansrule.github.io/algorithm-forge/sims/search-trees.html) · [Gaussian Elimination](https://normansrule.github.io/algorithm-forge/sims/gaussian.html) · [Horner and Binary Powers](https://normansrule.github.io/algorithm-forge/sims/horner-binexp.html) | [17 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=6) | Ch 6 |
 | 7 | [Space-Time Tradeoffs](lessons/07-space-time-tradeoffs/README.md) | Spend memory to buy speed: counting sorts, shift tables, hashing, B-trees. | [Sorting Studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) · [String Matching](https://normansrule.github.io/algorithm-forge/sims/string-match.html) · [Hashing Lab](https://normansrule.github.io/algorithm-forge/sims/hashing.html) · [B-Tree Lab](https://normansrule.github.io/algorithm-forge/sims/b-tree.html) | [9 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=7) | Ch 7 |
 | 8 | [Dynamic Programming (DP)](lessons/08-dynamic-programming/README.md) | Solve every overlapping subproblem once, write it in a table, never recompute. | [DP Table Studio](https://normansrule.github.io/algorithm-forge/sims/dp-studio.html) · [Optimal BST](https://normansrule.github.io/algorithm-forge/sims/optimal-bst.html) · [Warshall & Floyd](https://normansrule.github.io/algorithm-forge/sims/warshall-floyd.html) | [20 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=8) | Ch 8 |
-| 9 | [Greedy Technique](lessons/09-greedy/README.md) | Grab the best-looking piece every time — and prove it never backfires. | [Greedy Graph Algorithms](https://normansrule.github.io/algorithm-forge/sims/greedy-graphs.html) · [Huffman Codes](https://normansrule.github.io/algorithm-forge/sims/huffman.html) · [When Greedy Works](https://normansrule.github.io/algorithm-forge/sims/greedy-choices.html) | [12 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=9) | Ch 9 |
-| 10 | [Iterative Improvement](lessons/10-iterative-improvement/README.md) | Start feasible, keep improving, prove you're done: simplex, flows, matchings. | [Simplex Method](https://normansrule.github.io/algorithm-forge/sims/simplex.html) · [Maximum Flow](https://normansrule.github.io/algorithm-forge/sims/max-flow.html) · [Bipartite Matching](https://normansrule.github.io/algorithm-forge/sims/bipartite-matching.html) · [Stable Marriage](https://normansrule.github.io/algorithm-forge/sims/stable-marriage.html) | [7 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=10) | Ch 10 |
+| 9 | [Greedy Technique](lessons/09-greedy/README.md) | Grab the best-looking piece every time — and prove it never backfires. | [Greedy Graph Algorithms](https://normansrule.github.io/algorithm-forge/sims/greedy-graphs.html) · [Huffman Codes](https://normansrule.github.io/algorithm-forge/sims/huffman.html) · [When Greedy Works](https://normansrule.github.io/algorithm-forge/sims/greedy-choices.html) · [Modern MST](https://normansrule.github.io/algorithm-forge/sims/mst-modern.html) | [12 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=9) | Ch 9 |
+| 10 | [Iterative Improvement](lessons/10-iterative-improvement/README.md) | Start feasible, keep improving, prove you're done: simplex, flows, matchings. | [Simplex Method](https://normansrule.github.io/algorithm-forge/sims/simplex.html) · [Maximum Flow](https://normansrule.github.io/algorithm-forge/sims/max-flow.html) · [Bipartite Matching](https://normansrule.github.io/algorithm-forge/sims/bipartite-matching.html) · [Stable Marriage](https://normansrule.github.io/algorithm-forge/sims/stable-marriage.html) · [Maximum Flow Beyond Augmenting Paths](https://normansrule.github.io/algorithm-forge/sims/flow-modern.html) | [7 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=10) | Ch 10 |
 | 11 | [Limitations of Algorithm Power](lessons/11-limitations/README.md) | Lower bounds, decision trees, and deterministic Polynomial time (P) versus Nondeterministic Polynomial time (NP). | [Decision Trees & Lower Bounds](https://normansrule.github.io/algorithm-forge/sims/decision-trees.html) · [P vs NP Lab](https://normansrule.github.io/algorithm-forge/sims/p-np.html) | [6 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=11) | Ch 11 |
 | 12 | [Coping with Limitations](lessons/12-coping-with-limitations/README.md) | When exact is too slow: backtracking, branch-and-bound, approximation, root finding. | [Backtracking](https://normansrule.github.io/algorithm-forge/sims/backtracking.html) · [Branch-and-Bound](https://normansrule.github.io/algorithm-forge/sims/branch-and-bound.html) · [TSP Approximations](https://normansrule.github.io/algorithm-forge/sims/tsp-approx.html) · [Bin Packing](https://normansrule.github.io/algorithm-forge/sims/bin-packing.html) · [Root Finding](https://normansrule.github.io/algorithm-forge/sims/root-finding.html) | [15 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=12) | Ch 12 |
 | 13 | [Advanced Data Structures](lessons/13-advanced-data-structures/README.md) 🚀 | Union–find, Fenwick and segment trees, tries, skip lists, caches, storage engines. | [Union-Find](https://normansrule.github.io/algorithm-forge/sims/union-find.html) · [Segment Tree & Fenwick](https://normansrule.github.io/algorithm-forge/sims/segment-tree.html) · [Trie](https://normansrule.github.io/algorithm-forge/sims/trie.html) | [11 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=13) | Beyond |
-| 14 | [Advanced Graphs](lessons/14-advanced-graphs/README.md) 🚀 | Negative edges, heuristics, components, bridges — modeling real problems as graphs. | [Shortest Paths+](https://normansrule.github.io/algorithm-forge/sims/shortest-paths-plus.html) · [Strongly Connected Components](https://normansrule.github.io/algorithm-forge/sims/scc.html) | [10 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=14) | Beyond |
-| 15 | [DP & Interview Patterns](lessons/15-dp-and-interview-patterns/README.md) 🚀 | Recognize the pattern in seconds: two pointers, sliding window, monotonic stack, and more. | [Interview Patterns](https://normansrule.github.io/algorithm-forge/sims/patterns.html) | [18 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=15) | Beyond |
-| 16 | [Randomized, Amortized & Streaming](lessons/16-randomized-amortized-streaming/README.md) 🚀 | Why array doubling is cheap on average, and how sketches count billions in kilobytes. | [Amortized Analysis](https://normansrule.github.io/algorithm-forge/sims/amortized.html) · [Bloom Filter](https://normansrule.github.io/algorithm-forge/sims/bloom-filter.html) | [7 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=16) | Beyond |
-| 17 | [Senior Engineer Playbook](lessons/17-senior-engineer-playbook/README.md) 🚀 | Clarify, estimate, choose, prove, test, ship — the process behind every good design. | — | [7 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=17) | Beyond |
+| 14 | [Advanced Graphs](lessons/14-advanced-graphs/README.md) 🚀 | Negative edges, heuristics, components, bridges — modeling real problems as graphs. | [Shortest Paths+](https://normansrule.github.io/algorithm-forge/sims/shortest-paths-plus.html) · [Strongly Connected Components](https://normansrule.github.io/algorithm-forge/sims/scc.html) · [Shortest Paths: Dijkstra to the 2025 Frontier](https://normansrule.github.io/algorithm-forge/sims/shortest-path-frontier.html) · [Maximum Flow Beyond Augmenting Paths](https://normansrule.github.io/algorithm-forge/sims/flow-modern.html) | [13 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=14) | Beyond |
+| 15 | [DP & Interview Patterns](lessons/15-dp-and-interview-patterns/README.md) 🚀 | Recognize the pattern in seconds: two pointers, sliding window, monotonic stack, and more. | [Interview Patterns](https://normansrule.github.io/algorithm-forge/sims/patterns.html) · [Suffix Structures](https://normansrule.github.io/algorithm-forge/sims/suffix-structures.html) | [21 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=15) | Beyond |
+| 16 | [Randomized, Amortized & Streaming](lessons/16-randomized-amortized-streaming/README.md) 🚀 | Why array doubling is cheap on average, and how sketches count billions in kilobytes. | [Amortized Analysis](https://normansrule.github.io/algorithm-forge/sims/amortized.html) · [Bloom Filter](https://normansrule.github.io/algorithm-forge/sims/bloom-filter.html) · [Counting in a Stream](https://normansrule.github.io/algorithm-forge/sims/streaming-sketches.html) | [9 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=16) | Beyond |
+| 17 | [Senior Engineer Playbook](lessons/17-senior-engineer-playbook/README.md) 🚀 | Clarify, estimate, choose, prove, test, ship — the process behind every good design. | [Raft Consensus](https://normansrule.github.io/algorithm-forge/sims/raft-consensus.html) | [12 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=17) | Beyond |
+| 18 | [The Frontier](lessons/18-the-frontier/README.md) 🚀 | From the classic to the cutting edge: the algorithms inside today's standard libraries, databases, vector search engines and recent research. | [Sorting Evolution](https://normansrule.github.io/algorithm-forge/sims/sorting-evolution.html) · [Vector Search](https://normansrule.github.io/algorithm-forge/sims/vector-search.html) · [Cuckoo Hashing and Modern Filters](https://normansrule.github.io/algorithm-forge/sims/cuckoo-filters.html) · [Skip List](https://normansrule.github.io/algorithm-forge/sims/skip-list.html) · [Parallel Prefix Sums](https://normansrule.github.io/algorithm-forge/sims/parallel-prefix.html) · [Counting in a Stream](https://normansrule.github.io/algorithm-forge/sims/streaming-sketches.html) · [Shortest Paths: Dijkstra to the 2025 Frontier](https://normansrule.github.io/algorithm-forge/sims/shortest-path-frontier.html) · [Maximum Flow Beyond Augmenting Paths](https://normansrule.github.io/algorithm-forge/sims/flow-modern.html) · [Suffix Structures](https://normansrule.github.io/algorithm-forge/sims/suffix-structures.html) · [Modern MST](https://normansrule.github.io/algorithm-forge/sims/mst-modern.html) · [Raft Consensus](https://normansrule.github.io/algorithm-forge/sims/raft-consensus.html) | [26 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=18) | Frontier |
 
 🚀 = Beyond the textbook (senior-engineer level).
-<!-- COURSE-MAP:END -->
+<!-- CHAPTER-MAP:END -->
 
 ---
 
@@ -175,16 +233,16 @@ Lessons open on GitHub; simulations and practice open on the live site.
 
 ---
 
-## 📝 CSC 501 practice kit
+## 📝 Practice kit
 
-Everything from the course, redone so you can learn from it rather than just read it:
+Worked problem sets and practice exams, built to be redone from a blank page rather than just read:
 
 | | What you get |
 |---|---|
-| [**Quiz bank**](practice/quizzes/README.md) · [interactive quiz](https://normansrule.github.io/algorithm-forge/quiz.html) | All 19 course quiz questions, plus 98 new ones (117 in the interactive quiz). Every answer explains why it's right *and* why each distractor is wrong. |
-| [**Assignment 1**](practice/assignments/assignment-1.md) (Ch 1–2) · [**Assignment 2**](practice/assignments/assignment-2.md) (Ch 3–4) | Worked solutions to the Levitin exercises: idea → pseudocode → why it's correct → count → Θ. Most are also Arena problems. |
-| [**Midterm 1**](practice/midterm-1/README.md) · [**Practice Exam 2**](practice/midterm-1/practice-exam-2.md) | The sample exam and Midterm 1 fully worked (linear algorithms, recursive + non-recursive designs, exhaustive search, backward substitution), plus a fresh exam in the same style. |
-| [**Exam strategies**](practice/exam-strategies.md) | How to attack each of the four question types, with fill-in templates. |
+| [**Quiz bank**](practice/quizzes/README.md) · [interactive quiz](https://normansrule.github.io/algorithm-forge/quiz.html) | 117 questions across Chapters 1–12 (19 core questions plus 98 more). Every answer explains why it's right *and* why each distractor is wrong. |
+| [**Problem Set 1**](practice/problem-sets/set-1-foundations.md) (Ch 1–2) · [**Problem Set 2**](practice/problem-sets/set-2-brute-force-and-decrease.md) (Ch 3–4) | Worked solutions to Levitin exercises: idea → pseudocode → why it's correct → count → Θ. Most are also Arena problems. |
+| [**Practice Exam 1**](practice/exams/practice-exam-1.md) · [**Practice Exam 2**](practice/exams/practice-exam-2.md) | Two exams on Chapters 1–5, fully worked (linear algorithms, recursive and non-recursive designs, exhaustive search, backward substitution). |
+| [**Problem-solving strategies**](practice/problem-solving-strategies.md) | The four common kinds of algorithm-design questions and how to attack each, with fill-in templates. |
 | [**Empirical-analysis lab**](practice/empirical-analysis-lab/README.md) · [in-browser lab](https://normansrule.github.io/algorithm-forge/sims/empirical-lab.html) | The SortAnalysis project: why the given counter is misplaced, the fix, Java + Python experiments on 20 random arrays per size, scatter plots, the ≈ n²/4 hypothesis and the n = 10,000 estimate (≈ 25,007,000 comparisons). |
 
 <p align="center"><img src="practice/empirical-analysis-lab/results/comparisons_scatter.png" alt="Scatter plot of key comparisons versus n for insertion sort" width="620"></p>
@@ -197,7 +255,7 @@ Everything from the course, redone so you can learn from it rather than just rea
 # 1) The site: every page is plain HTML/JS, so any static server works
 python3 -m http.server 8000 --directory docs      # then open http://localhost:8000
 
-# 2) Python library: every algorithm in the course, instrumented with operation counters
+# 2) Python library: every algorithm in the lessons, instrumented with operation counters
 python3 -m venv .venv && . .venv/bin/activate     # a virtual environment (needed on recent Ubuntu/Debian)
 python3 -m pip install -e . pytest                 # installs the algoforge package (src/python)
 python3 -m pytest                                  # the whole test suite
@@ -211,6 +269,8 @@ node tests/engine/forge-pseudo.test.mjs            # interpreter unit tests
 node tools/validate-problems.mjs                   # every problem: reference solution passes,
                                                    # starter fails, every known mistake is caught
 node tools/check-lesson-pseudocode.mjs             # every lesson ALGORITHM block is valid pseudocode
+node tools/check-playground-examples.mjs           # every Playground example gives its expected answer
+npm test                                           # all of the Node checks in one go
 python3 tools/check_links.py                       # every link in the repo and site resolves
 ```
 
@@ -230,13 +290,15 @@ print(c["comparisons"])   # the exact key-comparison count Levitin analyzes
 ```text
 algorithm-forge/
 ├── README.md                  ← you are here (home base)
-├── lessons/                   ← 18 lessons: 00 Start Here · 01–12 Levitin · 13–17 Beyond the textbook
-├── practice/                  ← quizzes · assignments · midterm · exam strategies · empirical-analysis lab
+├── lessons/                   ← 19 lessons: 00 Start Here · 01–12 Levitin · 13–17 Beyond · 18 The Frontier
+├── practice/                  ← quiz bank · problem sets · practice exams · strategies · empirical-analysis lab
 ├── cheatsheets/               ← asymptotics · sums & recurrences · design strategies · complexity table · pseudocode
 ├── docs/                      ← the GitHub Pages site (no build step)
 │   ├── index.html path.html cheatsheet.html quiz.html
-│   ├── sims/                  ← 48 interactive simulations
-│   ├── arena/                 ← the Arena UI, grading worker, and problems/ (213 problems in 11 packs)
+│   ├── atlas.html atlas/      ← Algorithm Atlas: 16 evolution ladders, classic → research frontier
+│   ├── playground.html        ← run, visualize and measure any Forge Pseudocode
+│   ├── sims/                  ← 59 interactive simulations
+│   ├── arena/                 ← the Arena UI, grading worker, and problems/ (252 problems in 13 packs)
 │   ├── engine/                ← forge-pseudo.js (interpreter) · forge-check.js (grader)
 │   └── assets/                ← design system: forge.css · forge-kit.js
 ├── src/python/algoforge/      ← tested Python implementations with operation counters

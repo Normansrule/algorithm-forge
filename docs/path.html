@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Learning Path · Algorithm Forge</title>
-<meta name="description" content="The Algorithm Forge learning path: a subway map of Levels 0–5 and Chapters 0–17 with your progress, what each level unlocks, and a week-by-week plan.">
+<meta name="description" content="The Algorithm Forge learning path: a subway map of Levels 0–7 and Chapters 0–18, from your first loop to the research frontier, with your progress, what each level unlocks, and a week-by-week plan.">
 <link rel="stylesheet" href="assets/css/forge.css">
 <link rel="stylesheet" href="assets/css/forge-hub.css">
 <script src="assets/js/forge-kit.js"></script>
@@ -24,6 +24,7 @@
   @media (prefers-reduced-motion: reduce) { #map .next-ring { animation: none; } }
   .map-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .8rem; color: var(--ink-2); align-items: center; }
   .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .map-legend .lv-diamond { width: 9px; height: 9px; transform: rotate(45deg); border-radius: 2px; flex: none; }
 
   .detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-top: 14px; }
   .detail h2 { margin: 4px 0 6px; }
@@ -34,7 +35,7 @@
   .mini-sim:hover { border-color: var(--ember); text-decoration: none; }
   .mini-sim .glyph { margin-bottom: 4px; }
 
-  .levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
   .lvl-card { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--lvc); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
   .lvl-card .lv { font-family: var(--mono); font-weight: 800; color: var(--lvc); font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; }
   .lvl-card h3 { margin: 0; }
@@ -46,16 +47,17 @@
   .lvl-card .chs { margin-top: auto; font-size: .82rem; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 
   .weeks { display: grid; gap: 8px; }
-  .wk { display: grid; grid-template-columns: 64px 150px minmax(0, 1fr) auto; gap: 14px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--lvc); border-radius: 10px; padding: 12px 14px; }
+  .wk { display: grid; grid-template-columns: 64px 210px minmax(0, 1fr) auto; gap: 14px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--lvc); border-radius: 10px; padding: 12px 14px; }
   .wk.review { background: color-mix(in srgb, var(--ember) 7%, var(--panel)); border-left-color: var(--ember); }
   .wk .w { font-family: var(--mono); font-weight: 800; font-size: 1.05rem; }
   .wk .w small { display: block; font-size: .64rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
-  .wk .lec { font-weight: 700; font-size: .9rem; }
-  .wk .lec small { display: block; color: var(--muted); font-weight: 600; font-size: .78rem; }
+  .wk .wk-label { font-weight: 700; font-size: .9rem; }
+  .wk .wk-label small { display: block; color: var(--muted); font-weight: 600; font-size: .78rem; }
   .wk .goal { color: var(--ink-2); font-size: .9rem; }
   .wk .do { display: flex; gap: 10px; flex-wrap: wrap; font-size: .82rem; font-weight: 700; justify-content: flex-end; }
   .beyond-sep { margin: 18px 0 6px; font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--steel); }
 
+  @media (max-width: 1200px) { .levels { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 1000px) { .levels { grid-template-columns: repeat(2, minmax(0, 1fr)); } .wk { grid-template-columns: 56px minmax(0, 1fr); } .wk .goal, .wk .do { grid-column: 2; } .wk .do { justify-content: flex-start; } }
   @media (max-width: 760px) { .detail { grid-template-columns: 1fr; } }
   @media (max-width: 640px) { .levels { grid-template-columns: 1fr; } .wk { grid-template-columns: 46px minmax(0, 1fr); gap: 4px 10px; padding: 10px 12px; } }
@@ -65,9 +67,10 @@
 <main class="wrap">
   <header class="hero">
     <div class="eyebrow">Learning Path</div>
-    <h1>From your first loop to senior patterns</h1>
-    <p class="lead">Follow the line: each station is a chapter, each color a level. The ring around a station fills as you solve
-      its Practice Arena problems. Tap a station to see what's inside and where to start.</p>
+    <h1>From your first loop to the research frontier</h1>
+    <p class="lead">Follow the line: each station is a chapter, each color a level. It runs through the textbook core and the senior
+      patterns, and ends at Chapter 18, the Frontier. The ring around a station fills as you solve its Practice Arena problems.
+      Tap a station to see what's inside and where to start.</p>
     <div class="map-legend" id="legend"></div>
   </header>
 
@@ -87,17 +90,18 @@
 
   <section class="section" id="order">
     <div class="section-head"><div><div class="eyebrow">Recommended order</div><h2>How to walk the line</h2></div></div>
-    <div class="grid cols-3">
+    <div class="grid cols-4">
       <div class="panel"><h3>1 · Chapters 0–2 first, always</h3><p class="small" style="color:var(--ink-2);margin:0">Chapter 2 is the measuring tape for everything after it. Come back to it whenever a new sum or recurrence appears — the <a href="cheatsheet.html#sums">cheat sheet</a> keeps the formulas in one place.</p></div>
       <div class="panel"><h3>2 · Strategies in textbook order</h3><p class="small" style="color:var(--ink-2);margin:0">Chapters 3–10 each add one design strategy. Each one reuses the one before it (divide-and-conquer needs recursion; dynamic programming fixes divide-and-conquer's repeats), so resist skipping.</p></div>
       <div class="panel"><h3>3 · Beyond, in any order</h3><p class="small" style="color:var(--ink-2);margin:0">After Chapter 12, Chapters 13–17 are independent. Pick by goal: interviews → 15, systems work → 13 and 16, graph-heavy work → 14. Finish with 17, the playbook.</p></div>
+      <div class="panel" style="box-shadow: inset 0 3px 0 var(--lv7)"><h3>4 · The Frontier, as a finale</h3><p class="small" style="color:var(--ink-2);margin:0">Chapter 18 is optional and builds on everything before it: each section starts from a classic you already know (mergesort, hashing, binary search trees, scans) and shows what modern libraries and recent papers changed. Trace any idea further in the <a href="atlas.html">Algorithm Atlas</a>.</p></div>
     </div>
   </section>
 
   <section class="section" id="weeks">
     <div class="section-head">
-      <div><div class="eyebrow">Week by week</div><h2>A semester plan that follows the lectures</h2>
-        <p>Lecture N covers Chapter N of Levitin, so this plan lines up with the CSC 501 course (Algorithm Analysis and Design). It is a suggested pace, not an official calendar: shift it to match your syllabus.</p></div>
+      <div><div class="eyebrow">Week by week</div><h2>A 12-week study plan</h2>
+        <p>One chapter of Levitin per week, in chapter order, at about 6–8 hours a week, with Checkpoint A (a timed practice exam) after Chapter 5 and Checkpoint B after Chapter 12. It is a suggested pace: go faster or slower as you like. Chapters 13–17 follow at your own pace, and the Frontier (Chapter 18) is the optional finale.</p></div>
     </div>
     <div class="weeks" id="week-list"></div>
   </section>
@@ -112,9 +116,20 @@ Forge.page({ title: "Learning Path" });
   const prog = H.progress();
   const svg = document.getElementById("map");
 
+  // Levels with no station of their own (e.g. Level 6 "Expert" spans the Chapter 12–17 stations of Level 5)
+  // get a small diamond on each station they share, and say so in the legend.
+  const stationLevels = new Set(H.CHAPTERS.map((c) => c.level));
+  const SHARED = H.LEVELS.filter((L) => !stationLevels.has(L.n) && (L.chapters || []).length);
+  const sharedOn = (ch) => SHARED.filter((L) => L.chapters.includes(ch));
+  const chRange = (xs) => { const a = xs.slice().sort((x, y) => x - y); return a.every((v, i) => !i || v === a[i - 1] + 1) && a.length > 1 ? `Ch ${a[0]}–${a[a.length - 1]}` : "Ch " + a.join(", "); };
   // legend
   const legend = document.getElementById("legend");
-  H.LEVELS.forEach((L) => legend.appendChild(Forge.el("span", null, Forge.el("i", { class: "lv-dot", style: `background:var(--lv${L.n})` }), `Level ${L.n}`)));
+  H.LEVELS.forEach((L) => {
+    const shared = SHARED.includes(L);
+    legend.appendChild(Forge.el("span", shared ? { title: `Level ${L.n} has no stations of its own: its problems sit on the ${chRange(L.chapters)} stations` } : null,
+      Forge.el("i", { class: shared ? "lv-diamond" : "lv-dot", style: `background:var(--lv${L.n})` }),
+      shared ? `Level ${L.n} (◆ on the ${chRange(L.chapters)} stations)` : `Level ${L.n}`));
+  });
   legend.appendChild(Forge.el("span", { class: "muted" }, "◯ ring = problems solved"));
 
   function nextUp() {
@@ -122,7 +137,7 @@ Forge.page({ title: "Learning Path" });
     return tally.total ? null : 1;
   }
 
-  const SHORT = ["Foundations", "Brute Force & Analysis", "Decrease & Divide", "Transform & Space-Time", "Tables, Greedy, Flows", "Hard Problems & Beyond", "Expert"];
+  const SHORT = ["Foundations", "Brute Force & Analysis", "Decrease & Divide", "Transform & Space-Time", "Tables, Greedy, Flows", "Hard Problems & Beyond", "Expert", "Frontier"];
   function wrapText(s, max) {
     const words = s.split(/(?<=-)|\s+/), lines = [];
     let cur = "";
@@ -168,17 +183,33 @@ Forge.page({ title: "Learning Path" });
       if (vertical) g += `<text class="lvtag" x="${p.x + 38}" y="${p.y - 33}" font-size="10" fill="var(--lv${L.n})">${esc(`Level ${L.n} · ${SHORT[L.n]}`)}</text>`;
       else g += `<text class="lvtag" x="${p.x}" y="${p.y - 34}" font-size="10" text-anchor="middle" fill="var(--lv${L.n})">${esc(`Level ${L.n}`)}</text>`;
     });
+    // shared levels: a tag over their first station (wide layouts; the legend explains it everywhere)
+    if (!vertical) SHARED.forEach((L) => {
+      const i = C.findIndex((c) => L.chapters.includes(c.n));
+      if (i < 0) return;
+      const p = pos[i];
+      if (i > 0 && C[i - 1].level !== C[i].level) return; // a station-level tag already sits there
+      g += `<text class="lvtag" x="${p.x}" y="${p.y - 34}" font-size="10" text-anchor="middle" fill="var(--lv${L.n})">${esc(`Level ${L.n} ◆`)}</text>`;
+    });
     const nu = nextUp();
     C.forEach((c, i) => {
       const p = pos[i], b = tally.byCh[c.n] || { total: 0, solved: 0 };
       const R = 21, circ = 2 * Math.PI * (R + 5), f = b.total ? b.solved / b.total : 0;
       const lv = `var(--lv${c.level})`;
-      let s = `<g class="st${selected === c.n ? " sel" : ""}" data-ch="${c.n}" tabindex="0" role="button" aria-label="Chapter ${c.n}: ${esc(c.title)}, ${b.solved} of ${b.total} problems solved">`;
+      const also = sharedOn(c.n);
+      let s = `<g class="st${selected === c.n ? " sel" : ""}" data-ch="${c.n}" tabindex="0" role="button" aria-label="Chapter ${c.n}: ${esc(c.title)}${also.map((L) => `, also Level ${L.n} (${esc(L.name)}) problems`).join("")}, ${b.solved} of ${b.total} problems solved">`;
+      if (c.level === 7) s += `<circle cx="${p.x}" cy="${p.y}" r="${R + 13}" fill="var(--lv7)" opacity=".14"/>`;
+      if (c.level === 7 && !vertical && i === n - 1 && pos[i].r > 0 && pos.filter((q) => q.r === pos[i].r).length === 1)
+        s += `<text class="sub" x="${p.x + (p.x > W / 2 ? -48 : 48)}" y="${p.y + 4}" text-anchor="${p.x > W / 2 ? "end" : "start"}" font-size="11.5" style="fill: var(--lv7)">optional finale: the research frontier</text>`;
       if (c.n === nu) s += `<circle class="next-ring" cx="${p.x}" cy="${p.y}" r="25" fill="none" stroke="var(--ember)" stroke-width="3"/>`;
       s += `<circle class="halo" cx="${p.x}" cy="${p.y}" r="${R + 5}" fill="var(--panel)" stroke="var(--line)" stroke-width="1"/>`;
       if (b.solved) s += `<circle cx="${p.x}" cy="${p.y}" r="${R + 5}" fill="none" stroke="var(--c-done)" stroke-width="4" stroke-dasharray="${(circ * f).toFixed(1)} 999" transform="rotate(-90 ${p.x} ${p.y})" stroke-linecap="round"/>`;
       s += `<circle cx="${p.x}" cy="${p.y}" r="${R - 2}" fill="${f === 1 ? "var(--c-done)" : "var(--bg-2)"}" stroke="${lv}" stroke-width="4"/>`;
       s += `<text x="${p.x}" y="${p.y + 5}" text-anchor="middle" font-size="15" font-weight="800" font-family="var(--mono)" fill="${f === 1 ? "#0d1117" : "var(--ink)"}">${c.n}</text>`;
+      also.forEach((L, k) => {
+        const dx = p.x + 19 + k * 13, dy = p.y - 19;
+        s += `<rect x="${dx - 5.5}" y="${dy - 5.5}" width="11" height="11" rx="2" transform="rotate(45 ${dx} ${dy})" fill="var(--lv${L.n})" stroke="var(--panel)" stroke-width="2"><title>Also Level ${L.n} · ${esc(L.name)}</title></rect>`;
+      });
       const sub = b.total ? `${b.solved}/${b.total} solved` : (c.n === 0 ? "start here" : "lesson + sims");
       if (vertical) {
         const lines = wrapText(c.title, Math.floor((W - 90) / 8.2));
@@ -210,7 +241,7 @@ Forge.page({ title: "Learning Path" });
     const firstOpen = probs.find((p) => !prog.solved.has(p.id));
     host.innerHTML = "";
     const left = Forge.el("div", { class: "panel", style: `border-top: 4px solid var(--lv${c.level})` },
-      Forge.el("div", { class: "eyebrow", style: `color: var(--lv${c.level})` }, `Chapter ${ch} · Level ${L.n} · ${L.name}`),
+      Forge.el("div", { class: "eyebrow", style: `color: var(--lv${c.level})` }, `Chapter ${ch} · Level ${L.n} · ${L.name}` + sharedOn(ch).map((S) => ` · also Level ${S.n} · ${S.name}`).join("")),
       Forge.el("h2", null, c.title),
       Forge.el("p", { class: "hook" }, c.hook),
       b.total ? Forge.el("div", null,
@@ -244,7 +275,7 @@ Forge.page({ title: "Learning Path" });
       host.appendChild(Forge.el("div", { class: "lvl-card", style: `--lvc: var(--lv${L.n})` },
         Forge.el("div", { class: "lv" }, "Level " + L.n),
         Forge.el("h3", null, L.name),
-        reg ? Forge.el("p", { class: "blurb" }, reg.blurb.replace(/\bDP\b/g, "dynamic programming").replace(/\bNP\b/, "Nondeterministic Polynomial (NP)-hard problems")) : null,
+        reg ? Forge.el("p", { class: "blurb" }, (/Nondeterministic Polynomial/.test(reg.blurb) ? reg.blurb : reg.blurb.replace(/\bNP\b/, "Nondeterministic Polynomial (NP)")).replace(/\bDP\b/g, "dynamic programming")) : null,
         Forge.el("p", { class: "can" }, Forge.el("b", null, "You can: "), L.can.replace(/^You can /, "")),
         Forge.el("div", { class: "chs" }, L.chapters.map((n) => Forge.el("a", { href: "#", onclick: (e) => { e.preventDefault(); select(n); document.getElementById("map").scrollIntoView({ behavior: "smooth" }); } }, `Ch ${n} · ${H.CHAPTERS[n].title}`))),
         Forge.el("div", { class: "foot" }, Forge.el("span", null, b.total ? `${b.solved}/${b.total}` : "—"),
@@ -258,8 +289,9 @@ Forge.page({ title: "Learning Path" });
     const host = document.getElementById("week-list");
     host.innerHTML = "";
     H.WEEKS.forEach((wk, k) => {
-      if (wk.beyond && !H.WEEKS[k - 1].beyond) host.appendChild(Forge.el("div", { class: "beyond-sep" }, "Beyond the course · Chapters 13–17, at your own pace"));
       const ch = wk.ch[0], c = H.CHAPTERS[ch];
+      if (wk.beyond && !H.WEEKS[k - 1].beyond) host.appendChild(Forge.el("div", { class: "beyond-sep" }, "Beyond the textbook · Chapters 13–17, at your own pace"));
+      if (c && c.level === 7) host.appendChild(Forge.el("div", { class: "beyond-sep", style: { color: "var(--lv7)" } }, "Optional finale · Chapter 18, the Frontier"));
       const chLabel = wk.review ? `Chapters ${wk.ch[0]}–${wk.ch[wk.ch.length - 1]}` : `Chapter ${ch} · ${c.title}`;
       const doLinks = wk.review ? [
         wk.extra ? Forge.el("a", { href: H.REPO + wk.extra[1], target: "_blank", rel: "noopener" }, "📝 " + wk.extra[0]) : null,
@@ -272,7 +304,7 @@ Forge.page({ title: "Learning Path" });
         wk.extra ? Forge.el("a", { href: H.REPO + wk.extra[1], target: "_blank", rel: "noopener" }, "📝 " + wk.extra[0]) : null];
       host.appendChild(Forge.el("div", { class: "wk" + (wk.review ? " review" : ""), style: `--lvc: var(--lv${c.level})` },
         Forge.el("div", { class: "w" }, Forge.el("small", null, "week"), wk.w),
-        Forge.el("div", { class: "lec" }, wk.lec, Forge.el("small", null, chLabel)),
+        Forge.el("div", { class: "wk-label" }, wk.label, Forge.el("small", null, chLabel)),
         Forge.el("div", { class: "goal" }, wk.goal),
         Forge.el("div", { class: "do" }, doLinks)));
     });

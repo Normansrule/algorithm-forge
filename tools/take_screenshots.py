@@ -108,6 +108,11 @@ MAX_OK = ("ALGORITHM MaxElement(A[0..n-1])\n    maxval ← A[0]\n    for i ← 1
           "        if A[i] > maxval then\n            maxval ← A[i]\n    return maxval")
 
 
+INSERTION_DRAFT = ("ALGORITHM InsertionSort(A[0..n-1])\n    // Sorts A in place, nondecreasing\n    for i ← 1 to n - 1 do\n"
+                   "        v ← A[i]\n        j ← i - 1\n        while j ≥ 0 and A[j] > v do\n            A[j + 1] ← A[j]\n"
+                   "            \n    return A")
+
+
 # ---------------------------------------------------------------------------- shots
 def shot_landing(pg, B):
     pg.goto(B + "index.html")
@@ -137,7 +142,7 @@ def shot_arena_accepted(pg, B):
     open_max(pg, B)
     pg.click(".ws-toolbar >> text=Submit")
     wait_report(pg)
-    pg.wait_for_timeout(900)
+    dismiss_toasts(pg)
     # bring the verdict + efficiency chart into the right-hand column's view
     pg.evaluate("""() => {
         const r = document.querySelector('.results .report'); if (!r) return;
@@ -245,6 +250,112 @@ def shot_heap(pg, B):
     scroll_to(pg, ".sim-layout", 62)
 
 
+def dismiss_toasts(pg):
+    """Close badge toasts so they do not cover the shot (they arrive a beat after an Accepted)."""
+    pg.wait_for_timeout(2200)
+    pg.evaluate("() => document.querySelectorAll('.a-toasts').forEach(t => t.remove())")
+
+
+def shot_atlas(pg, B):
+    pg.goto(B + "atlas.html#shortest-paths/6")   # the 2025 "Breaking the sorting barrier" rung
+    pg.wait_for_selector(".rung.on")
+    pg.wait_for_timeout(900)
+    scroll_to(pg, ".rung.on", 300)
+
+
+def shot_playground(pg, B):
+    pg.goto(B + "playground.html#ex=insertion-sort")
+    pg.wait_for_selector("#pgtab-growth")
+    pg.wait_for_timeout(600)
+    pg.locator("button", has_text="▶ Run").first.click()
+    pg.wait_for_timeout(900)
+    pg.click("#pgtab-growth")
+    pg.locator("button", has_text="📈 Measure growth").first.click()
+    pg.wait_for_function("() => !document.querySelector('#pane-growth').textContent.includes('Measuring')", timeout=60000)
+    pg.wait_for_timeout(800)
+    scroll_to(pg, ".pg-views", 70)
+
+
+def shot_arena_interview(pg, B):
+    pg.goto(B + "arena/problem.html?id=insertion-sort")
+    pg.wait_for_selector(".ed-ta", state="attached")
+    pg.click("#mt-pseudo")
+    pg.click(".iv-toggle")
+    pg.wait_for_selector("#iv-start")
+    pg.click("#iv-start")
+    pg.wait_for_selector(".iv-timer:not([hidden])")
+    set_code(pg, INSERTION_DRAFT)   # mid-attempt: half of the loop written
+    pg.wait_for_timeout(3200)    # let the clock tick a few seconds
+
+
+def shot_arena_compare(pg, B):
+    pg.goto(B + "arena/problem.html?id=max-element")
+    pg.wait_for_selector(".ed-ta", state="attached")
+    pg.click("#mt-pseudo")
+    ref = pg.evaluate("() => ForgeProblems.get('max-element').solution.pseudo")   # submit the reference itself
+    set_code(pg, ref)
+    pg.click(".ws-toolbar >> text=Submit")
+    wait_report(pg)
+    pg.wait_for_selector("#cel-compare")
+    dismiss_toasts(pg)
+    pg.click("#cel-compare")
+    pg.wait_for_selector(".compare-host")
+    pg.wait_for_timeout(1200)
+    pg.evaluate("""() => {
+        const r = document.querySelector('.compare-host'); if (!r) return;
+        let p = r.parentElement;   // the right-hand column scrolls on its own: move it, keep the page at the top
+        while (p && !(p.scrollHeight > p.clientHeight && /auto|scroll/.test(getComputedStyle(p).overflowY))) p = p.parentElement;
+        window.scrollTo(0, 0);
+        if (p) p.scrollTop += r.getBoundingClientRect().top - p.getBoundingClientRect().top - 56;
+        else window.scrollTo(0, r.getBoundingClientRect().top - 72);
+    }""")
+    pg.wait_for_timeout(400)
+
+
+def shot_sorting_evolution(pg, B):
+    pg.goto(B + "sims/sorting-evolution.html")
+    pg.wait_for_timeout(800)
+    pg.click("#modeTim")
+    pg.wait_for_timeout(400)
+    scrub(pg, 0.42)
+    scroll_to(pg, ".sim-layout", 62)
+
+
+def shot_vector_search(pg, B):
+    pg.goto(B + "sims/vector-search.html")
+    pg.wait_for_timeout(800)
+    pg.click("button[data-mode='hnsw']")
+    pg.wait_for_timeout(800)
+    scrub(pg, 0.55)
+    scroll_to(pg, ".sim-layout", 62)
+
+
+def shot_cuckoo(pg, B):
+    pg.goto(B + "sims/cuckoo-filters.html")
+    pg.wait_for_timeout(800)
+    pg.click("#modeA")
+    pg.click("#aExample")              # 7 keys in two tables of 11 cells
+    pg.wait_for_timeout(400)
+    pg.fill("#aKey", "32")             # inserting 32 starts a long kick-out chain
+    pg.click("#aIns")
+    pg.wait_for_timeout(600)
+    scrub(pg, 0.6)
+    scroll_to(pg, ".sim-layout", 62)
+
+
+def shot_generic(path, frac=0.5, before=None):
+    """Open a simulation, optionally run a setup step, move its player to a fraction of the frames."""
+    def go(pg, B):
+        pg.goto(B + path)
+        pg.wait_for_timeout(1200)
+        if before:
+            before(pg)
+        if pg.locator("input.scrub").count():
+            scrub(pg, frac)
+        scroll_to(pg, ".sim-layout", 62)
+    return go
+
+
 SHOTS = [
     ("landing", shot_landing),
     ("path", shot_path),
@@ -259,6 +370,19 @@ SHOTS = [
     ("sim-n-queens", shot_backtracking),
     ("sim-boyer-moore", shot_string),
     ("sim-heapsort", shot_heap),
+    ("atlas", shot_atlas),
+    ("playground", shot_playground),
+    ("arena-interview", shot_arena_interview),
+    ("arena-compare", shot_arena_compare),
+    ("sim-sorting-evolution", shot_sorting_evolution),
+    ("sim-vector-search", shot_vector_search),
+    ("sim-cuckoo-filters", shot_cuckoo),
+    ("sim-streaming-sketches", shot_generic("sims/streaming-sketches.html", 0.6)),
+    ("sim-raft-consensus", shot_generic("sims/raft-consensus.html", 0.35)),
+    ("sim-shortest-path-frontier", shot_generic("sims/shortest-path-frontier.html", 0.5)),
+    ("sim-flow-modern", shot_generic("sims/flow-modern.html", 0.45)),
+    ("sim-suffix-structures", shot_generic("sims/suffix-structures.html", 0.6)),
+    ("sim-mst-modern", shot_generic("sims/mst-modern.html", 0.5)),
 ]
 
 

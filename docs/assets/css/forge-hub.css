@@ -60,10 +60,16 @@ button.chip.on { background: var(--ember); color: #1b0f05; border-color: var(--e
 .stat .v small { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
 
 /* level colors as variables for SVG use */
-:root { --lv0: #3ddc97; --lv1: #7bd88f; --lv2: #5ab0ff; --lv3: #c38bff; --lv4: #ff8a3d; --lv5: #ff5d73; --lv6: #ffd24d; }
-:root[data-theme="light"] { --lv0: #12a26b; --lv1: #3f9a52; --lv2: #1f6fd1; --lv3: #8a4fd6; --lv4: #d9621a; --lv5: #e23a55; --lv6: #a77b00; }
+:root { --lv0: #3ddc97; --lv1: #ff7ad9; --lv2: #5ab0ff; --lv3: #c38bff; --lv4: #ff8a3d; --lv5: #ff5d73; --lv6: #ffd24d; --lv7: #4de1ff; }
+:root[data-theme="light"] { --lv0: #12a26b; --lv1: #b8318f; --lv2: #1f6fd1; --lv3: #8a4fd6; --lv4: #d9621a; --lv5: #e23a55; --lv6: #a77b00; --lv7: #0b8fb3; }
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) { --lv0: #12a26b; --lv1: #3f9a52; --lv2: #1f6fd1; --lv3: #8a4fd6; --lv4: #d9621a; --lv5: #e23a55; --lv6: #a77b00; }
+  :root:not([data-theme="dark"]) { --lv0: #12a26b; --lv1: #b8318f; --lv2: #1f6fd1; --lv3: #8a4fd6; --lv4: #d9621a; --lv5: #e23a55; --lv6: #a77b00; --lv7: #0b8fb3; }
+}
+/* Atlas stage colours (same heat ramp as docs/atlas/atlas.css: steel first idea → gold research frontier) */
+:root { --st-first: #8d9cb6; --st-classic: #5ab0ff; --st-advanced: #c38bff; --st-production: #ff8a3d; --st-frontier: #ffd24d; }
+:root[data-theme="light"] { --st-first: #66768f; --st-classic: #1f6fd1; --st-advanced: #8a4fd6; --st-production: #dc5f12; --st-frontier: #c48a00; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) { --st-first: #66768f; --st-classic: #1f6fd1; --st-advanced: #8a4fd6; --st-production: #dc5f12; --st-frontier: #c48a00; }
 }
 .lv-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: 0; }
 

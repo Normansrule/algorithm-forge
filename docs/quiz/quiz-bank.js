@@ -19,8 +19,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.1",
    "ch": 1,
-   "src": "Course quiz · Quiz A #1",
-   "course": true,
+   "src": "Core · Algorithms and programs",
+   "core": true,
    "q": "<p>Which formula describes what a program is made of?</p>",
    "options": [
     "Program = Algorithm + Hardware",
@@ -35,8 +35,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.2",
    "ch": 2,
-   "src": "Course quiz · Quiz A #2",
-   "course": true,
+   "src": "Core · Analysis framework and cost measures",
+   "core": true,
    "q": "<p>What are the two main approaches to analyzing an algorithm's efficiency?</p>",
    "options": [
     "Best case and worst case",
@@ -51,8 +51,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.3",
    "ch": 2,
-   "src": "Course quiz · Quiz A #3, regraded",
-   "course": true,
+   "src": "Core · Analysis framework and cost measures",
+   "core": true,
    "q": "<p>True or False: \"Counting the number of basic operations is different from finding the running time.\"</p>",
    "options": [
     "True",
@@ -65,8 +65,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.4",
    "ch": 2,
-   "src": "Course quiz · Quiz A #4",
-   "course": true,
+   "src": "Core · Analysis framework and cost measures",
+   "core": true,
    "q": "<p>Space complexity of an algorithm is best described as…</p>",
    "options": [
     "the size of the source code",
@@ -81,8 +81,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.5",
    "ch": 2,
-   "src": "Course quiz · Quiz B #5",
-   "course": true,
+   "src": "Core · Analysis framework and cost measures",
+   "core": true,
    "q": "<p>What is the space complexity of the recursive factorial algorithm <code>F(n) = F(n − 1) · n</code>, <code>F(0) = 1</code>?</p>",
    "options": [
     "O(1)",
@@ -97,8 +97,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.6",
    "ch": 2,
-   "src": "Course quiz · Quiz A #5, and again as Quiz C #1",
-   "course": true,
+   "src": "Core · Amortized analysis",
+   "core": true,
    "q": "<p>Which statements about amortized analysis are true?</p>\n<ul><li>I. It analyzes the running time of a <i>sequence</i> of operations performed on a data structure.</li><li>II. It focuses on the cost of <i>each individual</i> operation.</li><li>III. It finds the average running time per operation over the sequence.</li></ul>",
    "options": [
     "I only",
@@ -113,8 +113,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.7",
    "ch": 2,
-   "src": "Course quiz · Quiz B #1",
-   "course": true,
+   "src": "Core · Orders of growth",
+   "core": true,
    "q": "<p>Order these from highest to lowest order of growth: (a) <span class=\"math\">2<sup>n</sup></span>, (b) <span class=\"math\">n!</span>, (c) <span class=\"math\">n<sup>100</sup></span>.</p>",
    "options": [
     "a &gt; b &gt; c",
@@ -129,8 +129,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.8",
    "ch": 2,
-   "src": "Course quiz · Quiz B #3",
-   "course": true,
+   "src": "Core · Orders of growth",
+   "core": true,
    "q": "<p>True or False: \"An algorithm with a lower big-O class is always faster than one with a higher class, for all input sizes.\"</p>",
    "options": [
     "True",
@@ -143,8 +143,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.9",
    "ch": 2,
-   "src": "Course quiz · Quiz B #2",
-   "course": true,
+   "src": "Core · Recurrences",
+   "core": true,
    "q": "<p>Solve <span class=\"math\">T(n) = T(n − 1) + n</span> for <span class=\"math\">n &gt; 1</span>, <span class=\"math\">T(1) = 0</span>.</p>",
    "options": [
     "<span class=\"math\">n(n + 1)/2</span>",
@@ -154,13 +154,13 @@ window.FORGE_QUIZ = {
    ],
    "answer": 1,
    "verdict": "<span class=\"math\">n(n + 1)/2 − 1</span>",
-   "explain": "<p><b>Why (backward substitution):</b> <span class=\"math\">T(n) = T(n − 1) + n = T(n − 2) + (n − 1) + n = … = T(1) + 2 + 3 + … + n = 0 + (n(n + 1)/2 − 1)</span>. Check: <span class=\"math\">T(2) = T(1) + 2 = 2</span>, and <span class=\"math\">2·3/2 − 1 = 2</span> ✔.</p>\n<p><b>Why not the others:</b> a) would need <span class=\"math\">T(1) = 1</span>; it ignores that the sum starts at 2. c) is the solution of <span class=\"math\">T(n) = T(n − 1) + (n − 1)</span>. d) is the right order (Θ(n²)) but not the exact value. It is the answer to a different problem (Q(n) in Assignment 1).</p>"
+   "explain": "<p><b>Why (backward substitution):</b> <span class=\"math\">T(n) = T(n − 1) + n = T(n − 2) + (n − 1) + n = … = T(1) + 2 + 3 + … + n = 0 + (n(n + 1)/2 − 1)</span>. Check: <span class=\"math\">T(2) = T(1) + 2 = 2</span>, and <span class=\"math\">2·3/2 − 1 = 2</span> ✔.</p>\n<p><b>Why not the others:</b> a) would need <span class=\"math\">T(1) = 1</span>; it ignores that the sum starts at 2. c) is the solution of <span class=\"math\">T(n) = T(n − 1) + (n − 1)</span>. d) is the right order (Θ(n²)) but not the exact value. It is the answer to a different problem (Q(n) in Problem Set 1).</p>"
   },
   {
    "id": "Q1.10",
    "ch": 2,
-   "src": "Course quiz · Quiz B #4",
-   "course": true,
+   "src": "Core · Recurrences",
+   "core": true,
    "q": "<p>What is the time complexity of this function?</p>\n<pre class=\"code-block\" data-lang=\"\"><code>ALGORITHM Mystery(n)\n    if n ≤ 1 then\n        return 1\n    return Mystery(n div 2) + Mystery(n div 2)</code></pre>",
    "options": [
     "O(log n)",
@@ -175,8 +175,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.11",
    "ch": 3,
-   "src": "Course quiz · Quiz C #2",
-   "course": true,
+   "src": "Core · Brute force and exhaustive search",
+   "core": true,
    "q": "<p>Brute-force computation of <span class=\"math\">a<sup>n</sup></span> multiplies a by itself repeatedly. Let b be the number of bits of n. Which are true?</p>\n<ul><li>I. <span class=\"math\">M(n) = n</span> (the number of multiplications is linear in n).</li><li>II. <span class=\"math\">M(b) ≈ 2<sup>b</sup></span> (as a function of the input size in bits, it is exponential).</li><li>III. The algorithm is polynomial in the size of its input.</li></ul>",
    "options": [
     "I only",
@@ -186,13 +186,13 @@ window.FORGE_QUIZ = {
    ],
    "answer": 1,
    "verdict": "I and II",
-   "explain": "<p><b>Why:</b> the loop multiplies n times (n − 1 if it starts from a instead of 1), so I holds. Since <span class=\"math\">2<sup>b−1</sup> ≤ n &lt; 2<sup>b</sup></span>, that count is <span class=\"math\">Θ(2<sup>b</sup>)</span>, so II holds. (Levitin Exercise 3.1.2; see Assignment 2, Problem 1.)</p>\n<p><b>Why not III:</b> the input <i>size</i> of a number is b bits, and the work is exponential in b. \"Linear in n\" sounds polynomial, but n is the <i>value</i> of the input, not its size. This distinction is exactly why factoring by trial division is not a polynomial-time algorithm.</p>"
+   "explain": "<p><b>Why:</b> the loop multiplies n times (n − 1 if it starts from a instead of 1), so I holds. Since <span class=\"math\">2<sup>b−1</sup> ≤ n &lt; 2<sup>b</sup></span>, that count is <span class=\"math\">Θ(2<sup>b</sup>)</span>, so II holds. (Levitin Exercise 3.1.2; see Problem Set 2, Problem 1.)</p>\n<p><b>Why not III:</b> the input <i>size</i> of a number is b bits, and the work is exponential in b. \"Linear in n\" sounds polynomial, but n is the <i>value</i> of the input, not its size. This distinction is exactly why factoring by trial division is not a polynomial-time algorithm.</p>"
   },
   {
    "id": "Q1.12",
    "ch": 3,
-   "src": "Course quiz · Quiz C #3",
-   "course": true,
+   "src": "Core · Brute force and exhaustive search",
+   "core": true,
    "q": "<p>True or False: \"Exhaustive search for the knapsack problem is O(2ⁿ), and exhaustive search for the assignment problem is O(n!).\"</p>",
    "options": [
     "True",
@@ -205,8 +205,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.13",
    "ch": 3,
-   "src": "Course quiz · Quiz C #4",
-   "course": true,
+   "src": "Core · Brute force and exhaustive search",
+   "core": true,
    "q": "<p>What is the time efficiency of the brute-force closest-pair algorithm for n points in k-dimensional space?</p>",
    "options": [
     "O(n²)",
@@ -221,8 +221,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.14",
    "ch": 3,
-   "src": "Course quiz · Quiz C #5",
-   "course": true,
+   "src": "Core · Graph traversal",
+   "core": true,
    "q": "<p>For a given undirected graph, consider two claims about Depth-First Search (DFS) forests.</p>\n<ul><li>A. All DFS forests of the graph (for any starting vertex and any neighbour order) have the same number of trees.</li><li>B. All DFS forests of the graph have the same number of tree edges and the same number of back edges.</li></ul>",
    "options": [
     "A only",
@@ -237,8 +237,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.15",
    "ch": 4,
-   "src": "Course quiz · Quiz D #1",
-   "course": true,
+   "src": "Core · Decrease-and-conquer",
+   "core": true,
    "q": "<p>The source-removal algorithm for topological sorting runs on a digraph with n vertices and m edges stored as an <b>adjacency matrix</b>. Its time efficiency is…</p>",
    "options": [
     "O(n + m)",
@@ -248,13 +248,13 @@ window.FORGE_QUIZ = {
    ],
    "answer": 1,
    "verdict": "O(n² + m)",
-   "explain": "<p>(the course answer key).</p>\n<p><b>Why:</b> with a matrix, computing all in-degrees means scanning every column, which is Θ(n²). Removing a source means scanning its row (Θ(n)) to decrement its successors' in-degrees; over n removals that is Θ(n²) again. Keeping the current sources in a queue avoids searching for them. The m edge updates are included in those scans, so the total is Θ(n²). Writing it as O(n² + m) is equivalent, because <span class=\"math\">m ≤ n<sup>2</sup></span>.</p>\n<p><b>Why not the others:</b> a) O(n + m) is the running time with <b>adjacency lists</b> (Levitin Exercise 4.2.7). With a matrix, just reading the structure costs n². c) There is no sorting or log factor anywhere. d) This is what a naive version costs if it searches the whole matrix again for a new source after every removal: n searches × Θ(n²).</p>"
+   "explain": "<p><b>Why:</b> with a matrix, computing all in-degrees means scanning every column, which is Θ(n²). Removing a source means scanning its row (Θ(n)) to decrement its successors' in-degrees; over n removals that is Θ(n²) again. Keeping the current sources in a queue avoids searching for them. The m edge updates are included in those scans, so the total is Θ(n²). Writing it as O(n² + m) is equivalent, because <span class=\"math\">m ≤ n<sup>2</sup></span>.</p>\n<p><b>Why not the others:</b> a) O(n + m) is the running time with <b>adjacency lists</b> (Levitin Exercise 4.2.7). With a matrix, just reading the structure costs n². c) There is no sorting or log factor anywhere. d) This is what a naive version costs if it searches the whole matrix again for a new source after every removal: n searches × Θ(n²).</p>"
   },
   {
    "id": "Q1.16",
    "ch": 4,
-   "src": "Course quiz · Quiz D #2",
-   "course": true,
+   "src": "Core · Decrease-and-conquer",
+   "core": true,
    "q": "<p>A decrease-and-conquer (decrease-by-one) algorithm generates the power set of an n-element set. Its time efficiency is…</p>",
    "options": [
     "O(n)",
@@ -269,8 +269,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.17",
    "ch": 4,
-   "src": "Course quiz · Quiz D #3",
-   "course": true,
+   "src": "Core · Decrease-and-conquer",
+   "core": true,
    "q": "<p>True or False: \"Insertion sort implemented on a linked list is also O(n²).\"</p>",
    "options": [
     "True",
@@ -283,8 +283,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.18",
    "ch": 4,
-   "src": "Course quiz · Quiz D #4",
-   "course": true,
+   "src": "Core · Decrease-and-conquer",
+   "core": true,
    "q": "<p>Which algorithm is the classic example of decrease-and-conquer (decrease by a constant factor)?</p>",
    "options": [
     "Mergesort",
@@ -299,8 +299,8 @@ window.FORGE_QUIZ = {
   {
    "id": "Q1.19",
    "ch": 4,
-   "src": "Course quiz · Quiz D #5",
-   "course": true,
+   "src": "Core · Decrease-and-conquer",
+   "core": true,
    "q": "<p>Which statements are true?</p>\n<ul><li>A. Insertion sort is a decrease-and-conquer algorithm (loosely described as \"recursively breaking down\" the problem).</li><li>B. Euclid's algorithm for the gcd is a decrease-and-conquer algorithm.</li><li>C. Selection sort can be viewed as a decrease-and-conquer algorithm.</li></ul>",
    "options": [
     "A only",
@@ -310,13 +310,13 @@ window.FORGE_QUIZ = {
    ],
    "answer": 3,
    "verdict": "A, B and C",
-   "explain": "<p>(per the course answer key).</p>\n<p><b>Why each is true, in Levitin's framework:</b></p>\n<ul><li><b>A. Insertion sort = decrease-by-one.</b> To sort <code>A[0..n-1]</code>, sort <code>A[0..n-2]</code> (a smaller instance), then insert <code>A[n-1]</code> into place (§4.1). The iterative version is the same idea written bottom-up. <i>Note:</i> \"recursively breaking down\" is loose wording. It sounds like divide-and-conquer, but the intended meaning is \"reduce to a smaller instance\".</li><li><b>B. Euclid = variable-size decrease.</b> <span class=\"math\">gcd(m, n) = gcd(n, m mod n)</span> replaces the instance with a smaller one, and by how much it shrinks varies from step to step (§4.5).</li><li><b>C. Selection sort viewed as decrease-by-one.</b> Each pass puts the minimum of the unsorted part in its final place, which leaves an unsorted part one element smaller. That is the same problem on size n − 1. Levitin <i>presents</i> selection sort as brute force (§3.1), but the decrease-by-one reading is legitimate, and it is what this quiz intended.</li></ul>\n<p><b>Why not the others:</b> each of a), b), c) leaves out a statement that holds under the decrease-and-conquer view.</p>"
+   "explain": "<p><b>Why each is true, in Levitin's framework:</b></p>\n<ul><li><b>A. Insertion sort = decrease-by-one.</b> To sort <code>A[0..n-1]</code>, sort <code>A[0..n-2]</code> (a smaller instance), then insert <code>A[n-1]</code> into place (§4.1). The iterative version is the same idea written bottom-up. <i>Note:</i> \"recursively breaking down\" is loose wording. It sounds like divide-and-conquer, but the intended meaning is \"reduce to a smaller instance\".</li><li><b>B. Euclid = variable-size decrease.</b> <span class=\"math\">gcd(m, n) = gcd(n, m mod n)</span> replaces the instance with a smaller one, and by how much it shrinks varies from step to step (§4.5).</li><li><b>C. Selection sort viewed as decrease-by-one.</b> Each pass puts the minimum of the unsorted part in its final place, which leaves an unsorted part one element smaller. That is the same problem on size n − 1. Levitin <i>presents</i> selection sort as brute force (§3.1), but the decrease-by-one reading is legitimate, and it is the view this question is testing.</li></ul>\n<p><b>Why not the others:</b> each of a), b), c) leaves out a statement that holds under the decrease-and-conquer view.</p>"
   },
   {
    "id": "N1",
    "ch": 1,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>How many modulo divisions does Euclid's algorithm make to compute gcd(60, 24)?</p>",
    "options": [
     "1",
@@ -332,7 +332,7 @@ window.FORGE_QUIZ = {
    "id": "N2",
    "ch": 1,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>You call <code>gcd(24, 60)</code> with the smaller number first. What does the first iteration of Euclid's algorithm do?</p>",
    "options": [
     "It fails; Euclid needs m ≥ n",
@@ -348,7 +348,7 @@ window.FORGE_QUIZ = {
    "id": "N3",
    "ch": 1,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>A sorting algorithm is <b>stable</b> if…</p>",
    "options": [
     "it never uses extra memory",
@@ -358,13 +358,13 @@ window.FORGE_QUIZ = {
    ],
    "answer": 2,
    "verdict": "",
-   "explain": "<p>Example: sort students by grade. A stable sort keeps students who have the same grade in their earlier (say, alphabetical) order. <b>Why not the others:</b> a) describes an <i>in-place</i> algorithm. b) and d) describe input-insensitive algorithms, like selection sort, which is <b>not</b> stable.</p>"
+   "explain": "<p>Example: sort employees by department. A stable sort keeps employees who are in the same department in their earlier (say, alphabetical) order. <b>Why not the others:</b> a) describes an <i>in-place</i> algorithm. b) and d) describe input-insensitive algorithms, like selection sort, which is <b>not</b> stable.</p>"
   },
   {
    "id": "N4",
    "ch": 1,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Which data structure best fits \"serve customers in the order of their priorities\"?</p>",
    "options": [
     "Stack",
@@ -380,7 +380,7 @@ window.FORGE_QUIZ = {
    "id": "N5",
    "ch": 2,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In a successful sequential search where the key is equally likely to be in any of the n positions, the average number of comparisons is…</p>",
    "options": [
     "n",
@@ -396,7 +396,7 @@ window.FORGE_QUIZ = {
    "id": "N6",
    "ch": 2,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Which statement is <b>false</b>?</p>",
    "options": [
     "<span class=\"math\">n(n + 1)/2 ∈ O(n<sup>3</sup>)</span>",
@@ -412,7 +412,7 @@ window.FORGE_QUIZ = {
    "id": "N7",
    "ch": 2,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>How many bits are in the binary representation of n = 100?</p>",
    "options": [
     "6",
@@ -428,7 +428,7 @@ window.FORGE_QUIZ = {
    "id": "N8",
    "ch": 2,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>How many moves does the recursive Tower of Hanoi make with 10 disks?</p>",
    "options": [
     "100",
@@ -444,7 +444,7 @@ window.FORGE_QUIZ = {
    "id": "N9",
    "ch": 2,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The definition-based algorithm multiplies two n × n matrices. How many scalar multiplications does it make?</p>",
    "options": [
     "n²",
@@ -460,7 +460,7 @@ window.FORGE_QUIZ = {
    "id": "N10",
    "ch": 2,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Your empirical data looks roughly like <span class=\"math\">C(n) = an<sup>b</sup></span>. Which plot lets you read off b directly?</p>",
    "options": [
     "C(n) against n on linear axes",
@@ -476,7 +476,7 @@ window.FORGE_QUIZ = {
    "id": "N11",
    "ch": 3,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>How many key comparisons does selection sort make on an <b>already sorted</b> array of n elements?</p>",
    "options": [
     "0",
@@ -492,7 +492,7 @@ window.FORGE_QUIZ = {
    "id": "N12",
    "ch": 3,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Brute-force string matching, text of length n and pattern of length m: the worst-case number of character comparisons is…</p>",
    "options": [
     "n + m",
@@ -508,7 +508,7 @@ window.FORGE_QUIZ = {
    "id": "N13",
    "ch": 3,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The brute-force convex-hull algorithm checks every pair of points to see whether all other points lie on one side of the line through them. Its efficiency is…</p>",
    "options": [
     "Θ(n log n)",
@@ -524,7 +524,7 @@ window.FORGE_QUIZ = {
    "id": "N14",
    "ch": 3,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>An exhaustive search for the Traveling Salesman Problem (TSP) fixes the start city and treats a tour and its reversal as the same tour. How many distinct tours are there for 5 cities?</p>",
    "options": [
     "120",
@@ -540,7 +540,7 @@ window.FORGE_QUIZ = {
    "id": "N15",
    "ch": 3,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What are the time efficiencies of BFS (and of DFS) with adjacency lists and with an adjacency matrix?</p>",
    "options": [
     "Θ(|V| + |E|) and Θ(|V|²)",
@@ -556,7 +556,7 @@ window.FORGE_QUIZ = {
    "id": "N16",
    "ch": 3,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>BFS uses a ______, DFS uses a ______.</p>",
    "options": [
     "stack; queue",
@@ -572,7 +572,7 @@ window.FORGE_QUIZ = {
    "id": "N17",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the worst-case number of three-way key comparisons binary search makes on a sorted array of 1000 elements?</p>",
    "options": [
     "9",
@@ -588,7 +588,7 @@ window.FORGE_QUIZ = {
    "id": "N18",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In Russian peasant multiplication of 50 × 65, which values are added to form the product (the rows where the halved number is odd)?</p>",
    "options": [
     "65, 260, 2080",
@@ -604,7 +604,7 @@ window.FORGE_QUIZ = {
    "id": "N19",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the best-case number of key comparisons of insertion sort?</p>",
    "options": [
     "0",
@@ -620,7 +620,7 @@ window.FORGE_QUIZ = {
    "id": "N20",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Josephus problem, every second person eliminated, n = 40 people: who survives? (Recall that J(n) is a one-bit cyclic left shift of n in binary.)</p>",
    "options": [
     "1",
@@ -636,7 +636,7 @@ window.FORGE_QUIZ = {
    "id": "N21",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the third bit string in the Binary Reflected Gray Code (BRGC) of length 3?</p>",
    "options": [
     "010",
@@ -652,7 +652,7 @@ window.FORGE_QUIZ = {
    "id": "N22",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Quickselect (Lomuto partition) for the k-th smallest element has which efficiencies?</p>",
    "options": [
     "Θ(n) average, Θ(n²) worst",
@@ -668,7 +668,7 @@ window.FORGE_QUIZ = {
    "id": "N23",
    "ch": 4,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the average-case efficiency of interpolation search on uniformly distributed sorted keys?</p>",
    "options": [
     "Θ(1)",
@@ -684,7 +684,7 @@ window.FORGE_QUIZ = {
    "id": "N24",
    "ch": 5,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the worst-case number of key comparisons mergesort makes on n = 8 elements?</p>",
    "options": [
     "12",
@@ -700,7 +700,7 @@ window.FORGE_QUIZ = {
    "id": "N25",
    "ch": 5,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>By the Master Theorem, <span class=\"math\">T(n) = 4T(n/2) + n<sup>2</sup></span> is in…</p>",
    "options": [
     "Θ(n²)",
@@ -716,7 +716,7 @@ window.FORGE_QUIZ = {
    "id": "N26",
    "ch": 5,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Which is true?</p>",
    "options": [
     "Quicksort is stable; mergesort is not",
@@ -732,7 +732,7 @@ window.FORGE_QUIZ = {
    "id": "N27",
    "ch": 5,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>A binary tree has n internal nodes. How many external nodes (null links) does its extended tree have?</p>",
    "options": [
     "n",
@@ -748,7 +748,7 @@ window.FORGE_QUIZ = {
    "id": "N28",
    "ch": 5,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>How many digit multiplications does Karatsuba's algorithm make for two n-digit numbers (n a power of 2)?</p>",
    "options": [
     "n²",
@@ -764,7 +764,7 @@ window.FORGE_QUIZ = {
    "id": "N29",
    "ch": 5,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the efficiency of the divide-and-conquer closest-pair algorithm (with presorting)?</p>",
    "options": [
     "Θ(n²)",
@@ -780,7 +780,7 @@ window.FORGE_QUIZ = {
    "id": "N30",
    "ch": 6,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the time efficiency of bottom-up heap construction for n keys?</p>",
    "options": [
     "Θ(log n)",
@@ -796,7 +796,7 @@ window.FORGE_QUIZ = {
    "id": "N31",
    "ch": 6,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In an array heap H[1..n], which index is the parent of node 11?</p>",
    "options": [
     "5",
@@ -812,7 +812,7 @@ window.FORGE_QUIZ = {
    "id": "N32",
    "ch": 6,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>A new key is inserted into the <b>right</b> subtree of the <b>left</b> child of a node, and that node becomes unbalanced. Which Adelson-Velsky–Landis (AVL) tree rotation fixes it?</p>",
    "options": [
     "Single right rotation (R)",
@@ -828,7 +828,7 @@ window.FORGE_QUIZ = {
    "id": "N33",
    "ch": 6,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Horner's rule evaluates a polynomial of degree n at a point with…</p>",
    "options": [
     "n multiplications and n additions",
@@ -844,7 +844,7 @@ window.FORGE_QUIZ = {
    "id": "N34",
    "ch": 6,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the efficiency of the presorting-based algorithm for checking whether all n elements of an array are distinct?</p>",
    "options": [
     "Θ(n)",
@@ -860,7 +860,7 @@ window.FORGE_QUIZ = {
    "id": "N35",
    "ch": 6,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>True or False: in a 2-3 tree, all leaves are on the same level.</p>",
    "options": [
     "True",
@@ -874,7 +874,7 @@ window.FORGE_QUIZ = {
    "id": "N36",
    "ch": 7,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the efficiency of distribution counting sort for n keys whose values lie in a range of size r?</p>",
    "options": [
     "Θ(n log n)",
@@ -890,7 +890,7 @@ window.FORGE_QUIZ = {
    "id": "N37",
    "ch": 7,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In Horspool's algorithm, the shift table for the pattern BARBER gives which shift for the character <b>B</b>?</p>",
    "options": [
     "1",
@@ -906,7 +906,7 @@ window.FORGE_QUIZ = {
    "id": "N38",
    "ch": 7,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The load factor α of a hash table is…</p>",
    "options": [
     "the number of collisions",
@@ -922,7 +922,7 @@ window.FORGE_QUIZ = {
    "id": "N39",
    "ch": 7,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In a B-tree of order m, how many children does an internal non-root node have?</p>",
    "options": [
     "exactly m",
@@ -938,7 +938,7 @@ window.FORGE_QUIZ = {
    "id": "N40",
    "ch": 8,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Coin-row problem: coins 6, 2, 9, 4, 7, 1 in a row, and you may not pick two adjacent coins. What is the maximum total?</p>",
    "options": [
     "17",
@@ -954,7 +954,7 @@ window.FORGE_QUIZ = {
    "id": "N41",
    "ch": 8,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The bottom-up DP algorithm for the 0/1 knapsack problem with n items and capacity W runs in…</p>",
    "options": [
     "Θ(2ⁿ)",
@@ -970,7 +970,7 @@ window.FORGE_QUIZ = {
    "id": "N42",
    "ch": 8,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the time efficiency of Warshall's (transitive closure) and Floyd's (all-pairs shortest paths) algorithms?</p>",
    "options": [
     "Θ(n²) and Θ(n²)",
@@ -986,7 +986,7 @@ window.FORGE_QUIZ = {
    "id": "N43",
    "ch": 8,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>A memory-function (top-down, memoized) version of a DP algorithm…</p>",
    "options": [
     "always solves more subproblems than bottom-up",
@@ -1002,7 +1002,7 @@ window.FORGE_QUIZ = {
    "id": "N44",
    "ch": 9,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Huffman coding for A: 0.4, B: 0.3, C: 0.2, D: 0.1. What is the expected number of bits per character?</p>",
    "options": [
     "1.7",
@@ -1018,7 +1018,7 @@ window.FORGE_QUIZ = {
    "id": "N45",
    "ch": 9,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The greedy change-making algorithm (always take the largest coin that fits) with denominations {1, 3, 4} and amount 6 gives…</p>",
    "options": [
     "the optimum, 2 coins",
@@ -1034,7 +1034,7 @@ window.FORGE_QUIZ = {
    "id": "N46",
    "ch": 9,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>True or False: Dijkstra's algorithm can give wrong shortest paths if some edge weights are negative.</p>",
    "options": [
     "True",
@@ -1048,7 +1048,7 @@ window.FORGE_QUIZ = {
    "id": "N47",
    "ch": 9,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the running time of Prim's Minimum Spanning Tree (MST) algorithm with a binary min-heap and adjacency lists?</p>",
    "options": [
     "Θ(|V|²)",
@@ -1064,7 +1064,7 @@ window.FORGE_QUIZ = {
    "id": "N48",
    "ch": 10,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The Max-Flow Min-Cut Theorem states that…</p>",
    "options": [
     "the maximum flow equals the number of edges in the smallest cut",
@@ -1080,7 +1080,7 @@ window.FORGE_QUIZ = {
    "id": "N49",
    "ch": 10,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In the Gale–Shapley stable marriage algorithm where men propose, the resulting matching is…</p>",
    "options": [
     "the best possible for every woman",
@@ -1096,7 +1096,7 @@ window.FORGE_QUIZ = {
    "id": "N50",
    "ch": 10,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The simplex method relies on which fact about linear programs?</p>",
    "options": [
     "If an optimal solution exists, one exists at an extreme point (vertex) of the feasible region",
@@ -1112,7 +1112,7 @@ window.FORGE_QUIZ = {
    "id": "N51",
    "ch": 11,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>What is the information-theoretic lower bound on the worst-case number of comparisons for sorting 5 elements?</p>",
    "options": [
     "5",
@@ -1128,7 +1128,7 @@ window.FORGE_QUIZ = {
    "id": "N52",
    "ch": 11,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Which problem is NP-complete?</p>",
    "options": [
     "Minimum Spanning Tree",
@@ -1144,7 +1144,7 @@ window.FORGE_QUIZ = {
    "id": "N53",
    "ch": 11,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>True or False: if any single NP-complete problem can be solved in polynomial time, then P = NP.</p>",
    "options": [
     "True",
@@ -1158,7 +1158,7 @@ window.FORGE_QUIZ = {
    "id": "N54",
    "ch": 11,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>An adversary argument shows that merging two sorted lists of n elements each needs, in the worst case, at least how many comparisons?</p>",
    "options": [
     "n",
@@ -1174,7 +1174,7 @@ window.FORGE_QUIZ = {
    "id": "N55",
    "ch": 12,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>How many solutions does the 4-queens problem have?</p>",
    "options": [
     "0",
@@ -1190,7 +1190,7 @@ window.FORGE_QUIZ = {
    "id": "N56",
    "ch": 12,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>In branch-and-bound, a node is pruned when…</p>",
    "options": [
     "it is a leaf",
@@ -1206,7 +1206,7 @@ window.FORGE_QUIZ = {
    "id": "N57",
    "ch": 12,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>Which statement about approximation algorithms for the TSP is correct?</p>",
    "options": [
     "The nearest-neighbour heuristic is always within a factor 2 of the optimum",
@@ -1222,7 +1222,7 @@ window.FORGE_QUIZ = {
    "id": "N58",
    "ch": 12,
    "src": "Forge practice",
-   "course": false,
+   "core": false,
    "q": "<p>The bisection method on [0, 1] halves the interval each step. How many iterations guarantee an error below <span class=\"math\">10<sup>−6</sup></span>?</p>",
    "options": [
     "6",
@@ -1238,7 +1238,7 @@ window.FORGE_QUIZ = {
    "id": "X1",
    "ch": 1,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>A \"procedure\" gives the right answer whenever it stops, but on some inputs it runs forever. Which requirement of an algorithm does it break?</p>",
    "options": [
     "Finiteness: it must stop after a finite number of steps on every legitimate input",
@@ -1254,7 +1254,7 @@ window.FORGE_QUIZ = {
    "id": "X2",
    "ch": 1,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>You run the sieve of Eratosthenes up to n = 30. After crossing out the multiples of 2, 3 and 5, why can you stop?</p>",
    "options": [
     "Every composite number ≤ 30 has a prime factor ≤ √30 ≈ 5.5, so all of them are already crossed out",
@@ -1270,7 +1270,7 @@ window.FORGE_QUIZ = {
    "id": "X3",
    "ch": 1,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Which structure gives constant-time access to the i-th element, but needs Θ(n) time to insert a new element at the front?</p>",
    "options": [
     "An array",
@@ -1286,7 +1286,7 @@ window.FORGE_QUIZ = {
    "id": "X4",
    "ch": 2,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>What is the value of <code>count</code> after this code runs? <code>count ← 0; for i ← 1 to n do for j ← 1 to i do count ← count + 1</code></p>",
    "options": [
     "n²",
@@ -1302,7 +1302,7 @@ window.FORGE_QUIZ = {
    "id": "X5",
    "ch": 2,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>How many times does the loop body run? <code>i ← 64; c ← 0; while i &gt; 1 do i ← i div 2; c ← c + 1</code></p>",
    "options": [
     "5",
@@ -1318,7 +1318,7 @@ window.FORGE_QUIZ = {
    "id": "X6",
    "ch": 2,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Which of these functions is <b>not</b> in Θ(n log n)?</p>",
    "options": [
     "log₂(n!)",
@@ -1334,7 +1334,7 @@ window.FORGE_QUIZ = {
    "id": "X7",
    "ch": 2,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>A Θ(n²) algorithm takes 1 second on an input of size 1,000. About how long should it take on size 4,000?</p>",
    "options": [
     "4 seconds",
@@ -1350,7 +1350,7 @@ window.FORGE_QUIZ = {
    "id": "X8",
    "ch": 2,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Solve <span class=\"math\">C(n) = C(n − 1) + 2</span> for <span class=\"math\">n &gt; 0</span>, <span class=\"math\">C(0) = 0</span>.</p>",
    "options": [
     "2n",
@@ -1366,7 +1366,7 @@ window.FORGE_QUIZ = {
    "id": "X9",
    "ch": 3,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Bubble sort with the \"stop when a pass makes no swaps\" improvement runs on an array that is already sorted. How many key comparisons does it make?</p>",
    "options": [
     "n − 1",
@@ -1382,7 +1382,7 @@ window.FORGE_QUIZ = {
    "id": "X10",
    "ch": 3,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Brute-force string matching searches for the pattern <code>AAB</code> in a text of ten <code>A</code>s. How many character comparisons does it make in total?</p>",
    "options": [
     "8",
@@ -1398,7 +1398,7 @@ window.FORGE_QUIZ = {
    "id": "X11",
    "ch": 3,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>How many subsets does exhaustive search examine for a knapsack instance with 20 items?</p>",
    "options": [
     "20",
@@ -1414,7 +1414,7 @@ window.FORGE_QUIZ = {
    "id": "X12",
    "ch": 3,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>In a depth-first search of an <b>undirected</b> graph, a back edge connects a vertex to…</p>",
    "options": [
     "an ancestor in the depth-first search tree (other than its parent)",
@@ -1430,7 +1430,7 @@ window.FORGE_QUIZ = {
    "id": "X13",
    "ch": 4,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Binary search looks for K = 70 in <code>3, 14, 27, 31, 39, 42, 55, 70, 74, 81, 85, 93, 98</code> (indices 0–12, middle m = ⌊(l + r)/2⌋). Which elements are compared with K, in order?</p>",
    "options": [
     "55, 81, 70",
@@ -1446,7 +1446,7 @@ window.FORGE_QUIZ = {
    "id": "X14",
    "ch": 4,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>A directed graph has a topological ordering if and only if it…</p>",
    "options": [
     "has no directed cycle",
@@ -1462,7 +1462,7 @@ window.FORGE_QUIZ = {
    "id": "X15",
    "ch": 4,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>In lexicographic order, which permutation comes right after <code>1 3 4 2</code>?</p>",
    "options": [
     "1 4 2 3",
@@ -1478,7 +1478,7 @@ window.FORGE_QUIZ = {
    "id": "X16",
    "ch": 4,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Computing <span class=\"math\">a<sup>n</sup></span> by repeated squaring (using the bits of n) takes how many multiplications?</p>",
    "options": [
     "Θ(log n)",
@@ -1494,7 +1494,7 @@ window.FORGE_QUIZ = {
    "id": "X17",
    "ch": 5,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Quicksort always picks the first element as its pivot. On which input does it hit its Θ(n²) worst case?</p>",
    "options": [
     "An array that is already sorted",
@@ -1510,7 +1510,7 @@ window.FORGE_QUIZ = {
    "id": "X18",
    "ch": 5,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>What does an inorder traversal of a binary search tree output?</p>",
    "options": [
     "The keys in increasing order",
@@ -1526,7 +1526,7 @@ window.FORGE_QUIZ = {
    "id": "X19",
    "ch": 5,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Mergesort's merge step combines the sorted lists <code>2 5 8</code> and <code>3 4 9</code>. How many key comparisons does it make?</p>",
    "options": [
     "3",
@@ -1542,7 +1542,7 @@ window.FORGE_QUIZ = {
    "id": "X20",
    "ch": 5,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>By the Master Theorem, <span class=\"math\">T(n) = 8T(n/2) + n<sup>2</sup></span> is in…</p>",
    "options": [
     "Θ(n²)",
@@ -1558,7 +1558,7 @@ window.FORGE_QUIZ = {
    "id": "X21",
    "ch": 6,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Build a max-heap bottom-up from the array <code>2 9 7 6 5 8</code>. What is the resulting array?</p>",
    "options": [
     "9 6 8 2 5 7",
@@ -1574,7 +1574,7 @@ window.FORGE_QUIZ = {
    "id": "X22",
    "ch": 6,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Use Horner's rule to evaluate <span class=\"math\">p(x) = 2x<sup>3</sup> − x<sup>2</sup> + 3x + 5</span> at x = 2.</p>",
    "options": [
     "19",
@@ -1590,7 +1590,7 @@ window.FORGE_QUIZ = {
    "id": "X23",
    "ch": 6,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Computing lcm(m, n) as m · n / gcd(m, n) is an example of which transform-and-conquer idea?</p>",
    "options": [
     "Problem reduction",
@@ -1606,7 +1606,7 @@ window.FORGE_QUIZ = {
    "id": "X24",
    "ch": 7,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Horspool's algorithm builds a shift table for the pattern <code>TENSE</code> (m = 5). What is the shift for the character <b>E</b>?</p>",
    "options": [
     "1",
@@ -1622,7 +1622,7 @@ window.FORGE_QUIZ = {
    "id": "X25",
    "ch": 7,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>A hash table has 7 cells, h(k) = k mod 7, and uses linear probing. You insert 10, 3 and 17, in that order. In which cell does 17 end up?</p>",
    "options": [
     "3",
@@ -1638,7 +1638,7 @@ window.FORGE_QUIZ = {
    "id": "X26",
    "ch": 7,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Why do databases index data on disk with B-trees rather than binary search trees?</p>",
    "options": [
     "Each node holds many keys, so the tree is very short and a search needs only a few slow disk reads",
@@ -1654,7 +1654,7 @@ window.FORGE_QUIZ = {
    "id": "X27",
    "ch": 8,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Coins have values 1, 7 and 10. What is the minimum number of coins that make 14?</p>",
    "options": [
     "2",
@@ -1670,7 +1670,7 @@ window.FORGE_QUIZ = {
    "id": "X28",
    "ch": 8,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>What is the length of a longest common subsequence of <code>ABCBDAB</code> and <code>BDCABA</code>?</p>",
    "options": [
     "3",
@@ -1686,7 +1686,7 @@ window.FORGE_QUIZ = {
    "id": "X29",
    "ch": 8,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>The bottom-up dynamic-programming table for a 0/1 knapsack instance with n = 4 items and capacity W = 5 has how many cells?</p>",
    "options": [
     "20",
@@ -1702,7 +1702,7 @@ window.FORGE_QUIZ = {
    "id": "X30",
    "ch": 8,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>In Floyd's algorithm, what does the entry <span class=\"math\">D<sup>(k)</sup>[i, j]</span> mean?</p>",
    "options": [
     "The length of the shortest path from i to j whose intermediate vertices are all numbered ≤ k",
@@ -1718,7 +1718,7 @@ window.FORGE_QUIZ = {
    "id": "X31",
    "ch": 9,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>In which order does Kruskal's algorithm consider the edges?</p>",
    "options": [
     "By nondecreasing weight, skipping any edge that would close a cycle",
@@ -1734,7 +1734,7 @@ window.FORGE_QUIZ = {
    "id": "X32",
    "ch": 9,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Huffman coding for four symbols with probabilities A 0.5, B 0.25, C 0.125, D 0.125. What is the expected number of bits per symbol?</p>",
    "options": [
     "1.5",
@@ -1750,7 +1750,7 @@ window.FORGE_QUIZ = {
    "id": "X33",
    "ch": 9,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Which change makes Dijkstra's algorithm run in O(E log V) time on a sparse graph?</p>",
    "options": [
     "Keeping the unfinished vertices in a binary min-heap keyed by their tentative distance",
@@ -1766,7 +1766,7 @@ window.FORGE_QUIZ = {
    "id": "X34",
    "ch": 10,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>In the residual network of a flow network, an augmenting path may use a backward edge. What does sending flow along a backward edge do?</p>",
    "options": [
     "It cancels (reduces) flow that was sent earlier along the corresponding forward edge",
@@ -1782,7 +1782,7 @@ window.FORGE_QUIZ = {
    "id": "X35",
    "ch": 10,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>A matching M in a bipartite graph is maximum exactly when…</p>",
    "options": [
     "there is no augmenting path with respect to M",
@@ -1798,7 +1798,7 @@ window.FORGE_QUIZ = {
    "id": "X36",
    "ch": 11,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>What is the lower bound on the number of comparisons needed to find the largest of n numbers?</p>",
    "options": [
     "⌈log₂ n⌉",
@@ -1814,7 +1814,7 @@ window.FORGE_QUIZ = {
    "id": "X37",
    "ch": 11,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>A decision problem is NP-complete when it belongs to NP and…</p>",
    "options": [
     "every problem in NP can be reduced to it in polynomial time",
@@ -1830,7 +1830,7 @@ window.FORGE_QUIZ = {
    "id": "X38",
    "ch": 12,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>Can a solution of the 4-queens problem have a queen in a corner square?</p>",
    "options": [
     "No: both solutions avoid all four corners",
@@ -1846,7 +1846,7 @@ window.FORGE_QUIZ = {
    "id": "X39",
    "ch": 12,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>The bisection method starts on [1, 2] for <span class=\"math\">f(x) = x<sup>2</sup> − 2</span>. What is the interval after one step?</p>",
    "options": [
     "[1, 1.5]",
@@ -1862,7 +1862,7 @@ window.FORGE_QUIZ = {
    "id": "X40",
    "ch": 12,
    "src": "Forge original",
-   "course": false,
+   "core": false,
    "q": "<p>First-fit packs items of sizes 0.5, 0.7, 0.5, 0.2, 0.4, 0.2, 0.5, 0.1 (in that order) into bins of capacity 1. How many bins does it use?</p>",
    "options": [
     "3",

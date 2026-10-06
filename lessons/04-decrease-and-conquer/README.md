@@ -73,7 +73,7 @@ The last two rows are the whole lesson in miniature: divide-and-conquer solves *
 
 ## Quiz trap: what counts as decrease-and-conquer?
 
-Instructors love this question because the answer depends on **how the algorithm reduces the instance**, not on what the code looks like.
+Exam writers love this question because the answer depends on **how the algorithm reduces the instance**, not on what the code looks like.
 
 - **Insertion sort** *is* decrease-by-one. To sort $A[0..n-1]$, assume $A[0..n-2]$ is already sorted (the smaller instance of the same problem), then *extend* by inserting $A[n-1]$ into place. The loop version is just the bottom-up form of that recursion. Levitin files it in §4.1 for exactly this reason.
 - **Selection sort** is a trap in the other direction. Levitin places it under **brute force** (§3.1), because the natural description is "scan everything, pick the smallest, repeat" — the straightforward approach straight from the definition of sorted order. But you *can* view it as decrease-by-one: put the minimum in position 0, then sort $A[1..n-1]$ — a smaller instance of the same problem. If an exam asks "is selection sort decrease-and-conquer?", the safe answer is: *"Levitin classifies it as brute force, but structurally it reduces sorting $n$ items to sorting $n-1$ items, so it can also be described as decrease-by-one. The difference from insertion sort: selection sort does its work in the decrease step (finding the minimum), insertion sort does its work in the extend step (inserting)."*
@@ -238,7 +238,7 @@ static void insertionSortRec(int[] a, int n) {
   $$C_{worst}(n) = \sum_{i=1}^{n-1} i = \frac{(n-1)n}{2} \in \Theta(n^2)$$
 - **Best case** (already sorted): one comparison per $i$, so $C_{best}(n) = n - 1 \in \Theta(n)$. This is why insertion sort is great on *almost* sorted data.
 - **Average case** (random distinct keys): each new element travels about half-way back, so $C_{avg}(n) \approx n^2/4 \in \Theta(n^2)$.
-- **The recursive version's recurrence** (worst case, and also *every* case for the slide version that always sweeps all adjacent pairs):
+- **The recursive version's recurrence** (worst case, and also *every* case for the simple version that always sweeps all adjacent pairs):
   $$C(n) = C(n-1) + (n-1), \quad C(1) = 0.$$
   Backward substitution:
   $$C(n) = C(n-2) + (n-2) + (n-1) = C(n-3) + (n-3) + (n-2) + (n-1) = \dots = C(1) + \sum_{j=1}^{n-1} j = \frac{n(n-1)}{2}.$$
@@ -1451,7 +1451,7 @@ ALGORITHM NimMove(n, m)
 
 ## Worked exam problems
 
-These mirror the CSC 501 midterm style: **design** an algorithm, then **justify** its efficiency.
+These follow the classic exam style: **design** an algorithm, then **justify** its efficiency. Both also appear, fully worked, in [Practice Exam 1](../../practice/exams/practice-exam-1.md).
 
 ### Problem A — Negatives before positives (two linear algorithms)
 
@@ -1558,7 +1558,7 @@ static void negFirstIter(double[] a) {
 
 (The recursive version uses $\Theta(n)$ stack depth — fine on paper, but in practice Python's default recursion limit of about 1000 would stop it on large inputs.)
 
-### Problem B — "Professor H's" recurrence
+### Problem B — The halve-and-pay-log recurrence
 
 > A decrease-and-conquer algorithm reduces size $n$ to $n/2$; decreasing plus extending cost $\log_2 n$; size 1 costs 1. Set up and solve the recurrence by backward substitution.
 
@@ -1707,11 +1707,11 @@ $T(2^k) = T(2^{k-1}) + 2^k = \dots = T(1) + (2^1 + 2^2 + \dots + 2^k) = 1 + (2^{
 - Master Theorem extensions: Levitin Appendix B.
 
 **English-language resources**
-- Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 *Introduction to Algorithms* — lectures on binary search, graph search (DFS, topological sort): <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
+- Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 *Introduction to Algorithms* — video sessions on binary search, graph search (DFS, topological sort): <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
 - VisuAlgo — animated sorting, DFS / Breadth-First Search (BFS) and BST: <https://visualgo.net/en>
 - cp-algorithms — [Topological sort](https://cp-algorithms.com/graph/topological-sort.html) · [Binary exponentiation](https://cp-algorithms.com/algebra/binary-exp.html) · [Gray code](https://cp-algorithms.com/algebra/gray-code.html) · [Josephus problem](https://cp-algorithms.com/others/josephus_problem.html)
 - Sedgewick & Wayne, *Algorithms, 4th ed.* booksite (insertion sort, BSTs, topological sort): <https://algs4.cs.princeton.edu/>
-- Abdul Bari (YouTube) — "Binary Search" and "Topological Sorting" lectures (search the channel by name).
+- Abdul Bari (YouTube) — "Binary Search" and "Topological Sorting" videos (search the channel by name).
 - William Fiset (YouTube) — "Topological Sort Algorithm | Graph Theory" and "Kahn's Algorithm".
 - Donald Knuth, *The Art of Computer Programming, Vol. 4A* — the definitive treatment of generating permutations, subsets and Gray codes.
 

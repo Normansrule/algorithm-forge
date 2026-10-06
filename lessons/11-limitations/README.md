@@ -1,4 +1,4 @@
-# 11 · Limitations of Algorithm Power — Lower Bounds, P, NP and NP-Completeness
+# Chapter 11 · Limitations of Algorithm Power — Lower Bounds, P, NP and NP-Completeness
 
 > Every chapter so far asked "how fast *can* we solve this?" This chapter flips the question: **how fast is it
 > *impossible* to go?** Some limits are hard proofs (no comparison sort can beat $\lceil \log_2 n! \rceil$
@@ -125,7 +125,7 @@ If problem $Q$ has a known lower bound and $Q$ can be **reduced** to problem $P$
 into a $P$-instance, solve $P$, transform back — all fast), then $P$ can't be easier than $Q$: **$Q$'s lower bound is
 a lower bound for $P$** (minus the reduction cost).
 
-**Worked example (course slides).** $P$ = Euclidean Minimum Spanning Tree (MST) of $n$ points in the plane.
+**Worked example.** $P$ = Euclidean Minimum Spanning Tree (MST) of $n$ points in the plane.
 $Q$ = **element uniqueness** ("are all $n$ numbers distinct?"), known to need $\Omega(n \log n)$ comparisons.
 
 Reduction: given numbers $x_1, \dots, x_n$, build points $(0, x_1), (0, x_2), \dots, (0, x_n)$ — $O(n)$ work. Find
@@ -363,7 +363,7 @@ a real machine guesses correctly.
 ### Example: Conjunctive Normal Form satisfiability (CNF-SAT) is in NP
 
 A Boolean formula is in **Conjunctive Normal Form (CNF)** if it is an AND of **clauses**, each an OR of **literals**
-(variables or their negations). CNF-SAT asks: is there a truth assignment making the formula true? The course
+(variables or their negations). CNF-SAT asks: is there a truth assignment making the formula true? An
 example:
 
 $$(A \lor \neg B \lor \neg C) \land (A \lor B) \land (\neg B \lor \neg D \lor E) \land (\neg D \lor \neg E)$$
@@ -479,7 +479,7 @@ public class CnfSat {
 ```
 </details>
 
-### Course practice — "an $O(n^{\log_2 n})$ algorithm: tractable?"
+### Practice — "an $O(n^{\log_2 n})$ algorithm: tractable?"
 
 > *A problem can be solved by an algorithm whose running time is in $O(n^{\log_2 n})$. Is the problem (a) tractable,
 > (b) intractable, or (c) impossible to tell?*
@@ -555,8 +555,8 @@ to its inputs that makes the output 1?
   computer executing one step of $D$ is itself a fixed Boolean circuit $S$ (registers, program counter, memory in, the
   same things out). Stack $p(n)$ copies of $S$, one per step, wire the instance $x$ in as constants, leave the
   certificate $y$ as the only free inputs, and let the output be "verifier accepted." The circuit is satisfiable
-  **iff** some certificate makes $D$ accept **iff** $x$ is a yes-instance of $M$. Its size is polynomial (the slides
-  estimate $O(p(n)^3)$), so the construction is a polynomial reduction.
+  **iff** some certificate makes $D$ accept **iff** $x$ is a yes-instance of $M$. Its size is polynomial (a standard
+  estimate is $O(p(n)^3)$), so the construction is a polynomial reduction.
 
 ### The reduction chain
 
@@ -576,8 +576,8 @@ flowchart TD
     SS --> SP["SET-PARTITION"]
 ```
 
-(Arrows mean "reduces to": each problem below is shown NP-hard by reducing the one above into it — this is the order
-in the course slides.)
+(Arrows mean "reduces to": each problem below is shown NP-hard by reducing the one above into it — this is the classic
+order of reductions.)
 
 **SAT is NP-complete** (reduce CIRCUIT-SAT to SAT): make one variable per input and per gate; for each gate write a
 small formula forcing its variable to equal the gate's function (e.g., $e \leftrightarrow (a \lor b)$ for an OR gate,
@@ -601,7 +601,7 @@ has at least one endpoint in $W$? It's in NP: the certificate is $W$; check $|W|
 3. **Connections:** join each triangle vertex to the variable-gadget vertex of the same literal.
 4. Set $K = n + 2m$. The graph has $2n + 3m$ vertices and $n + 6m$ edges.
 
-**Example (course slides):** $(a \lor b \lor c)(\neg a \lor b \lor \neg c)(\neg b \lor \neg c \lor \neg d)$.
+**Example:** $(a \lor b \lor c)(\neg a \lor b \lor \neg c)(\neg b \lor \neg c \lor \neg d)$.
 $n = 4$, $m = 3$: $2\cdot4 + 3\cdot3 = 17$ vertices, $4 + 6\cdot3 = 22$ edges, $K = 4 + 2\cdot3 = 10$.
 
 ```
@@ -653,7 +653,7 @@ exists — as the proof below predicts.)
 | **TSP** (tour of total cost $\le K$ in a complete weighted graph?) | HAMILTONIAN-CYCLE | complete graph on the same vertices; weight 1 for edges of $G$, weight 2 for non-edges; $K = n$. A tour of cost $n$ uses only original edges ⇔ $G$ has a Hamiltonian cycle. |
 | **SET-PARTITION** | SUBSET-SUM | see the practice problem below (both directions). |
 
-### ✋ Course practice — prove SUBSET-SUM is NP-complete, given SET-PARTITION is
+### ✋ Practice — prove SUBSET-SUM is NP-complete, given SET-PARTITION is
 
 - **SET-PARTITION:** given a multiset $X$ of positive integers, can it be split into two parts with equal sums?
 - **SUBSET-SUM:** given a multiset $X$ of positive integers and a target $K$, is there a sub-multiset summing to $K$?
@@ -692,9 +692,9 @@ partition ✔. (Both reductions were checked against brute force on 3,000 random
 ⚠️ The most common exam error is reducing in the **wrong direction**: "SUBSET-SUM reduces to SET-PARTITION, therefore
 SUBSET-SUM is hard" is invalid. To transfer hardness **to** a problem, the known-hard problem must reduce **into** it.
 
-### Course practice — which Venn diagrams don't contradict what we know?
+### Practice — which Venn diagrams don't contradict what we know?
 
-The slides draw several pictures of P, NP and NPC (the NP-complete problems). Here is how to judge **any** such
+Textbooks and articles draw several pictures of P, NP and NPC (the NP-complete problems). Here is how to judge **any** such
 picture — and the two that survive.
 
 | Picture | Verdict | Why |
@@ -924,7 +924,7 @@ code. Take $x^2 - 10^8 x + 1 = 0$ (roots $\approx 10^8$ and $\approx 10^{-8}$). 
 
 What went wrong: $\sqrt{D} \approx 10^8 - 2\times10^{-8}$, so $-b - \sqrt D = 10^8 - \sqrt D$ subtracts two nearly
 equal numbers. **Fix:** compute the root where the signs *add* ($-b$ and $-\operatorname{sign}(b)\sqrt D$ have the
-same sign), then get the other root from Vieta's formula $x_1 x_2 = c/a$. Other practical fixes from the slides:
+same sign), then get the other root from Vieta's formula $x_1 x_2 = c/a$. Other practical fixes:
 compute $D$ in higher precision; compute $\sqrt D$ carefully (Newton's method, Chapter 12); guard against overflow
 in $b^2$ (scale the coefficients).
 
@@ -1096,14 +1096,14 @@ $x_2 = c/(a x_1)$.
 - **Levitin**, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.: §11.1 (lower-bound arguments), §11.2
   (decision trees), §11.3 (P, NP, NP-complete), §11.4 (numerical algorithms). Try Levitin Exercises 11.1.2, 11.2.2,
   11.3.2, 11.3.11 and 11.4.8.
-- **Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J** *Design and Analysis of Algorithms* (Spring 2015) — lectures on complexity and
+- **Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J** *Design and Analysis of Algorithms* (Spring 2015) — video sessions on complexity and
   NP-completeness reductions: <https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/>
-- **MIT OpenCourseWare 6.006** *Introduction to Algorithms* (Spring 2020) — the complexity lecture gives a clean
+- **MIT OpenCourseWare 6.006** *Introduction to Algorithms* (Spring 2020) — the complexity session gives a clean
   overview of P, NP and reductions: <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
 - **Abdul Bari** (YouTube, English) — *NP-Hard and NP-Complete Problems* (whiteboard explanation of reductions and
   the P vs NP picture).
 - Garey & Johnson, *Computers and Intractability: A Guide to the Theory of NP-Completeness* — the classic catalog of
-  NP-complete problems (and the cartoons the course instructor mentions).
+  NP-complete problems (and home of the famous "I can't find an efficient algorithm, but neither can all these famous people" cartoon).
 - Cormen, Leiserson, Rivest, Stein (CLRS), *Introduction to Algorithms*, Chapter 34 — full proofs of the reductions in
   the chain above (including SUBSET-SUM and HAMILTONIAN-CYCLE).
 - Michael Sipser, *Introduction to the Theory of Computation* — Cook–Levin with complete detail.

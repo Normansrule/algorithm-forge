@@ -4,60 +4,146 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Algorithm Forge — build algorithms from scratch</title>
-<meta name="description" content="Learn to design and analyze algorithms from zero to senior-engineer level: lessons, step-by-step simulations, and a practice Arena that checks your pseudocode.">
+<meta name="description" content="A free, open path for learning to build algorithms from scratch: from your first loop through the classic design strategies and senior-engineer patterns to the research frontier. Lessons, step-by-step simulations, a practice Arena that runs your pseudocode, a Pseudocode Playground and the Algorithm Atlas.">
 <link rel="stylesheet" href="assets/css/forge.css">
 <link rel="stylesheet" href="assets/css/forge-hub.css">
 <script src="assets/js/forge-kit.js"></script>
 <script src="assets/js/forge-hub.js"></script>
+<script src="atlas/atlas-data.js" defer></script>
+<script src="playground/examples.js" defer></script>
 <style>
   /* ---------- hero ---------- */
-  .home-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 36px; align-items: center; padding: 40px 0 8px; }
-  .home-hero h1 { font-size: clamp(2rem, 4.4vw, 3.2rem); line-height: 1.07; letter-spacing: -0.03em; margin: 10px 0 16px; }
-  .home-hero h1 .hot { background: linear-gradient(90deg, var(--ember), var(--c-swap)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .home-hero .lead { font-size: 1.1rem; color: var(--ink-2); max-width: 600px; }
-  .cta { display: flex; gap: 10px; flex-wrap: wrap; margin: 22px 0 14px; }
+  .home-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 40px; align-items: center; padding: 44px 0 10px; }
+  .home-hero h1 { font-size: clamp(2rem, 4.2vw, 3.15rem); line-height: 1.06; letter-spacing: -0.035em; margin: 0 0 18px; max-width: 18ch; text-wrap: balance; }
+  .home-hero .lead { font-size: 1.08rem; color: var(--ink-2); max-width: 58ch; margin-bottom: 0; }
+  .cta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 24px 0 10px; }
   .cta .btn { padding: 10px 16px; font-size: .95rem; }
-  .source-line { font-size: .84rem; color: var(--muted); }
-  .hero-art { position: relative; background: radial-gradient(120% 90% at 50% 100%, var(--ember-soft), transparent 70%), var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 12px; box-shadow: var(--shadow); }
+  .cta .btn.primary { padding: 11px 20px; font-size: 1rem; font-weight: 700; }
+  .cta-note { font-size: .86rem; color: var(--muted); margin: 0; }
+  .cta-note a { font-weight: 600; }
+  .source-line { font-size: .82rem; color: var(--muted); margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); max-width: 62ch; }
+  .hero-art { position: relative; background: radial-gradient(120% 90% at 50% 100%, var(--ember-soft), transparent 70%), var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 12px; box-shadow: var(--shadow); margin: 0; }
   .hero-art svg { display: block; width: 100%; height: auto; }
   .hero-art .cap { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: .76rem; color: var(--muted); margin-top: 8px; }
   .hero-art .cap b { color: var(--ember); font-weight: 700; }
   .hb { transform-box: fill-box; }
   @media (prefers-reduced-motion: reduce) { .hero-art * { animation: none !important; } }
 
-  /* ---------- progress strip ---------- */
-  .progress-strip { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center; margin-top: 28px; }
-  .ring { width: 64px; height: 64px; }
-  .progress-strip .levels { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-  .progress-strip .levels .k { font-size: .68rem; color: var(--muted); font-weight: 700; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* ---------- today (Arena progress, read-only) ---------- */
+  .today { display: grid; grid-template-columns: auto minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: center; margin-top: 30px; padding: 16px 20px; }
+  .today .ring { width: 68px; height: 68px; display: block; }
+  .today h2 { font-size: 1rem; margin: 0 0 4px; }
+  .today .t-line { color: var(--ink-2); font-size: .9rem; margin: 0; }
+  .t-stats { display: flex; gap: 8px 22px; flex-wrap: wrap; margin: 2px 0 6px; }
+  .t-stat { display: flex; align-items: baseline; gap: 7px; color: var(--ink); text-decoration: none; }
+  a.t-stat:hover { text-decoration: none; }
+  a.t-stat:hover .l { color: var(--steel); text-decoration: underline; }
+  .t-stat .v { font-family: var(--mono); font-weight: 800; font-size: 1.45rem; line-height: 1.1; }
+  .t-stat .l { font-size: .84rem; color: var(--ink-2); }
+  .t-stat.due .v { color: var(--ember); }
+  .t-levels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; }
+  .t-levels .k { font-size: .7rem; color: var(--muted); font-weight: 700; margin-bottom: 3px; white-space: nowrap; font-family: var(--mono); }
+  .t-levels a { color: inherit; text-decoration: none; }
+  .t-levels a:hover .k { color: var(--ink); }
+
+  /* ---------- the journey: Levels 0–7 as one line in four stretches ---------- */
+  .journey { display: grid; grid-template-columns: 2fr 3fr 2fr 1.45fr; margin-top: 8px; }
+  .stretch { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); grid-template-rows: auto auto; align-content: start; min-width: 0; }
+  .stretch-head { grid-column: 1 / -1; padding: 0 18px 0 0; margin-bottom: 14px; }
+  .stretch-head h3 { font-size: 1.02rem; margin: 0 0 2px; }
+  .stretch-head p { font-size: .84rem; color: var(--muted); margin: 0; max-width: 34ch; }
+  .stretch-head .brace { display: block; height: 9px; margin-top: 10px; border: 1.5px solid var(--line-2); border-bottom: 0; border-radius: 6px 6px 0 0; }
+  .stn { position: relative; display: block; color: var(--ink); padding: 0 16px 6px 0; min-width: 0; text-decoration: none; }
+  .stn:hover { text-decoration: none; }
+  .stn:hover .stn-name { text-decoration: underline; text-decoration-color: var(--lvc); text-underline-offset: 3px; }
+  .stn:focus-visible { outline: 2px solid var(--ember); outline-offset: 4px; border-radius: 8px; }
+  .stn .rail { position: absolute; left: 0; right: 0; top: 13px; height: 8px; background: var(--lvc); }
+  .stretch:first-child .stn:first-of-type .rail { left: 14px; border-radius: 4px 0 0 4px; }
+  .stn.end .rail { background: linear-gradient(90deg, var(--lvc) 45%, color-mix(in srgb, var(--lvc) 0%, transparent)); }
+  .stn .dot { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--bg); border: 4px solid var(--lvc); font: 800 .8rem var(--mono); color: var(--ink); }
+  .stn .dot .arc { position: absolute; inset: -9px; width: 44px; height: 44px; transform: rotate(-90deg); }
+  .stn.end .dot { box-shadow: 0 0 0 6px color-mix(in srgb, var(--lvc) 18%, transparent), 0 0 22px color-mix(in srgb, var(--lvc) 45%, transparent); }
+  .stn-lv { display: block; font: 800 .74rem var(--mono); color: var(--lvc); margin-top: 12px; }
+  .stn-name { display: block; font-weight: 700; font-size: .95rem; line-height: 1.25; margin: 2px 0 5px; }
+  .stn-what { display: block; font-size: .82rem; color: var(--ink-2); line-height: 1.45; }
+  .stn-meta { display: block; font: 600 .72rem var(--mono); color: var(--muted); margin-top: 7px; }
+  :root[data-theme="light"] .stn-lv { filter: brightness(.9); }
+
+  /* ---------- Atlas preview ---------- */
+  .stage-key { display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: .8rem; color: var(--ink-2); margin: 0 0 14px; padding: 0; list-style: none; }
+  .stage-key li { display: inline-flex; align-items: center; gap: 6px; }
+  .stage-key i { width: 11px; height: 11px; border-radius: 50%; background: var(--sc); display: inline-block; }
+  .ladders { display: grid; gap: 12px; }
+  .ladder { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 8px 24px; padding: 16px 18px 14px; }
+  .ladder-title { grid-row: 1 / span 2; }
+  .ladder-title h3 { font-size: 1.02rem; margin: 0 0 4px; }
+  .ladder-title h3 a { color: var(--ink); }
+  .ladder-title p { font-size: .84rem; color: var(--muted); margin: 0 0 8px; }
+  .ladder-title .open { font-size: .84rem; font-weight: 700; }
+  .rungs { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .rungs li { min-width: 0; }
+  .rung { position: relative; display: block; padding: 0 10px 4px 0; color: var(--ink); text-decoration: none; border-radius: 6px; }
+  .rung:hover { text-decoration: none; }
+  .rung::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 3px; background: linear-gradient(90deg, var(--sc), var(--sc-next, var(--sc))); opacity: .65; }
+  .rungs li:last-child .rung::before { right: auto; width: 14px; }
+  .rung .rd { position: relative; display: block; width: 17px; height: 17px; border-radius: 50%; background: var(--panel); border: 3px solid var(--sc); transition: transform .12s, background .12s; }
+  .rung .rn { display: block; font-size: .78rem; font-weight: 600; line-height: 1.3; margin-top: 8px; color: var(--ink-2); }
+  .rung .ry { display: block; font: 600 .7rem var(--mono); color: var(--muted); margin-top: 2px; }
+  .rung.on .rd, .rung:hover .rd, .rung:focus-visible .rd { background: var(--sc); transform: scale(1.2); }
+  .rung.on .rn { color: var(--ink); }
+  .rung:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
+  .rung-detail { grid-column: 2; align-self: start; margin: 6px 0 0; font-size: .86rem; color: var(--ink-2); min-height: 2.9em; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .rung-detail b { color: var(--ink); }
+  .rung-detail .st { font-weight: 700; color: var(--sc); }
+  :root[data-theme="light"] .rung-detail .st { filter: brightness(.85); }
+  .rung-detail .tb { font-family: var(--mono); font-size: .8rem; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; white-space: nowrap; }
+  .atlas-foot { display: flex; gap: 10px 18px; flex-wrap: wrap; align-items: center; margin-top: 14px; font-size: .88rem; color: var(--ink-2); }
+
+  /* ---------- features (bento) ---------- */
+  .features { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+  .feat { grid-column: span 3; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+  .feat.big { grid-column: span 6; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "txt ill" "list list" "go go"; gap: 0 20px; padding: 18px; }
+  .feat.big .txt { grid-area: txt; }
+  .feat.big .ill { grid-area: ill; align-self: start; }
+  .feat.big ul { grid-area: list; columns: 2; column-gap: 24px; margin: 14px 0 12px; }
+  .feat.big ul li { break-inside: avoid; }
+  .feat.big .go { grid-area: go; }
+  .feat .ill { display: block; width: 100%; height: auto; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 14px; }
+  .feat.big .ill { margin: 0; }
+  .feat h3 { font-size: 1.05rem; margin: 0 0 6px; }
+  .feat p { color: var(--ink-2); font-size: .88rem; margin: 0 0 10px; }
+  .feat ul { margin: 0 0 12px; padding-left: 18px; color: var(--ink-2); font-size: .86rem; }
+  .feat li + li { margin-top: 3px; }
+  .feat .go { margin-top: auto; display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: .86rem; font-weight: 700; }
+  .feat.big .go { margin-top: auto; }
+  .also { margin-top: 14px; font-size: .88rem; color: var(--ink-2); display: flex; gap: 6px 18px; flex-wrap: wrap; }
+  .also b { color: var(--ink); font-weight: 700; }
 
   /* ---------- how it works loop ---------- */
-  .loop { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; position: relative; }
+  .loop { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; position: relative; counter-reset: step; }
   .loop .step { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 14px 14px; }
-  .loop .step .ico { font-size: 1.6rem; line-height: 1; }
+  .loop .step .ico { font-size: 1.5rem; line-height: 1; }
   .loop .step .n { position: absolute; top: 12px; right: 12px; font-family: var(--mono); font-size: .72rem; color: var(--muted); font-weight: 700; }
   .loop .step h3 { margin: 10px 0 4px; font-size: 1.02rem; }
   .loop .step p { color: var(--ink-2); font-size: .88rem; margin: 0 0 8px; }
   .loop .step a { font-size: .82rem; font-weight: 700; }
-  .loop .step:not(:last-child)::after { content: "→"; position: absolute; right: -13px; top: 50%; transform: translateY(-50%); color: var(--ember); font-weight: 800; z-index: 1; background: var(--bg); border-radius: 50%; width: 16px; text-align: center; font-size: .9rem; }
+  .loop .step:not(:last-child)::after { content: ""; position: absolute; right: -11px; top: 50%; width: 8px; height: 8px; border-top: 2px solid var(--ember); border-right: 2px solid var(--ember); transform: translateY(-50%) rotate(45deg); z-index: 1; }
   .loop-back { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--muted); font-size: .85rem; }
   .loop-back svg { flex: 1; height: 18px; min-width: 0; }
 
-  /* ---------- ways in ---------- */
-  .ways { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-  .way { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; }
-  .way .ico { font-size: 1.5rem; }
-  .way h3 { margin: 8px 0 2px; font-size: 1rem; }
-  .way .q { color: var(--ember); font-size: .82rem; font-weight: 700; margin-bottom: 8px; }
-  .way ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: .86rem; flex: 1; }
-  .way li + li { margin-top: 5px; }
-
   /* ---------- chapter grid ---------- */
-  .part-label { display: flex; align-items: center; gap: 10px; margin: 26px 0 12px; font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .part-label::after { content: ""; flex: 1; border-top: 1px dashed var(--line-2); }
-  .ch-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
-  .ch-card:hover { border-color: var(--line-2); transform: translateY(-1px); }
+  .part { margin: 28px 0 12px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .part h3 { margin: 0; font-size: 1.05rem; }
+  .part p { margin: 0; font-size: .86rem; color: var(--muted); }
+  .part::after { content: ""; flex: 1 1 60px; border-top: 1px dashed var(--line-2); align-self: center; }
+  .ch-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s; position: relative; overflow: hidden; }
+  .ch-card:hover { border-color: var(--line-2); }
   .ch-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--lvc, var(--ember)); }
+  .auto-grid.solo { grid-template-columns: minmax(0, 1fr); }
+  .solo .ch-card { display: grid; grid-template-columns: minmax(0, 220px) minmax(0, 1fr) auto; align-items: center; gap: 4px 20px; }
+  .solo .ch-card .meta { grid-column: 1; grid-row: 2; margin: 0; }
+  .solo .ch-card p { grid-column: 2; grid-row: 1 / span 2; }
+  .solo .ch-card .links { grid-column: 3; grid-row: 1 / span 2; margin: 0; }
   .ch-card .top { display: flex; align-items: baseline; gap: 9px; }
   .ch-card .num { font-family: var(--mono); font-weight: 800; font-size: 1.3rem; color: var(--lvc); min-width: 2ch; }
   .ch-card h3 { margin: 0; font-size: 1rem; }
@@ -65,18 +151,35 @@
   .ch-card .links { display: flex; gap: 4px 11px; flex-wrap: wrap; font-size: .8rem; font-weight: 700; margin-top: 4px; }
   .ch-card .meta { display: flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--muted); font-weight: 600; margin-top: -2px; }
   .ch-card .done { margin-left: auto; font-family: var(--mono); white-space: nowrap; }
+  :root[data-theme="light"] .ch-card .num { filter: brightness(.9); }
 
-  /* ---------- level stairs ---------- */
-  .stairs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: end; }
-  .stair { border-radius: 12px 12px 4px 4px; padding: 12px; border: 1px solid var(--line); background: linear-gradient(180deg, color-mix(in srgb, var(--lvc) 20%, var(--panel)), var(--panel) 70%); }
-  .stair .lv { font-family: var(--mono); font-weight: 800; color: var(--lvc); font-size: .85rem; text-transform: uppercase; }
-  .stair h3 { font-size: .95rem; margin: 4px 0; }
-  .stair p { font-size: .8rem; color: var(--ink-2); margin: 0; }
-  .stair .chs { font-size: .75rem; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+  /* the Frontier chapter gets its own wide card */
+  .frontier { --lvc: var(--lv7); display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 22px; padding: 20px 22px; border: 1px solid color-mix(in srgb, var(--lv7) 45%, var(--line)); border-radius: 16px;
+    background: radial-gradient(90% 140% at 100% 0%, color-mix(in srgb, var(--lv7) 12%, transparent), transparent 60%), var(--panel); position: relative; overflow: hidden; }
+  .frontier .top { display: flex; align-items: baseline; gap: 12px; }
+  .frontier .num { font: 800 2.2rem/1 var(--mono); color: var(--lv7); }
+  .frontier h3 { font-size: 1.35rem; margin: 0; }
+  .frontier .meta { font-size: .8rem; color: var(--muted); font-weight: 600; margin: 6px 0 10px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .frontier .hook { color: var(--ink-2); margin: 0; max-width: 72ch; }
+  .frontier .fr-done { font-family: var(--mono); margin-left: 8px; }
+  .frontier .acts { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-width: 230px; padding-top: 6px; }
+  .f-sims { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .f-sim { display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px 9px; color: var(--ink); font-size: .78rem; font-weight: 700; line-height: 1.25; }
+  .f-sim:hover { border-color: var(--lv7); text-decoration: none; }
+  .f-sim .glyph { margin-bottom: 6px; }
+  .f-sims-cap { grid-column: 1 / -1; font-size: .8rem; color: var(--muted); margin: 0 0 -2px; }
+  :root[data-theme="light"] .frontier .num { filter: brightness(.9); }
 
-  /* ---------- tools + credits ---------- */
-  .tool { display: flex; gap: 12px; align-items: flex-start; }
-  .tool .ico { font-size: 1.5rem; line-height: 1.2; }
+  /* ---------- ways in ---------- */
+  .ways { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  .way { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; }
+  .way .ico { font-size: 1.4rem; }
+  .way h3 { margin: 8px 0 2px; font-size: 1rem; }
+  .way .q { color: var(--ember); font-size: .82rem; font-weight: 700; margin-bottom: 8px; }
+  .way ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: .86rem; flex: 1; }
+  .way li + li { margin-top: 5px; }
+
+  /* ---------- credits ---------- */
   .credits { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
   .credits ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: .9rem; }
 
@@ -84,23 +187,77 @@
     .ways { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .loop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .loop .step:nth-child(3)::after { display: none; }
-    .stairs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .stair { min-height: 0 !important; }
+    .feat.big { grid-column: span 12; }
+    .feat { grid-column: span 6; }
+    .f-sims { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .frontier { grid-template-columns: minmax(0, 1fr); }
+    .frontier .acts { flex-direction: row; flex-wrap: wrap; min-width: 0; }
+  }
+  @media (max-width: 1000px) {
+    /* the journey turns vertical: the line runs down the left edge */
+    .journey { grid-template-columns: minmax(0, 1fr); }
+    .stretch { grid-template-columns: minmax(0, 1fr); }
+    .stretch-head { padding: 0 0 0 52px; margin: 0; position: relative; padding-bottom: 14px; }
+    .stretch-head::before { content: ""; position: absolute; left: 13px; top: 0; bottom: 0; width: 8px; background: var(--lvc-first); }
+    .stretch:first-child .stretch-head::before { display: none; }
+    .stretch-head .brace { display: none; }
+    .stretch-head p { max-width: none; }
+    .stn { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 18px; padding: 0 0 18px; }
+    .stn > :not(.rail):not(.dot) { grid-column: 2; }
+    .stn .dot { grid-row: 1 / span 4; }
+    .stn .rail { left: 13px; right: auto; top: 0; bottom: 0; width: 8px; height: auto; }
+    .stretch:first-child .stn:first-of-type .rail { left: 13px; top: 14px; border-radius: 4px 4px 0 0; }
+    .stn.end .rail { background: linear-gradient(180deg, var(--lvc) 40%, color-mix(in srgb, var(--lvc) 0%, transparent)); }
+    .stn-lv { margin-top: 0; }
+    .today { grid-template-columns: auto minmax(0, 1fr); }
+    .today .t-levels { grid-column: 1 / -1; grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .frontier { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 860px) {
-    .home-hero { grid-template-columns: 1fr; gap: 22px; padding-top: 20px; }
-    .progress-strip { grid-template-columns: auto minmax(0, 1fr); }
-    .progress-strip .go { grid-column: 1 / -1; }
-    .progress-strip .levels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .credits { grid-template-columns: 1fr; }
+    .home-hero { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 22px; }
+    .credits { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 760px) {
+    /* Atlas ladders turn vertical too */
+    .ladder { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+    .rungs { grid-auto-flow: row; grid-auto-columns: auto; }
+    .rung { display: grid; grid-template-columns: 17px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 4px 0; }
+    .rung::before { left: 7px; right: auto; top: 0; bottom: 0; width: 3px; height: auto; background: linear-gradient(180deg, var(--sc), var(--sc-next, var(--sc))); }
+    .rungs li:first-child .rung::before { top: 50%; }
+    .rungs li:last-child .rung::before { width: 3px; bottom: 50%; }
+    .rung .rn, .rung .ry { margin: 0; }
+    .rung-detail { grid-column: 1; }
+    .ladder-title { grid-row: auto; }
   }
   @media (max-width: 640px) {
-    .ways, .loop, .stairs { grid-template-columns: 1fr; }
+    .ways, .loop { grid-template-columns: minmax(0, 1fr); }
+    .features { grid-template-columns: minmax(0, 1fr); }
+    .feat, .feat.big { grid-column: auto; }
+    .feat.big { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ill" "txt" "list" "go"; }
+    .feat.big .ill { margin-bottom: 14px; }
+    .feat.big ul { columns: 1; margin-top: 4px; }
+    .feat:not(.big) { display: grid; grid-template-columns: 104px minmax(0, 1fr); column-gap: 14px; align-items: start; padding: 14px; }
+    .feat:not(.big) .ill { grid-row: 1 / span 3; margin: 0; }
+    .feat:not(.big) > :not(.ill) { grid-column: 2; }
+    .feat:not(.big) p { font-size: .86rem; margin-bottom: 8px; }
+    .cta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .cta .btn.primary { grid-column: 1 / -1; }
+    .cta .btn { padding: 10px 8px; font-size: .9rem; }
+    .today .ring { width: 52px; height: 52px; }
+    .rung-detail { display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; min-height: 0; }
     .loop .step::after { display: none !important; }
     .loop .step { padding: 12px 14px; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; }
-    .loop .step .ico { grid-row: 1 / span 3; font-size: 1.4rem; }
+    .loop .step .ico { grid-row: 1 / span 3; font-size: 1.3rem; }
     .loop .step h3 { margin-top: 0; }
     .loop-back { display: none; }
+    .today { padding: 14px; gap: 14px; }
+    .today .t-levels { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .f-sims { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+    .f-sim { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: center; padding: 6px 10px 6px 6px; font-size: .85rem; }
+    .f-sim .glyph { margin: 0; }
+    .frontier { padding: 16px; }
+    .solo .ch-card { grid-template-columns: minmax(0, 1fr); }
+    .solo .ch-card .meta, .solo .ch-card p, .solo .ch-card .links { grid-column: 1; grid-row: auto; }
   }
 </style>
 </head>
@@ -109,123 +266,256 @@
   <!-- ======================= HERO ======================= -->
   <section class="home-hero">
     <div>
-      <div class="eyebrow">Algorithm Analysis &amp; Design · from zero to senior engineer</div>
-      <h1>Build algorithms <span class="hot">from scratch</span> — and prove how fast they are.</h1>
-      <p class="lead">Algorithm Forge teaches the way good engineers actually learn: see the idea move, snap it together
-        in blocks, write it yourself in pseudocode that gets <b>checked for real</b>, then push it to the version a senior
-        engineer would ship. No prior math confidence required.</p>
+      <h1>Build algorithms from scratch, all the way to the research frontier.</h1>
+      <p class="lead">Start with a single loop. Climb through the classic design strategies and the patterns senior engineers
+        rely on, and finish with the algorithms inside today's databases, search engines and research papers. Watch each idea
+        move, write it yourself in pseudocode that is run and checked for real, and measure how fast it is.</p>
       <div class="cta">
-        <a class="btn primary" href="path.html">Start the Learning Path →</a>
-        <a class="btn" href="arena/index.html">🏟️ Practice Arena</a>
-        <a class="btn" href="sims/index.html">👀 Simulations</a>
+        <a class="btn primary" href="arena/problem.html?id=max-element">Start Level 0</a>
+        <a class="btn" href="atlas.html">Explore the Atlas</a>
+        <a class="btn" href="playground.html">Open the Playground</a>
       </div>
-      <div class="source-line">18 chapters · 48 simulations · a graded problem bank · follows A. Levitin,
-        <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed.</div>
+      <p class="cta-note">Your first problem, Largest Element, takes about five minutes. No account and no installs: progress stays in this browser.
+        Prefer a plan? Follow the <a href="path.html">Learning Path</a>.</p>
+      <p class="source-line" id="source-line">Chapters 0–18, step-by-step simulations and a problem bank, checked in your browser, in eight levels.
+        Grounded in A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed., then extended well beyond it.</p>
     </div>
-    <figure class="hero-art" style="margin:0">
+    <figure class="hero-art">
       <svg id="hero-svg" viewBox="0 0 520 300" role="img" aria-label="Animated bars sorting themselves with selection sort"></svg>
-      <figcaption class="cap"><span><b>selection sort</b> · finds the minimum, swaps it home</span><span id="hero-count"></span></figcaption>
+      <figcaption class="cap"><span><b>selection sort</b> finds the minimum and swaps it home</span><span id="hero-count"></span></figcaption>
     </figure>
   </section>
 
-  <!-- ======================= PROGRESS ======================= -->
-  <section class="panel progress-strip" id="progress" aria-live="polite">
-    <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
-      <circle cx="32" cy="32" r="26" fill="none" stroke="var(--line)" stroke-width="7"/>
-      <circle id="ring-arc" cx="32" cy="32" r="26" fill="none" stroke="var(--ember)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 999" transform="rotate(-90 32 32)"/>
-      <text id="ring-txt" x="32" y="37" text-anchor="middle" font-size="14" font-weight="800" fill="var(--ink)" font-family="var(--mono)">0</text>
+  <!-- ======================= TODAY (Arena progress, read-only) ======================= -->
+  <section class="panel today" id="today" aria-labelledby="today-h" aria-live="polite">
+    <svg class="ring" viewBox="0 0 68 68" aria-hidden="true">
+      <circle cx="34" cy="34" r="27" fill="none" stroke="var(--line)" stroke-width="7"/>
+      <circle id="ring-arc" cx="34" cy="34" r="27" fill="none" stroke="var(--ember)" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 999" transform="rotate(-90 34 34)"/>
+      <text id="ring-txt" x="34" y="39" text-anchor="middle" font-size="15" font-weight="800" fill="var(--ink)" font-family="var(--mono)">0</text>
     </svg>
     <div>
-      <div class="panel-title" style="margin-bottom:4px">Your progress</div>
-      <div id="prog-line" class="small" style="color:var(--ink-2)">Loading your Arena progress…</div>
-      <div class="levels" id="prog-levels" style="margin-top:10px"></div>
+      <h2 id="today-h">Today in the Arena</h2>
+      <div id="t-body"><p class="t-line">Loading your saved progress…</p></div>
     </div>
-    <div class="go"><a class="btn primary" id="prog-go" href="arena/index.html">Continue in the Arena →</a></div>
+    <div class="t-levels" id="t-levels" aria-label="Problems solved per level"></div>
+  </section>
+
+  <!-- ======================= JOURNEY: LEVELS 0–7 ======================= -->
+  <section class="section" id="levels">
+    <div class="section-head">
+      <div><h2>One path, four stretches</h2>
+        <p>Every Arena problem has a level. Climb in order or jump in where you are: each station says what you will be able to do once you finish it.</p></div>
+      <a class="btn" href="path.html#levels">What each level unlocks</a>
+    </div>
+    <div class="journey" id="journey"></div>
+  </section>
+
+  <!-- ======================= ATLAS PREVIEW ======================= -->
+  <section class="section" id="atlas">
+    <div class="section-head">
+      <div><h2>From classic to cutting edge</h2>
+        <p>The Algorithm Atlas follows one problem at a time from the first idea anyone tries to the newest research result, with
+          what each step fixed and where it runs today. Point at a station to read it; open it to see the whole ladder.</p></div>
+      <a class="btn" href="atlas.html">All ladders in the Atlas</a>
+    </div>
+    <ul class="stage-key" id="stage-key" aria-label="Stages, from first idea to research frontier"></ul>
+    <div class="ladders" id="ladders"><p class="muted small">Loading the Atlas…</p></div>
+  </section>
+
+  <!-- ======================= FEATURES ======================= -->
+  <section class="section" id="tools">
+    <div class="section-head">
+      <div><h2>Six ways to work on an algorithm</h2>
+        <p>Read it, watch it, write it, test it, trace its history and check yourself. Every page links to the others, so you can switch whenever one way stops working for you.</p></div>
+    </div>
+    <div class="features">
+      <article class="feat big">
+        <svg class="ill" viewBox="0 0 240 132" aria-hidden="true">
+          <rect x="12" y="12" width="140" height="108" rx="7" fill="var(--panel)" stroke="var(--line)"/>
+          <circle cx="23" cy="22" r="2.6" fill="var(--c-swap)"/><circle cx="31" cy="22" r="2.6" fill="var(--c-compare)"/><circle cx="39" cy="22" r="2.6" fill="var(--c-done)"/>
+          <g fill="var(--muted)" opacity=".7"><rect x="20" y="36" width="8" height="4" rx="2"/><rect x="20" y="48" width="8" height="4" rx="2"/><rect x="20" y="60" width="8" height="4" rx="2"/><rect x="20" y="72" width="8" height="4" rx="2"/><rect x="20" y="84" width="8" height="4" rx="2"/><rect x="20" y="96" width="8" height="4" rx="2"/></g>
+          <rect x="34" y="36" width="34" height="4" rx="2" fill="var(--steel)"/><rect x="72" y="36" width="58" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="42" y="48" width="44" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="42" y="60" width="18" height="4" rx="2" fill="var(--steel)"/><rect x="64" y="60" width="50" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="50" y="72" width="62" height="4" rx="2" fill="var(--ember-2)"/>
+          <rect x="42" y="84" width="22" height="4" rx="2" fill="var(--steel)"/><rect x="68" y="84" width="30" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="34" y="96" width="40" height="4" rx="2" fill="var(--steel)"/>
+          <rect x="164" y="12" width="64" height="18" rx="9" fill="color-mix(in srgb, var(--c-done) 18%, transparent)"/>
+          <text x="196" y="24.5" text-anchor="middle" font-size="9" font-weight="800" font-family="var(--mono)" fill="var(--c-done)">ACCEPTED</text>
+          <g font-family="var(--mono)" font-size="8" fill="var(--ink-2)">
+            <circle cx="172" cy="46" r="5" fill="var(--c-done)"/><text x="182" y="49">test 1</text>
+            <circle cx="172" cy="62" r="5" fill="var(--c-done)"/><text x="182" y="65">test 2</text>
+            <circle cx="172" cy="78" r="5" fill="var(--c-done)"/><text x="182" y="81">hidden</text>
+            <circle cx="172" cy="94" r="5" fill="var(--c-done)"/><text x="182" y="97">hidden</text>
+          </g>
+          <path d="M169.5 46l2 2 3-3.5M169.5 62l2 2 3-3.5M169.5 78l2 2 3-3.5M169.5 94l2 2 3-3.5" stroke="var(--bg)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <rect x="164" y="106" width="64" height="14" rx="4" fill="var(--panel-2)" stroke="var(--line)"/>
+          <text x="196" y="116" text-anchor="middle" font-size="7.5" font-family="var(--mono)" fill="var(--muted)">ops: 2n − 2</text>
+        </svg>
+        <div class="txt">
+          <h3>Practice Arena</h3>
+          <p><span data-count="problems">Over 200</span> problems in eight levels. Write Forge Pseudocode, JavaScript or Python, or snap shuffled blocks into order; hidden tests run in your browser and count the operations your solution performs.</p>
+        </div>
+          <ul>
+            <li>Interview mode with a timer and no hints</li>
+            <li>A daily challenge, a streak, and badges</li>
+            <li>A spaced-repetition review queue that brings problems back</li>
+            <li>Compare your solution with the reference, side by side</li>
+          </ul>
+          <div class="go"><a href="arena/index.html">Open the Arena</a><a href="arena/index.html?level=7">Frontier problems</a></div>
+      </article>
+      <article class="feat big">
+        <svg class="ill" viewBox="0 0 240 132" aria-hidden="true">
+          <rect x="12" y="12" width="104" height="108" rx="7" fill="var(--panel)" stroke="var(--line)"/>
+          <rect x="20" y="24" width="56" height="4" rx="2" fill="var(--steel)"/>
+          <rect x="28" y="36" width="44" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="16" y="45" width="96" height="10" rx="2" fill="var(--ember-soft)"/><rect x="16" y="45" width="2.5" height="10" fill="var(--ember)"/>
+          <rect x="28" y="48" width="18" height="4" rx="2" fill="var(--steel)"/><rect x="50" y="48" width="40" height="4" rx="2" fill="var(--ink-2)" opacity=".8"/>
+          <rect x="36" y="60" width="50" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="28" y="72" width="30" height="4" rx="2" fill="var(--steel)"/>
+          <g transform="translate(20 88)"><rect width="13" height="13" rx="2" fill="var(--c-done)"/><rect x="15" width="13" height="13" rx="2" fill="var(--c-done)"/><rect x="30" width="13" height="13" rx="2" fill="var(--c-compare)"/><rect x="45" width="13" height="13" rx="2" fill="var(--c-bar)"/><rect x="60" width="13" height="13" rx="2" fill="var(--c-bar)"/><rect x="75" width="13" height="13" rx="2" fill="var(--c-bar)"/></g>
+          <rect x="128" y="12" width="100" height="108" rx="7" fill="var(--panel)" stroke="var(--line)"/>
+          <path d="M140 106H220M140 106V24" stroke="var(--line-2)" stroke-width="1.5" fill="none"/>
+          <path d="M140 104C160 101 176 93 190 78S210 44 218 30" stroke="var(--steel)" stroke-width="1.6" stroke-dasharray="4 3" fill="none"/>
+          <g fill="var(--ember)"><circle cx="150" cy="102" r="3"/><circle cx="164" cy="98" r="3"/><circle cx="178" cy="89" r="3"/><circle cx="192" cy="75" r="3"/><circle cx="205" cy="55" r="3"/><circle cx="216" cy="33" r="3"/></g>
+          <text x="144" y="34" font-size="8" font-family="var(--mono)" fill="var(--ink-2)">fit: n²</text>
+          <text x="214" y="116" font-size="7.5" font-family="var(--mono)" fill="var(--muted)" text-anchor="end">n →</text>
+        </svg>
+        <div class="txt">
+          <h3>Pseudocode Playground</h3>
+          <p>Run any Forge Pseudocode you write. Step through it line by line and watch its variables and arrays change, then send it to the Growth Lab, which runs it on larger and larger inputs and fits the curve.</p>
+        </div>
+          <ul>
+            <li>A gallery of <span data-count="examples">worked</span> classic algorithms to start from</li>
+            <li>Arrays drawn as cells with their index variables as arrows, plus every variable and the call stack</li>
+            <li>Share a program and its inputs as a link</li>
+          </ul>
+          <div class="go"><a href="playground.html">Open the Playground</a></div>
+      </article>
+      <article class="feat">
+        <svg class="ill" viewBox="0 0 240 110" aria-hidden="true">
+          <rect x="40" y="10" width="160" height="90" rx="7" fill="var(--panel)" stroke="var(--line)"/>
+          <rect x="40" y="10" width="160" height="16" rx="7" fill="var(--ember-soft)"/><rect x="40" y="20" width="160" height="6" fill="var(--ember-soft)"/>
+          <rect x="50" y="15" width="60" height="5" rx="2.5" fill="var(--ember)"/>
+          <rect x="50" y="34" width="88" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/><rect x="50" y="43" width="72" height="4" rx="2" fill="var(--ink-2)" opacity=".7"/>
+          <rect x="50" y="56" width="66" height="34" rx="4" fill="var(--bg-2)" stroke="var(--line)"/>
+          <g fill="var(--c-bar)"><rect x="56" y="76" width="7" height="10" rx="1.5"/><rect x="66" y="70" width="7" height="16" rx="1.5"/><rect x="76" y="64" width="7" height="22" rx="1.5" fill="var(--c-compare)"/><rect x="86" y="72" width="7" height="14" rx="1.5"/><rect x="96" y="61" width="7" height="25" rx="1.5" fill="var(--c-done)"/></g>
+          <text x="128" y="70" font-size="13" font-family="var(--mono)" fill="var(--steel)">Σ</text>
+          <rect x="144" y="62" width="44" height="4" rx="2" fill="var(--ink-2)" opacity=".6"/>
+          <rect x="128" y="78" width="60" height="4" rx="2" fill="var(--ink-2)" opacity=".6"/>
+        </svg>
+        <h3>Lessons</h3>
+        <p>Nineteen chapters, each built around Build Cards: the problem in one sentence, a story, a picture, the pseudocode, the math, and a check-yourself question.</p>
+        <div class="go"><a href="#chapters">Browse the chapters</a></div>
+      </article>
+      <article class="feat">
+        <svg class="ill" viewBox="0 0 240 110" aria-hidden="true">
+          <line x1="30" x2="210" y1="76" y2="76" stroke="var(--line)"/>
+          <g><rect x="40" y="46" width="16" height="30" rx="3" fill="var(--c-done)"/><rect x="62" y="34" width="16" height="42" rx="3" fill="var(--c-done)"/><rect x="84" y="56" width="16" height="20" rx="3" fill="var(--c-compare)"/><rect x="106" y="22" width="16" height="54" rx="3" fill="var(--c-swap)"/><rect x="128" y="40" width="16" height="36" rx="3" fill="var(--c-bar)"/><rect x="150" y="28" width="16" height="48" rx="3" fill="var(--c-bar)"/><rect x="172" y="50" width="16" height="26" rx="3" fill="var(--c-bar)"/></g>
+          <circle cx="44" cy="92" r="8" fill="var(--ember)"/><path d="M41.5 88v8l6.5-4z" fill="var(--bg)"/>
+          <rect x="60" y="90" width="140" height="4" rx="2" fill="var(--line)"/><rect x="60" y="90" width="58" height="4" rx="2" fill="var(--ember)"/><circle cx="118" cy="92" r="4.5" fill="var(--ember)"/>
+        </svg>
+        <h3>Simulations</h3>
+        <p><span data-count="sims">Dozens of</span> step-through simulations. Type your own input, step forward and back, and read why each step happened.</p>
+        <div class="go"><a href="sims/index.html">See the simulations</a></div>
+      </article>
+      <article class="feat">
+        <svg class="ill" viewBox="0 0 240 110" aria-hidden="true">
+          <path d="M34 86L82 70L124 58L166 38L206 24" stroke="var(--line-2)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <circle cx="34" cy="86" r="8" fill="var(--panel)" stroke="var(--st-first)" stroke-width="3.5"/>
+          <circle cx="82" cy="70" r="8" fill="var(--panel)" stroke="var(--st-classic)" stroke-width="3.5"/>
+          <circle cx="124" cy="58" r="8" fill="var(--panel)" stroke="var(--st-advanced)" stroke-width="3.5"/>
+          <circle cx="166" cy="38" r="8" fill="var(--panel)" stroke="var(--st-production)" stroke-width="3.5"/>
+          <circle cx="206" cy="24" r="9" fill="var(--st-frontier)"/>
+          <g font-family="var(--mono)" font-size="8" fill="var(--muted)" text-anchor="middle"><text x="34" y="106">1945</text><text x="82" y="91">1962</text><text x="124" y="79">1997</text><text x="166" y="59">2002</text><text x="206" y="48">2018</text></g>
+        </svg>
+        <h3>Algorithm Atlas</h3>
+        <p>Evolution ladders for <span data-count="families">many</span> problems, from the first idea to today's research, every claim with a source.</p>
+        <div class="go"><a href="atlas.html">Open the Atlas</a><a href="atlas.html#timeline">Timeline</a></div>
+      </article>
+      <article class="feat">
+        <svg class="ill" viewBox="0 0 240 110" aria-hidden="true">
+          <rect x="62" y="8" width="128" height="84" rx="7" fill="var(--panel-2)" stroke="var(--line)" transform="rotate(5 126 50)"/>
+          <rect x="50" y="14" width="128" height="86" rx="7" fill="var(--panel)" stroke="var(--line)"/>
+          <rect x="60" y="24" width="90" height="5" rx="2.5" fill="var(--ink-2)" opacity=".8"/>
+          <g><rect x="60" y="38" width="108" height="14" rx="4" fill="var(--bg-2)" stroke="var(--line)"/><rect x="60" y="56" width="108" height="14" rx="4" fill="color-mix(in srgb, var(--c-done) 16%, transparent)" stroke="var(--c-done)"/><rect x="60" y="74" width="108" height="14" rx="4" fill="var(--bg-2)" stroke="var(--line)"/></g>
+          <g fill="var(--ink-2)" opacity=".6"><rect x="68" y="43.5" width="46" height="3.5" rx="1.75"/><rect x="68" y="79.5" width="56" height="3.5" rx="1.75"/></g>
+          <rect x="68" y="61.5" width="40" height="3.5" rx="1.75" fill="var(--c-done)"/>
+          <path d="M152 63l3 3 5-6" stroke="var(--c-done)" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <h3>Quiz and cheat sheet</h3>
+        <p>Multiple-choice questions with explanations and a flashcard mode, plus one printable page of sums, recurrences and complexities.</p>
+        <div class="go"><a href="quiz.html">Take the quiz</a><a href="cheatsheet.html">Cheat sheet</a></div>
+      </article>
+    </div>
+    <p class="also"><b>Also on hand:</b>
+      <a href="path.html#weeks">a 12-week study plan</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/tree/main/practice" target="_blank" rel="noopener">problem sets and two practice exams with full solutions</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/tree/main/src/python/algoforge" target="_blank" rel="noopener">a tested Python library that counts its own operations</a></p>
   </section>
 
   <!-- ======================= HOW IT WORKS ======================= -->
   <section class="section" id="how">
     <div class="section-head">
-      <div><div class="eyebrow">How it works</div><h2>One loop, for every algorithm</h2>
-        <p>Each algorithm is learned the same five ways, in the same order. If you get stuck at any step, go back one — usually to the picture.</p></div>
+      <div><h2>One loop, for every algorithm</h2>
+        <p>Each algorithm is learned the same five ways, in the same order. If you get stuck at any step, go back one, usually to the picture.</p></div>
     </div>
     <div class="loop">
-      <div class="step"><span class="n">1</span><div class="ico">📖</div><h3>Learn</h3>
-        <p>Read the lesson's Build Card: the problem in one sentence, a real-life story, then the idea.</p><a href="#chapters">Lessons by chapter →</a></div>
-      <div class="step"><span class="n">2</span><div class="ico">👀</div><h3>See</h3>
-        <p>Run the simulation on your own input. Step forward and back; every frame explains what happened and why.</p><a href="sims/index.html">Simulations →</a></div>
-      <div class="step"><span class="n">3</span><div class="ico">🧱</div><h3>Build</h3>
-        <p>Assemble the algorithm from shuffled blocks of pseudocode — order and indentation are the whole puzzle.</p><a href="arena/index.html">Blocks mode →</a></div>
-      <div class="step"><span class="n">4</span><div class="ico">✍️</div><h3>Write</h3>
-        <p>Write it from a blank page. The Arena runs your pseudocode, checks it against hidden tests and counts its operations.</p><a href="arena/index.html">Practice Arena →</a></div>
-      <div class="step"><span class="n">5</span><div class="ico">🧑‍💻</div><h3>Senior twist</h3>
-        <p>Solved it? Every problem ends with the harder follow-up an experienced engineer would ask next.</p><a href="#levels">Levels 0–5 →</a></div>
+      <div class="step"><span class="n">1</span><div class="ico" aria-hidden="true">📖</div><h3>Learn</h3>
+        <p>Read the lesson's Build Card: the problem in one sentence, a real-life story, then the idea.</p><a href="#chapters">Lessons by chapter</a></div>
+      <div class="step"><span class="n">2</span><div class="ico" aria-hidden="true">👀</div><h3>See</h3>
+        <p>Run the simulation on your own input. Step forward and back; every frame explains what happened and why.</p><a href="sims/index.html">Simulations</a></div>
+      <div class="step"><span class="n">3</span><div class="ico" aria-hidden="true">🧱</div><h3>Build</h3>
+        <p>Assemble the algorithm from shuffled blocks of pseudocode. Order and indentation are the whole puzzle.</p><a href="arena/index.html">Blocks mode</a></div>
+      <div class="step"><span class="n">4</span><div class="ico" aria-hidden="true">✍️</div><h3>Write</h3>
+        <p>Write it from a blank page. The Arena runs your pseudocode, checks it against hidden tests and counts its operations.</p><a href="arena/index.html">Practice Arena</a></div>
+      <div class="step"><span class="n">5</span><div class="ico" aria-hidden="true">🧑‍💻</div><h3>Senior twist</h3>
+        <p>Solved it? Every problem ends with the harder follow-up an experienced engineer would ask next.</p><a href="#levels">Levels 0–7</a></div>
     </div>
     <div class="loop-back" aria-hidden="true">
       <span>↺ repeat</span>
       <svg viewBox="0 0 400 18" preserveAspectRatio="none"><path d="M398 2 V10 H2 V2" fill="none" stroke="var(--line-2)" stroke-width="2" stroke-dasharray="5 5" vector-effect="non-scaling-stroke"/></svg>
-      <span>stuck? go back to 👀 See</span>
-    </div>
-  </section>
-
-  <!-- ======================= WAYS IN ======================= -->
-  <section class="section" id="ways">
-    <div class="section-head">
-      <div><div class="eyebrow">Pick your way in</div><h2>Start with the door that suits you</h2>
-        <p>Everyone has a favorite first door. Walk in through yours — then try the others, because the understanding that lasts is the one you've seen from several sides.</p></div>
-    </div>
-    <div class="ways">
-      <div class="way"><div class="ico">👀</div><h3>Visual</h3><div class="q">“I need to see it.”</div>
-        <ul><li>Open the <a href="sims/index.html">simulation</a> before the lesson, and step slowly.</li>
-          <li>Type the exact example from the lesson into the sim and watch it match.</li>
-          <li>In the Arena, press <b>Visualize</b> to watch <i>your own</i> code run.</li></ul></div>
-      <div class="way"><div class="ico">📖</div><h3>Story &amp; analogy</h3><div class="q">“Tell me what it's like.”</div>
-        <ul><li>Read each Build Card's <b>Story</b> first — sorting cards, looking up a word, filling a backpack.</li>
-          <li>Read the sims' narration panel instead of watching the bars.</li>
-          <li>Explain the algorithm out loud in one sentence before writing anything.</li></ul></div>
-      <div class="way"><div class="ico">✋</div><h3>Hands-on</h3><div class="q">“Let me try it.”</div>
-        <ul><li>Go straight to the <a href="arena/index.html">Arena</a> and attempt the problem cold.</li>
-          <li>Use <b>Blocks</b> mode when a blank page feels like too much.</li>
-          <li>Break things on purpose: change <code>&lt;</code> to <code>≤</code> and predict what fails.</li></ul></div>
-      <div class="way"><div class="ico">∑</div><h3>Math-first</h3><div class="q">“Show me the proof.”</div>
-        <ul><li>Start from the <a href="cheatsheet.html">cheat sheet</a>: sums, recurrences, the Master Theorem.</li>
-          <li>Jump to each card's <b>Analyze it</b> block, then read the code to see why the sum looks that way.</li>
-          <li>Try the <a href="sims/recurrence-lab.html">Recurrence Lab</a>.</li></ul></div>
-      <div class="way"><div class="ico">💻</div><h3>Code-first</h3><div class="q">“Show me the code.”</div>
-        <ul><li>Solve Arena problems in JavaScript or Python as well as pseudocode.</li>
-          <li>Read the tested library in <a href="https://github.com/Normansrule/algorithm-forge/tree/main/src/python/algoforge" target="_blank" rel="noopener">src/python</a> — it counts its own operations.</li>
-          <li>Keep the <a href="cheatsheet.html#pseudocode">pseudocode reference</a> open.</li></ul></div>
+      <span>stuck? go back to See</span>
     </div>
   </section>
 
   <!-- ======================= CHAPTERS ======================= -->
   <section class="section" id="chapters">
     <div class="section-head">
-      <div><div class="eyebrow">Chapters</div><h2>The whole course, Chapter 0 to 17</h2>
-        <p>Chapters 1–12 follow the textbook and the lecture order; 13–17 go beyond it into the tools and habits of working engineers.</p></div>
-      <a class="btn" href="path.html">See it as a map →</a>
+      <div><h2>Every chapter, 0 to 18</h2>
+        <p>Chapters 1–12 follow the classic design strategies in textbook order. Chapters 13–17 add the tools and habits of working engineers, and Chapter 18 reaches the research frontier.</p></div>
+      <a class="btn" href="path.html">See it as a map</a>
     </div>
     <div id="chapter-grid"></div>
   </section>
 
-  <!-- ======================= LEVELS ======================= -->
-  <section class="section" id="levels">
+  <!-- ======================= WAYS IN ======================= -->
+  <section class="section" id="ways">
     <div class="section-head">
-      <div><div class="eyebrow">Levels</div><h2>Six levels, from first loop to senior patterns</h2>
-        <p>Every Arena problem has a level. Climb in order, or jump to your level — each step says what you'll be able to do.</p></div>
-      <a class="btn" href="path.html#levels">What each level unlocks →</a>
+      <div><h2>Start with the door that suits you</h2>
+        <p>Everyone has a favorite first door. Walk in through yours, then try the others: the understanding that lasts is the one you have seen from several sides.</p></div>
     </div>
-    <div class="stairs" id="stairs"></div>
-  </section>
-
-  <!-- ======================= TOOLS ======================= -->
-  <section class="section">
-    <div class="section-head"><div><div class="eyebrow">Tools</div><h2>Everything else you'll want open</h2></div></div>
-    <div class="grid cols-4">
-      <a class="card tool" href="cheatsheet.html"><span class="ico">🧾</span><span><h3>Cheat Sheet</h3><p>Asymptotics, sums, recurrences, design strategies, the complexity table, and the pseudocode reference — printable.</p></span></a>
-      <a class="card tool" href="quiz.html"><span class="ico">🧠</span><span><h3>Quiz</h3><p>Over 100 multiple-choice questions with explanations, by chapter, with a flashcard mode.</p></span></a>
-      <a class="card tool" href="path.html#weeks"><span class="ico">🗓️</span><span><h3>Week-by-week plan</h3><p>The course in lecture order, with what to read, watch and solve each week.</p></span></a>
-      <a class="card tool" href="https://github.com/Normansrule/algorithm-forge/tree/main/practice" target="_blank" rel="noopener"><span class="ico">📝</span><span><h3>Practice sets</h3><p>Worked assignments, midterm review with full solutions, and the empirical-analysis lab.</p></span></a>
+    <div class="ways">
+      <div class="way"><div class="ico" aria-hidden="true">👀</div><h3>Visual</h3><div class="q">“I need to see it.”</div>
+        <ul><li>Open the <a href="sims/index.html">simulation</a> before the lesson, and step slowly.</li>
+          <li>Type the exact example from the lesson into the sim and watch it match.</li>
+          <li>In the Arena or the <a href="playground.html">Playground</a>, press <b>Visualize</b> to watch <i>your own</i> code run.</li></ul></div>
+      <div class="way"><div class="ico" aria-hidden="true">📖</div><h3>Story &amp; analogy</h3><div class="q">“Tell me what it's like.”</div>
+        <ul><li>Read each Build Card's <b>Story</b> first: sorting cards, looking up a word, filling a backpack.</li>
+          <li>Read the sims' narration panel instead of watching the bars.</li>
+          <li>Explain the algorithm out loud in one sentence before writing anything.</li></ul></div>
+      <div class="way"><div class="ico" aria-hidden="true">✋</div><h3>Hands-on</h3><div class="q">“Let me try it.”</div>
+        <ul><li>Go straight to the <a href="arena/index.html">Arena</a> and attempt the problem cold.</li>
+          <li>Use <b>Blocks</b> mode when a blank page feels like too much.</li>
+          <li>Break things on purpose: change <code>&lt;</code> to <code>≤</code> and predict what fails.</li></ul></div>
+      <div class="way"><div class="ico" aria-hidden="true">∑</div><h3>Math-first</h3><div class="q">“Show me the proof.”</div>
+        <ul><li>Start from the <a href="cheatsheet.html">cheat sheet</a>: sums, recurrences, the Master Theorem.</li>
+          <li>Jump to each card's <b>Analyze it</b> block, then read the code to see why the sum looks that way.</li>
+          <li>Try the <a href="sims/recurrence-lab.html">Recurrence Lab</a>.</li></ul></div>
+      <div class="way"><div class="ico" aria-hidden="true">💻</div><h3>Code-first</h3><div class="q">“Show me the code.”</div>
+        <ul><li>Solve Arena problems in JavaScript or Python as well as pseudocode.</li>
+          <li>Read the tested library in <a href="https://github.com/Normansrule/algorithm-forge/tree/main/src/python/algoforge" target="_blank" rel="noopener">src/python</a>; it counts its own operations.</li>
+          <li>Keep the <a href="cheatsheet.html#pseudocode">pseudocode reference</a> open.</li></ul></div>
     </div>
   </section>
 
@@ -234,19 +524,19 @@
     <div class="panel">
       <div class="panel-title">Primary reference</div>
       <p style="margin:0">Anany Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd edition (Pearson, 2012).
-        Lessons follow its chapters and cite sections like “Levitin §4.2”. All explanations, examples and pseudocode here are written
-        fresh for Algorithm Forge — get the book for the full treatment and exercises.</p>
-      <p class="small muted" style="margin:10px 0 0">Built alongside the CSC 501 course (Algorithm Analysis and Design) at California State University, Dominguez Hills. Source on
+        Chapters 1–12 follow its chapters and cite sections like “Levitin §4.2”. All explanations, examples and pseudocode here are written
+        fresh for Algorithm Forge; get the book for the full treatment and exercises. The Atlas and Chapter 18 cite the original papers.</p>
+      <p class="small muted" style="margin:10px 0 0">A free, open learning resource for anyone who wants to build algorithms from scratch. Source on
         <a href="https://github.com/Normansrule/algorithm-forge" target="_blank" rel="noopener">GitHub</a>.</p>
     </div>
     <div class="panel">
       <div class="panel-title">Great companions (all in English)</div>
       <ul>
-        <li>Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 <i>Introduction to Algorithms</i> — lectures and problem sets</li>
-        <li><a href="https://visualgo.net/" target="_blank" rel="noopener">VisuAlgo</a> — animations of classic data structures</li>
-        <li><a href="https://algs4.cs.princeton.edu/" target="_blank" rel="noopener">Sedgewick &amp; Wayne, <i>Algorithms</i></a> — book site with code</li>
-        <li><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms.com</a> — deep dives for the Beyond chapters</li>
-        <li>Abdul Bari and William Fiset on YouTube — recurrences, sorting, graph theory</li>
+        <li>Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 <i>Introduction to Algorithms</i>: free videos and problem sets</li>
+        <li><a href="https://visualgo.net/" target="_blank" rel="noopener">VisuAlgo</a>: animations of classic data structures</li>
+        <li><a href="https://algs4.cs.princeton.edu/" target="_blank" rel="noopener">Sedgewick &amp; Wayne, <i>Algorithms</i></a>: book site with code</li>
+        <li><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms.com</a>: deep dives for Chapters 13–18</li>
+        <li>Abdul Bari and William Fiset on YouTube: recurrences, sorting, graph theory</li>
       </ul>
     </div>
   </section>
@@ -262,8 +552,8 @@ document.title = "Algorithm Forge — build algorithms from scratch";
   const START = [7, 3, 10, 1, 8, 5, 12, 2, 9, 4, 11, 6];
   const n = START.length, W = 520, H = 300, pad = 22, base = 250, slot = (W - 2 * pad) / n, bw = slot * 0.7;
   const PASS = 0.85, MOVE = 0.45, HOLD = 1.8, RESET = 1.2;
-  // record selection sort: pos[value] per pass
-  const arr = START.slice(), events = []; // {pass, a, b} swap slot a <-> slot b
+  // record selection sort: one event per pass (swap slot i with slot m)
+  const arr = START.slice(), events = [];
   let comparisons = 0;
   for (let i = 0; i < n - 1; i++) {
     let m = i;
@@ -273,7 +563,7 @@ document.title = "Algorithm Forge — build algorithms from scratch";
   }
   const sortT = (n - 1) * PASS, total = sortT + HOLD + RESET;
   const pct = (t) => ((t / total) * 100).toFixed(3) + "%";
-  document.getElementById("hero-count").textContent = `n = ${n} · ${comparisons} comparisons · ${events.filter((e) => e.i !== e.m).length} swaps`;
+  document.getElementById("hero-count").textContent = `n = ${n}, ${comparisons} comparisons, ${events.filter((e) => e.i !== e.m).length} swaps`;
   let css = "";
   const max = Math.max(...START);
   const finalX = (v) => pad + (v - 1) * slot + (slot - bw) / 2; // sorted slot of value v (values are 1..n)
@@ -319,85 +609,277 @@ document.title = "Algorithm Forge — build algorithms from scratch";
   svg.innerHTML = g;
 })();
 
-/* ---------- progress ---------- */
-(function progress() {
-  const H = ForgeHub, prog = H.progress();
-  const line = document.getElementById("prog-line"), lv = document.getElementById("prog-levels");
-  const setRing = (solved, total) => {
-    const C = 2 * Math.PI * 26, f = total ? solved / total : 0;
-    document.getElementById("ring-arc").setAttribute("stroke-dasharray", `${(C * f).toFixed(1)} 999`);
-    document.getElementById("ring-txt").textContent = solved;
-  };
-  function draw(FP) {
-    const t = H.tally(FP, prog);
-    const solved = FP ? t.solved : prog.solved.size;
-    setRing(solved, t.total || Math.max(solved, 1));
-    const modes = Object.entries(prog.modes).filter(([, c]) => c).map(([m, c]) => `${c} in ${{ blocks: "🧱 Blocks", pseudo: "✍️ Pseudocode", js: "JavaScript", python: "🐍 Python" }[m]}`);
-    if (!prog.solved.size && !prog.attempted.size) {
-      line.innerHTML = `Nothing solved yet${t.total ? ` — ${t.total} problems are waiting` : ""}. Your first one takes about five minutes: <a href="arena/problem.html?id=max-element">Largest Element →</a>`;
-      document.getElementById("prog-go").textContent = "Start in the Arena →";
-    } else {
-      line.innerHTML = `<b>${solved}</b> solved${t.total ? ` of ${t.total}` : ""} · ${prog.attempted.size} in progress` + (modes.length ? ` · ${modes.join(", ")}` : "") + (prog.hints ? ` · ${prog.hints} hints used` : "");
-    }
-    lv.innerHTML = "";
-    H.LEVELS.forEach((L) => {
-      const b = t.byLevel[L.n] || { total: 0, solved: 0 };
-      const w = b.total ? (100 * b.solved) / b.total : 0;
-      lv.appendChild(Forge.el("div", { title: `Level ${L.n} · ${L.name}: ${b.solved} of ${b.total}` },
-        Forge.el("div", { class: "k" }, `L${L.n} · ${b.solved}/${b.total}`),
-        Forge.el("div", { class: "bar" }, Forge.el("i", { style: { width: w + "%", background: `var(--lv${L.n})` } }))));
-    });
-  }
-  draw(null);
-  H.loadProblems().then((FP) => { if (FP) draw(FP); });
+const H = ForgeHub;
+const el = Forge.el;
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const sup = (t) => esc(t).replace(/\^\{([^}]*)\}/g, "<sup>$1</sup>").replace(/\^([\w.]+)/g, "<sup>$1</sup>");
+const PROG = H.progress();
+let TALLY = H.tally(null, PROG), FP = null;
+
+/* ---------- counts in the copy (sims now; problems once the bank loads) ---------- */
+(function counts() {
+  const nSims = Object.keys(H.SIMS || {}).length;
+  document.querySelectorAll('[data-count="sims"]').forEach((s) => (s.textContent = nSims));
 })();
 
+/* ---------- today: the Arena's saved progress, read-only ---------- */
+const Today = (function () {
+  const DAY = 86400000;
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem("forge-arena-v1") || "null"); } catch (e) { raw = null; }
+  const obj = (x) => x && typeof x === "object" && !Array.isArray(x);
+  if (!obj(raw)) raw = {};
+  const dayKey = (ts) => { const d = new Date(ts); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const shift = (k, n) => { const [y, m, d] = k.split("-").map(Number); return dayKey(new Date(y, m - 1, d + n).getTime()); };
+  // calendar of Accepted days; older saves keep it only in the solve log
+  let days = obj(raw.days) ? raw.days : null;
+  if (!days) {
+    days = {};
+    const probs = obj(raw.problems) ? raw.problems : {};
+    for (const id in probs) {
+      const r = probs[id];
+      if (!obj(r)) continue;
+      (Array.isArray(r.solves) ? r.solves : []).forEach((x) => { if (x && x.at) { const k = dayKey(x.at); days[k] = (days[k] || 0) + 1; } });
+      if (r.firstSolved && !(Array.isArray(r.solves) && r.solves.length)) { const k = dayKey(r.firstSolved); days[k] = (days[k] || 0) + 1; }
+    }
+  }
+  const has = (k) => (+days[k] || 0) > 0;
+  const today = dayKey(Date.now());
+  let streak = 0;
+  for (let k = has(today) ? today : shift(today, -1); has(k) && streak < 5000; k = shift(k, -1)) streak++;
+  const review = obj(raw.review) ? raw.review : {};
+  const dueIds = Object.keys(review).filter((id) => obj(review[id]) && +review[id].due && +review[id].due <= Date.now());
+  const daily = obj(raw.daily) && raw.daily.date === today && typeof raw.daily.id === "string" ? raw.daily.id : null;
+  return { streak, doneToday: has(today), dueIds, daily, DAY };
+})();
+
+function drawToday() {
+  const body = document.getElementById("t-body");
+  const solved = FP ? TALLY.solved : PROG.solved.size;
+  const total = TALLY.total;
+  const C = 2 * Math.PI * 27, f = total ? solved / total : 0;
+  const arc = document.getElementById("ring-arc");
+  arc.setAttribute("stroke-dasharray", `${(C * f).toFixed(1)} 999`);
+  arc.style.visibility = solved ? "" : "hidden";
+  document.getElementById("ring-txt").textContent = solved;
+  const fresh = !PROG.solved.size && !PROG.attempted.size && !Today.streak && !Today.dueIds.length;
+  const title = (id) => (FP && FP.get && FP.get(id) ? FP.get(id).title : id.replace(/-/g, " "));
+  body.innerHTML = "";
+  if (fresh) {
+    body.appendChild(el("p", { class: "t-line" },
+      "Nothing saved in this browser yet. Solve your first problem and your solved count, daily streak and review queue appear here. ",
+      el("a", { href: "arena/problem.html?id=max-element", style: { fontWeight: 700 } }, "Start with Largest Element")));
+  } else {
+    const stats = el("div", { class: "t-stats" },
+      el("a", { class: "t-stat", href: "arena/index.html?status=solved" }, el("span", { class: "v" }, String(solved)), el("span", { class: "l" }, total ? `of ${total} solved` : "solved")),
+      el("span", { class: "t-stat", title: Today.doneToday ? "Today already counts" : "Get one Accepted today to keep it going" },
+        el("span", { class: "v" }, String(Today.streak)), el("span", { class: "l" }, (Today.streak === 1 ? "day streak" : "day streak") + (Today.doneToday ? ", today counts" : ""))),
+      el("a", { class: "t-stat" + (Today.dueIds.length ? " due" : ""), href: "arena/index.html?status=due" }, el("span", { class: "v" }, String(Today.dueIds.length)), el("span", { class: "l" }, Today.dueIds.length === 1 ? "review due" : "reviews due")));
+    body.appendChild(stats);
+    const line = el("p", { class: "t-line" });
+    if (Today.dueIds.length) line.append("Next review: ", el("a", { href: "arena/problem.html?id=" + encodeURIComponent(Today.dueIds[0]) }, title(Today.dueIds[0])), ". ");
+    if (Today.daily) line.append("Today's challenge: ", el("a", { href: "arena/problem.html?id=" + encodeURIComponent(Today.daily) }, title(Today.daily)), ".");
+    else line.append(el("a", { href: "arena/index.html" }, "Today's daily challenge"), " is waiting in the Arena.");
+    body.appendChild(line);
+  }
+  const lv = document.getElementById("t-levels");
+  lv.innerHTML = "";
+  H.LEVELS.forEach((L) => {
+    const b = TALLY.byLevel[L.n] || { total: 0, solved: 0 };
+    const w = b.total ? (100 * b.solved) / b.total : 0;
+    lv.appendChild(el("a", { href: "arena/index.html?level=" + L.n, title: `Level ${L.n}, ${L.name}: ${b.solved} of ${b.total} solved` },
+      el("div", { class: "k" }, `L${L.n} ${b.total ? b.solved + "/" + b.total : ""}`),
+      el("div", { class: "bar" }, el("i", { style: { width: w + "%", background: `var(--lv${L.n})` } }))));
+  });
+}
+
+/* ---------- the journey: Levels 0–7 as one line in four stretches ---------- */
+const STRETCHES = [
+  { name: "First loop", what: "Write an algorithm precisely and count what it costs.", levels: [0, 1] },
+  { name: "Textbook core", what: "The classic design strategies, one at a time.", levels: [2, 3, 4] },
+  { name: "Senior patterns", what: "Hard problems, pro data structures, design under real constraints.", levels: [5, 6] },
+  { name: "Research frontier", what: "What today's libraries, databases and papers run.", levels: [7] },
+];
+const LEVEL_WHAT = [
+  "Loops, arrays and counting: your first algorithms.",
+  "The honest solution, and what it costs.",
+  "Shrink it, split it, solve the recurrence.",
+  "Presort, heaps, hashing, smarter string search.",
+  "Tables, greedy proofs, flows and matchings.",
+  "Intractable problems, approximation, interview patterns.",
+  "Design the algorithm nobody handed you.",
+  "Timsort, cuckoo filters, vector search, parallel scans.",
+];
+function chRange(chs) { return chs.length > 2 ? `Ch ${chs[0]}–${chs[chs.length - 1]}` : `Ch ${chs.join(", ")}`; }
+function drawJourney() {
+  const host = document.getElementById("journey");
+  host.innerHTML = "";
+  STRETCHES.forEach((S) => {
+    const s = el("div", { class: "stretch", style: `--n: ${S.levels.length}; --lvc-first: var(--lv${S.levels[0]})` },
+      el("div", { class: "stretch-head" }, el("h3", null, S.name), el("p", null, S.what), el("span", { class: "brace", "aria-hidden": "true" })));
+    S.levels.forEach((n) => {
+      const L = H.LEVELS[n], b = TALLY.byLevel[n] || { total: 0, solved: 0 };
+      const f = b.total ? b.solved / b.total : 0;
+      const dot = el("span", { class: "dot", "aria-hidden": "true" }, String(n));
+      if (b.solved) dot.insertAdjacentHTML("beforeend", `<svg class="arc" viewBox="0 0 44 44"><circle cx="22" cy="22" r="20" fill="none" stroke="var(--c-done)" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(2 * Math.PI * 20 * f).toFixed(1)} 999"/></svg>`);
+      const meta = b.total ? `${chRange(L.chapters)}, ${b.total} problems` + (b.solved ? `, ${b.solved} solved` : "") : chRange(L.chapters);
+      s.appendChild(el("a", { class: "stn" + (n === 7 ? " end" : ""), href: "arena/index.html?level=" + n, style: `--lvc: var(--lv${n})`,
+        "aria-label": `Level ${n}, ${L.name}: ${LEVEL_WHAT[n]} ${meta}. Practice this level.` },
+        el("span", { class: "rail", "aria-hidden": "true" }), dot,
+        el("span", { class: "stn-lv" }, "Level " + n),
+        el("span", { class: "stn-name" }, L.name),
+        el("span", { class: "stn-what" }, LEVEL_WHAT[n]),
+        el("span", { class: "stn-meta" }, meta)));
+    });
+    host.appendChild(s);
+  });
+}
+
+/* ---------- Atlas preview: three evolution ladders ---------- */
+function drawAtlas() {
+  const A = window.FORGE_ATLAS, host = document.getElementById("ladders");
+  if (!A || !Array.isArray(A.families)) {
+    host.innerHTML = "";
+    host.appendChild(el("p", { class: "muted" }, "The Atlas preview could not load here. ", el("a", { href: "atlas.html" }, "Open the Algorithm Atlas"), " to see every ladder."));
+    return;
+  }
+  document.querySelectorAll('[data-count="families"]').forEach((s) => (s.textContent = A.families.length));
+  const stages = A.stages || [];
+  const stageLabel = (id) => (stages.find((s) => s.id === id) || { label: id }).label;
+  const key = document.getElementById("stage-key");
+  key.innerHTML = "";
+  stages.forEach((s) => key.appendChild(el("li", { style: `--sc: var(--st-${s.id})` }, el("i"), s.label)));
+  const PICK = ["sorting", "shortest-paths", "membership-filters"];
+  const fams = PICK.map((id) => A.families.find((f) => f.id === id)).filter(Boolean);
+  while (fams.length < 3 && A.families[fams.length]) { const f = A.families.find((x) => !fams.includes(x)); if (!f) break; fams.push(f); }
+  const short = (name) => name.replace(/\s*\((?:[^()]|\([^()]*\))*\)\s*$/, "");
+  host.innerHTML = "";
+  fams.forEach((F) => {
+    const box = el("article", { class: "panel ladder", "aria-labelledby": "lad-" + F.id });
+    const detail = el("p", { class: "rung-detail", "aria-live": "polite" });
+    const show = (i) => {
+      const r = F.rungs[i];
+      detail.style.setProperty("--sc", `var(--st-${r.stage})`);
+      detail.innerHTML = `<b>${esc(r.name)}</b>${r.year ? ` (${r.year})` : ""}: <span class="st">${esc(stageLabel(r.stage))}</span>. ` +
+        (r.time ? `<span class="tb">${sup(r.time)}</span> ` : "") + sup(r.idea || "");
+      box.querySelectorAll(".rung").forEach((a, k) => a.classList.toggle("on", k === i));
+    };
+    const list = el("ol", { class: "rungs", "aria-label": F.title + ", from first idea to research frontier" });
+    F.rungs.forEach((r, i) => {
+      const next = F.rungs[i + 1];
+      const a = el("a", { class: "rung", href: `atlas.html#${encodeURIComponent(F.id)}/${i}`,
+        style: `--sc: var(--st-${r.stage}); --sc-next: var(--st-${next ? next.stage : r.stage})` },
+        el("span", { class: "rd", "aria-hidden": "true" }),
+        el("span", { class: "rn" }, short(r.name)),
+        el("span", { class: "ry" }, r.year ? String(r.year) : "—"));
+      a.addEventListener("mouseenter", () => show(i));
+      a.addEventListener("focus", () => show(i));
+      list.appendChild(el("li", null, a));
+    });
+    box.append(
+      el("div", { class: "ladder-title" },
+        el("h3", { id: "lad-" + F.id }, el("a", { href: "atlas.html#" + encodeURIComponent(F.id) }, F.title)),
+        el("p", null, F.question),
+        el("a", { class: "open", href: "atlas.html#" + encodeURIComponent(F.id) }, `Open the ${F.rungs.length}-step ladder`)),
+      list, detail);
+    host.appendChild(box);
+    show(F.rungs.length - 1); // start on the newest idea
+  });
+}
+
 /* ---------- chapter grid ---------- */
-(function chapters() {
-  const H = ForgeHub, host = document.getElementById("chapter-grid");
-  const parts = [["Start", [0]], ["The course · Chapters 1–12 (Levitin + lectures 1–12)", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]], ["Beyond the textbook · Chapters 13–17", [13, 14, 15, 16, 17]]];
-  const cards = {};
-  parts.forEach(([label, chs]) => {
-    host.appendChild(Forge.el("div", { class: "part-label" }, label));
-    const grid = Forge.el("div", { class: "auto-grid" });
-    chs.forEach((n) => {
+const chDone = {};
+function drawChapters() {
+  const host = document.getElementById("chapter-grid");
+  const parts = [
+    ["Start here", "How to learn on this site.", [0]],
+    ["Textbook core", "Chapters 1–12, following Levitin's chapters in order.", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]],
+    ["Senior patterns", "Chapters 13–17, beyond the textbook.", [13, 14, 15, 16, 17]],
+  ];
+  parts.forEach(([label, sub, chs]) => {
+    const list = chs.filter((n) => H.CHAPTERS[n]);
+    if (!list.length) return;
+    host.appendChild(el("div", { class: "part" }, el("h3", null, label), el("p", null, sub)));
+    const grid = el("div", { class: list.length === 1 ? "auto-grid solo" : "auto-grid" });
+    list.forEach((n) => {
       const c = H.CHAPTERS[n];
       const simsHref = c.sims.length ? `sims/index.html#ch-${n}` : "sims/index.html";
       const practice = n === 0 ? "arena/index.html" : `arena/index.html?chapter=${n}`;
-      const done = Forge.el("span", { class: "done" });
-      const card = Forge.el("article", { class: "ch-card", style: `--lvc: var(--lv${c.level})` },
-        Forge.el("div", { class: "top" }, Forge.el("span", { class: "num" }, String(n)), Forge.el("h3", null, c.title)),
-        Forge.el("div", { class: "meta" }, Forge.el("span", { class: "lv-dot", style: `background: var(--lv${c.level})` }), ` Level ${c.level}`, done),
-        Forge.el("p", null, c.hook),
-        Forge.el("div", { class: "links" },
-          Forge.el("a", { href: H.lessonUrl(n), target: "_blank", rel: "noopener" }, "📖 Lesson"),
-          Forge.el("a", { href: simsHref }, c.sims.length ? `👀 Sims (${c.sims.length})` : "👀 Sims"),
-          Forge.el("a", { href: practice }, "🏟️ Practice"),
-          n >= 1 && n <= 12 ? Forge.el("a", { href: `quiz.html?ch=${n}` }, "🧠 Quiz") : null));
-      cards[n] = done;
-      grid.appendChild(card);
+      const done = el("span", { class: "done" });
+      chDone[n] = done;
+      grid.appendChild(el("article", { class: "ch-card", style: `--lvc: var(--lv${c.level})` },
+        el("div", { class: "top" }, el("span", { class: "num" }, String(n)), el("h3", null, c.title)),
+        el("div", { class: "meta" }, el("span", { class: "lv-dot", style: `background: var(--lv${c.level})` }), ` Level ${c.level}`, done),
+        el("p", null, c.hook),
+        el("div", { class: "links" },
+          el("a", { href: H.lessonUrl(n), target: "_blank", rel: "noopener" }, "📖 Lesson"),
+          el("a", { href: simsHref }, c.sims.length ? `👀 Sims (${c.sims.length})` : "👀 Sims"),
+          el("a", { href: practice }, "🏟️ Practice"),
+          n >= 1 && n <= 12 ? el("a", { href: `quiz.html?ch=${n}` }, "🧠 Quiz") : null)));
     });
     host.appendChild(grid);
   });
-  ForgeHub.loadProblems().then((FP) => {
-    if (!FP) return;
-    const t = H.tally(FP, H.progress());
-    for (const n in cards) { const b = t.byCh[n]; if (b && b.total) cards[n].textContent = `${b.solved} / ${b.total} solved`; }
+  // Chapter 18: the Frontier, in its own section
+  const c = H.CHAPTERS[18];
+  if (!c) return;
+  host.appendChild(el("div", { class: "part" }, el("h3", null, "Research frontier"), el("p", null, "Chapter 18, the optional finale.")));
+  const done = el("span", { class: "fr-done" });
+  chDone[18] = done;
+  const sims = el("div", { class: "f-sims" }, el("p", { class: "f-sims-cap" }, `${c.sims.length} simulations built for this chapter`));
+  c.sims.forEach(([id]) => {
+    const s = H.SIMS[id];
+    if (!s) return;
+    const a = el("a", { class: "f-sim", href: `sims/${id}.html`, title: s.blurb });
+    a.innerHTML = H.simGlyph(id) + esc(s.title);
+    sims.appendChild(a);
   });
-})();
+  host.appendChild(el("article", { class: "frontier", "aria-labelledby": "ch18-h" },
+    el("div", null,
+      el("div", { class: "top" }, el("span", { class: "num" }, "18"), el("h3", { id: "ch18-h" }, c.title)),
+      el("div", { class: "meta" }, el("span", { class: "lv-dot", style: "background: var(--lv7)" }), " Level 7, Frontier: Cutting-Edge Algorithms", done),
+      el("p", { class: "hook" }, c.hook + " Each section starts from a classic you already know and shows exactly what the new idea changes.")),
+    el("div", { class: "acts" },
+        el("a", { class: "btn primary", href: H.lessonUrl(18), target: "_blank", rel: "noopener" }, "Read Chapter 18"),
+        el("a", { class: "btn", href: "arena/index.html?level=7", id: "fr-practice" }, "Practice Level 7"),
+        el("a", { class: "btn ghost", href: "atlas.html" }, "Trace it in the Atlas")),
+    sims));
+}
+function fillChapterCounts() {
+  for (const n in chDone) {
+    const b = TALLY.byCh[n];
+    if (!b || !b.total) continue;
+    chDone[n].textContent = n === "18" ? `${b.solved} / ${b.total} solved` : `${b.solved} / ${b.total} solved`;
+  }
+  const p7 = document.getElementById("fr-practice"), b7 = TALLY.byLevel[7];
+  if (p7 && b7 && b7.total) p7.textContent = `Practice Level 7 (${b7.total} problems)`;
+}
 
-/* ---------- level stairs ---------- */
-(function stairs() {
-  const H = ForgeHub, host = document.getElementById("stairs");
-  const short = ["Loops, arrays, counting — your first algorithms.", "The honest solution, and what it costs.", "Shrink it, split it, solve the recurrence.",
-    "Presort, heaps, hashing, smarter string search.", "Tables, greedy proofs, flows and matchings.", "NP-hardness, approximation, pro patterns."];
-  H.LEVELS.forEach((L, k) => {
-    host.appendChild(Forge.el("a", { class: "stair card", href: "arena/index.html?level=" + L.n, style: `--lvc: var(--lv${L.n}); min-height: ${120 + k * 22}px` },
-      Forge.el("div", { class: "lv" }, "Level " + L.n),
-      Forge.el("h3", null, L.name),
-      Forge.el("p", null, short[k]),
-      Forge.el("div", { class: "chs" }, "Ch " + (L.chapters.length > 3 ? L.chapters[0] + "–" + L.chapters[L.chapters.length - 1] : L.chapters.join(", ")))));
-  });
+drawToday();
+drawJourney();
+drawChapters();
+if (window.FORGE_ATLAS) drawAtlas(); else window.addEventListener("load", drawAtlas);
+
+H.loadProblems().then((fp) => {
+  if (!fp) return;
+  FP = fp;
+  TALLY = H.tally(fp, PROG);
+  const total = TALLY.total;
+  document.querySelectorAll('[data-count="problems"]').forEach((s) => (s.textContent = total));
+  const src = document.getElementById("source-line");
+  if (src && total) src.innerHTML = `Chapters 0–18, ${Object.keys(H.SIMS).length} step-by-step simulations and ${total} auto-checked problems in eight levels. ` +
+    `Grounded in A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed., then extended well beyond it.`;
+  drawToday();
+  drawJourney();
+  fillChapterCounts();
+});
+
+/* ---------- Playground example count, if its gallery exposes one ---------- */
+(function examples() {
+  const set = () => {
+    const E = window.PGExamples, n = E && Array.isArray(E.list) ? E.list.length : 0;
+    if (n) document.querySelectorAll('[data-count="examples"]').forEach((s) => (s.textContent = n));
+  };
+  if (window.PGExamples) set(); else window.addEventListener("load", set);
 })();
 </script>
 </body>

@@ -32,8 +32,13 @@ jobs:
       - name: Every lesson ALGORITHM block is valid Forge Pseudocode
         run: node tools/check-lesson-pseudocode.mjs
 
-      - name: Cheat-sheet pseudocode snippets run
-        run: node tools/check-pseudocode-snippets.mjs
+      - name: Cheat-sheet and Chapter 18 pseudocode snippets run
+        run: |
+          node tools/check-pseudocode-snippets.mjs
+          node tools/check-pseudocode-snippets.mjs lessons/18-the-frontier/README.md
+
+      - name: Every Playground example runs and gives its expected answer
+        run: node tools/check-playground-examples.mjs --quiet
 
       - name: Python library tests
         run: |

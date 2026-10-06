@@ -54,7 +54,7 @@
       <button class="btn primary" id="load">Build tree</button>
       <button class="btn" id="rand">Random</button>
       <button class="btn ghost" id="pBook">Textbook example</button>
-      <button class="btn ghost" id="pLec">Lecture practice (ties)</button>
+      <button class="btn ghost" id="pTies">Practice instance (ties)</button>
       <label class="row small" style="gap:6px;margin-left:auto"><input type="checkbox" id="predictMode"> 🤔 Predict each merge</label>
       <span class="chip" id="score">predictions: 0 / 0</span>
     </div>
@@ -90,7 +90,7 @@
         <div class="bits small" id="encOut" style="margin-top:8px"></div>
       </div>
       <div class="panel">
-        <div class="panel-title">Tie-breaking changes the tree, not the average (lecture practice)</div>
+        <div class="panel-title">Tie-breaking changes the tree, not the average (practice instance)</div>
         <div id="ties" class="scroll-x small"></div>
       </div>
     </section>
@@ -115,7 +115,7 @@
       <h2>Try this</h2>
       <ol>
         <li>Textbook table (A .35, B .1, C .2, D .2, _ .15): expect codewords A 11, B 100, C 00, D 01, _ 101; 2.25 bits per symbol vs 3 fixed, a 25% saving.</li>
-        <li>Lecture practice (A .1, B .1, C .2, D .2, E .4): build it with both tie-breaking rules. Both average 2.2 bits, but the codeword-length variance is 0.16 with “oldest first” and 1.36 with “newest first”. Which would a data link prefer?</li>
+        <li>Practice instance (A .1, B .1, C .2, D .2, E .4): build it with both tie-breaking rules. Both average 2.2 bits, but the codeword-length variance is 0.16 with “oldest first” and 1.36 with “newest first”. Which would a data link prefer?</li>
         <li>Type text with one very common letter (e.g. <code>AAAAAAAABC</code>). How short does that letter's codeword get?</li>
         <li>Give all symbols equal weight (e.g. 8 symbols of 0.125). Huffman should reproduce a fixed-length 3-bit code.</li>
         <li>Encode <code>DAD_CAB</code>, then animate decoding: at each 1 or 0 the decoder moves right or left; at a leaf it prints the symbol and jumps back to the root.</li>

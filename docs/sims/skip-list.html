@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skip List · Algorithm Forge</title>
+<meta name="description" content="Interactive skip list: towers built by coin flips, search path with right and down moves counted against log2 n, insert and delete with pointer splicing, expected height and space, and a measured comparison with balanced and random binary search trees.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 420px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  label.field { max-width: 100%; min-width: 0; }
+  .field input[type="text"] { max-width: 100%; }
+  .calc { font-family: var(--mono); font-size: .82rem; color: var(--ink-2); background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-height: 2.4em; overflow-wrap: anywhere; }
+  .calc b { color: var(--ember-2); }
+  .coin { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-weight: 800; font-size: .8rem; margin-right: 4px; border: 2px solid var(--line-2); }
+  .coin.h { background: var(--c-pivot); color: #0d1117; border-color: var(--c-pivot); }
+  .coin.t { background: var(--bg); color: var(--ink-2); }
+  .chart { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .chart text { font-family: var(--mono); }
+  .refs li { margin-bottom: 4px; }
+  table.t td.l { text-align: left; font-family: var(--font); }
+  p code, li code, dd code { overflow-wrap: anywhere; }
+  .inp-err { margin: 10px 0 0; color: var(--bad); font-weight: 600; font-size: .9rem; }
+  .inp-err.note { color: var(--muted); font-weight: 500; }
+  .field input[aria-invalid="true"] { border-color: var(--bad); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Ch 18 · The Frontier</div>
+    <h1>Skip List</h1>
+    <p class="lead muted">A sorted linked list with express lanes. Each new key flips coins to decide how tall its tower is, and searches ride the high lanes, dropping down when they would overshoot. You get O(log n) expected search, insert and delete with no rotations or rebalancing at all.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Key (integer 0–999) <input id="key" type="text" aria-describedby="inpErr" value="23" style="width:110px"></label>
+      <button class="btn steel" id="ins">Insert</button>
+      <button class="btn steel" id="find">Search</button>
+      <button class="btn steel" id="del">Delete</button>
+      <button class="btn" id="rand">Insert 5 random</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Coin flips for the next insert (H = promote, T = stop; blank = random) <input id="flips" type="text" aria-describedby="inpErr" value="HHT" style="width:150px"></label>
+      <label class="field">Promote probability p <select id="p"><option value="0.5" selected>1/2 (Pugh's default)</option><option value="0.25">1/4 (Redis, LevelDB)</option></select></label>
+      <label class="field">Random seed <input id="seed" type="number" value="7" style="width:86px"></label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Build from keys (random heights) <input id="keys" type="text" aria-describedby="inpErr" value="3, 6, 7, 9, 12, 17, 19, 21, 25, 26" style="min-width:240px"></label>
+      <button class="btn primary" id="build">Build</button>
+      <button class="btn" id="example">Example</button>
+    </div>
+    <p class="inp-err" id="inpErr" role="alert" hidden></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="calc" id="calc" aria-live="polite"></div>
+      <svg class="stage" id="stage" role="img" aria-label="Skip list drawn as towers on levels with forward pointers"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-active)"></i>search is here</span>
+        <span><i style="background:var(--c-compare)"></i>key being compared</span>
+        <span><i style="background:var(--ember)"></i>search path</span>
+        <span><i style="background:var(--c-pivot)"></i>update[i] / new tower</span>
+        <span><i style="background:var(--c-swap)"></i>pointer rewired / removed</span>
+        <span><i style="background:var(--c-done)"></i>found / inserted</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Skip list vs balanced Binary Search Tree (BST)</h2>
+    <p class="small muted" style="margin-top:0">Build each structure from the same random keys, then search for every key once and average the number of key comparisons. "Balanced BST" is the perfectly balanced tree (the best any BST can do); "random BST" is a plain BST with keys inserted in random order and no rebalancing.</p>
+    <div class="row"><button class="btn steel" id="cmp">Measure n = 16 … 16,384</button><span class="small muted" id="cmpNote"></span></div>
+    <div class="scroll-x"><table class="t" id="cmpTab" style="margin-top:12px"></table></div>
+    <svg class="chart" id="cmpChart" role="img" aria-label="Average comparisons per successful search versus n" style="margin-top:12px" hidden></svg>
+    <div class="legend" id="cmpLegend" style="margin-top:6px" hidden>
+      <span><i style="background:var(--ember)"></i>skip list (measured)</span>
+      <span><i style="background:var(--c-pivot)"></i>random BST (measured)</span>
+      <span><i style="background:var(--steel)"></i>perfectly balanced BST</span>
+    </div>
+    <h3 style="margin-top:16px">Side by side</h3>
+    <div class="scroll-x"><table class="t">
+      <tr><th></th><th>Skip list</th><th>Balanced BST (Adelson-Velsky–Landis (AVL) tree, red-black tree)</th></tr>
+      <tr><td class="l">Search / insert / delete</td><td class="l">O(log n) expected, for every input (randomness is in the coin flips, not the data)</td><td class="l">O(log n) worst case</td></tr>
+      <tr><td class="l">Worst case</td><td class="l">O(n), but only with vanishing probability</td><td class="l">O(log n)</td></tr>
+      <tr><td class="l">Rebalancing</td><td class="l">None: an insert touches only its own tower's predecessors</td><td class="l">Rotations / recoloring that can ripple up the tree</td></tr>
+      <tr><td class="l">Space</td><td class="l">1/(1 − p) pointers per key on average (2 for p = 1/2, 1.33 for p = 1/4)</td><td class="l">2 child pointers per key (+ balance info)</td></tr>
+      <tr><td class="l">Range scan / ordered iteration</td><td class="l">Walk level 0: it is already a sorted linked list</td><td class="l">In-order traversal (or threaded leaves)</td></tr>
+      <tr><td class="l">Concurrency</td><td class="l">Local pointer updates make lock-free versions practical</td><td class="l">Rotations touch several nodes at once, harder to make lock-free</td></tr>
+    </table></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Where skip lists run</h2>
+    <ul>
+      <li><b>Redis sorted sets</b> (<code>ZADD</code>, <code>ZRANGE</code>): a skip list plus a hash table, with p = 1/4 and at most 32 levels (<code>ZSKIPLIST_P</code>, <code>ZSKIPLIST_MAXLEVEL</code> in the source). Each forward pointer also stores a span, so rank queries are O(log n) too.</li>
+      <li><b>LevelDB</b>: the in-memory write buffer (memtable) is a skip list with maximum height 12 that grows a level with probability 1 in 4.</li>
+      <li><b>RocksDB</b>: the default memtable implementation is a skip list. Both are the "C0" level of a Log-Structured Merge-tree (LSM-tree).</li>
+      <li><b>Java</b>: <code>java.util.concurrent.ConcurrentSkipListMap</code> and <code>ConcurrentSkipListSet</code>, sorted maps that many threads can update at once.</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>Towers and levels</dt>
+      <dd>Every key is a tower of boxes. Level 0 (bottom) links all keys in sorted order. A key reaches level i + 1 only if it won another coin flip (probability p), so each level holds about a fraction p of the keys below it: an express lane. head (left) and NIL (right, key +∞) are sentinels as tall as the list.</dd>
+      <dt>The search path</dt>
+      <dd>Start at the top of head. Look at the next key on this level: if it is smaller than the target, move right; otherwise drop down one level. At level 0 the next key is either the target or proof it is absent. The orange line is the path; counters show right and down moves next to log₂ n.</dd>
+      <dt>update[ ]</dt>
+      <dd>While descending, insert and delete remember the last box visited on each level (purple). Those are exactly the boxes whose forward pointers must change: splice the new tower in after them, or route around a deleted one.</dd>
+      <dt>Expected height and space</dt>
+      <dd>A tower has height ≥ k with probability p<sup>k−1</sup>, so the expected height is 1/(1 − p) and the tallest tower is about log<sub>1/p</sub> n. Pugh's analysis bounds the expected search path by log<sub>1/p</sub>(n)/p + 1/(1 − p): about 2 log₂ n + 2 for p = 1/2.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Follow a search.</b> Press <b>Example</b>, type <code>19</code> and press Search. On level 3 the next key is 21 &gt; 19, so drop. On level 2, ride right to 6; 21 is too big again, drop. On level 1, ride to 9 and 17, drop. On level 0 the next key is 19: found. That is 3 right + 3 down moves for n = 10, where a plain sorted linked list walks 7 nodes. The "pointers / key" counter shows measured vs expected (≈ 2 for p = 1/2).</li>
+      <li><b>Choose the coins.</b> Leave the flips as <code>HHT</code> and insert <code>23</code>: two heads and a tail give a tower of height 3. Watch the three purple update[ ] boxes, then the three pointers being rewired (red), bottom level first.</li>
+      <li><b>Grow the list taller.</b> Type flips <code>HHHHHT</code> and insert <code>1</code>. The tower is taller than the list, so the head grows and the new levels' update[ ] entries are the head itself.</li>
+      <li><b>Delete.</b> Delete <code>21</code> (a tower of height 4). Its predecessor on every level (purple) is rerouted around it, bottom level first. Then delete <code>1</code> from step 3: it was the only tower on the top levels, so the list's level shrinks.</li>
+      <li><b>p = 1/4.</b> Switch p to 1/4, clear the flips box, and Build with 30+ keys. Towers are shorter (1.33 pointers per key instead of 2) and paths a bit longer per level, but about the same total: 4·log₄ n = 2 log₂ n.</li>
+      <li><b>Measure.</b> Press <b>Measure</b> below. The skip list needs roughly twice the comparisons of a perfectly balanced BST (each level costs about 1/p moves) and more than a random BST, and its path stays under Pugh's bound. What you buy: the O(log n) expectation holds for <i>every</i> insertion order (a plain BST fed sorted keys becomes a linked list), and nothing is ever rotated. Switch p to 1/4 and measure again: fewer pointers per key, similar comparisons.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson: Chapter 18 The Frontier</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena: Level 7 Frontier problems</a>
+      <a href="../atlas.html">🗺️ Algorithm Atlas</a>
+      <a href="../arena/problem.html?id=bst-insert-inorder">Arena: bst-insert-inorder</a>
+      <a href="../arena/problem.html?id=avl-is-balanced">Arena: avl-is-balanced</a>
+      <a href="../arena/problem.html?id=lsm-compaction-merge">Arena: lsm-compaction-merge</a>
+      <a href="search-trees.html">🎮 Search Trees (BST, AVL, 2-3)</a>
+      <a href="b-tree.html">🎮 B-Tree Lab</a>
+      <a href="cuckoo-filters.html">🎮 Cuckoo Hashing and Filters</a>
+      <a href="amortized.html">🎮 Amortized Analysis</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>W. Pugh, “Skip Lists: A Probabilistic Alternative to Balanced Trees,” <i>Communications of the ACM</i> (ACM = Association for Computing Machinery) 33(6), 1990. Search, insert and delete with update[ ], the random level with probability p, expected cost log<sub>1/p</sub>(n)/p + 1/(1 − p).</li>
+      <li>Redis source, <a href="https://github.com/redis/redis/blob/unstable/src/server.h">src/server.h</a>: <code>ZSKIPLIST_MAXLEVEL 32</code>, <code>ZSKIPLIST_P 0.25</code>.</li>
+      <li>LevelDB source, <a href="https://github.com/google/leveldb/blob/main/db/skiplist.h">db/skiplist.h</a>: <code>kMaxHeight = 12</code>, <code>kBranching = 4</code>.</li>
+      <li>RocksDB wiki, <a href="https://github.com/facebook/rocksdb/wiki/MemTable">MemTable</a>: “The default implementation of memtable is based on skiplist.”</li>
+      <li>M. Herlihy and N. Shavit, <i>The Art of Multiprocessor Programming</i>, chapter on skip lists and balanced search (lock-free skip lists).</li>
+      <li>Levitin §6.3 (balanced search trees) and §5.3 (binary trees) for the BST side of the comparison.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/skip-list.js"></script>
+</body>
+</html>

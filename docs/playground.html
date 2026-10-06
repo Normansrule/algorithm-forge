@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playground · Algorithm Forge</title>
+<meta name="description" content="Write or paste any Forge Pseudocode, give it inputs, run it, watch it execute step by step, and measure how its cost grows with n.">
+<link rel="stylesheet" href="assets/css/forge.css">
+<link rel="stylesheet" href="arena/arena.css">
+<link rel="stylesheet" href="playground/playground.css">
+<script src="assets/js/forge-kit.js"></script>
+<script src="engine/forge-pseudo.js"></script>
+<script src="engine/forge-check.js"></script>
+<script src="arena/js/util.js"></script>
+<script src="arena/js/editor.js"></script>
+<script src="arena/js/trace.js"></script>
+<script src="playground/pg-core.js"></script>
+<script src="playground/examples.js"></script>
+<script src="playground/playground.js" defer></script>
+</head>
+<body class="arena pg">
+<main class="wrap pg-wrap">
+  <header class="pg-head">
+    <div class="eyebrow">Playground</div>
+    <h1>Pseudocode Playground</h1>
+    <p class="lead">Write or paste <em>any</em> algorithm in Forge Pseudocode — your own, or one from the lessons — give it inputs and run it. Then watch it execute line by line, or measure how its work grows as the input gets bigger.</p>
+  </header>
+
+  <div id="pg-app">
+    <noscript><div class="callout bad">The Playground runs your pseudocode in the browser, so it needs JavaScript.</div></noscript>
+  </div>
+
+  <section class="pg-gallery" aria-labelledby="pg-gallery-h">
+    <h2 id="pg-gallery-h">Examples gallery</h2>
+    <p class="muted">Classic algorithms from the lessons, ready to run. Open one, change it, break it, fix it. Each card also has its own link (<code>playground.html#ex=…</code>) you can share.</p>
+    <div id="pg-gallery"></div>
+  </section>
+
+  <section class="pg-ref" aria-labelledby="pg-ref-h">
+    <h2 id="pg-ref-h">Quick reference</h2>
+    <div class="grid cols-3">
+      <div class="card">
+        <h3>The language</h3>
+        <p>Levitin-style pseudocode; blocks are set by indentation (4 spaces).</p>
+        <ul class="small">
+          <li>Assign with <code>←</code> (or <code>&lt;-</code>); <code>=</code> means “is equal to”.</li>
+          <li><code>for i ← 0 to n - 1 do</code>, <code>downto</code>, <code>for each x in S do</code>, <code>while … do</code>, <code>repeat … until …</code></li>
+          <li><code>if … then … else if … else</code>, <code>and</code> <code>or</code> <code>not</code>, <code>div</code> <code>mod</code> <code>⌊x⌋</code> <code>⌈x⌉</code></li>
+          <li><code>swap A[i] and A[j]</code>, <code>return</code>, <code>print x, y</code></li>
+          <li>A header <code>A[0..n-1]</code> binds <code>n</code>; <code>A[l..r]</code> binds <code>l</code> and <code>r</code>.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Built-ins</h3>
+        <ul class="small">
+          <li><code>length(A)</code> <code>array(n, fill)</code> <code>matrix(r, c, fill)</code> <code>append(L, x)</code></li>
+          <li><code>min</code> <code>max</code> <code>abs</code> <code>sqrt</code> <code>floor</code> <code>ceil</code> <code>log2</code></li>
+          <li>Stacks and queues: <code>push</code> <code>pop</code> <code>top</code> <code>enqueue</code> <code>dequeue</code> <code>isEmpty</code></li>
+          <li>Priority queues: <code>Q ← priorityQueue()</code>, <code>insert(Q, item, key)</code>, <code>deleteMin(Q)</code></li>
+          <li>Maps and sets: <code>map()</code> <code>set()</code> <code>contains</code> <code>get(M, k, default)</code></li>
+          <li><code>∞</code>, <code>true</code> / <code>false</code>, <code>null</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Inputs and links</h3>
+        <ul class="small">
+          <li>Numbers <code>42</code>, lists <code>[3, 1, 2]</code>, text <code>"abc"</code> (quotes optional for a single word), nested lists for graphs and matrices <code>[[1, 2], [0], []]</code>, <code>∞</code>, <code>null</code>.</li>
+          <li>The 🎲 button next to an input makes random arrays, text and graphs of any size.</li>
+          <li><b>Copy link</b> packs your code and inputs into the address itself — nothing is uploaded.</li>
+          <li>Your work is kept as a draft in this browser. <b>Download .txt</b> saves a copy.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="muted small">New to the dialect? Start with <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/00-start-here/README.md">Lesson 0 · Start here</a>, then practise with graded problems in the <a href="arena/index.html">Arena</a>.</p>
+  </section>
+</main>
+</body>
+</html>

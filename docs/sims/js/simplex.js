@@ -358,7 +358,7 @@
   F.page({ title: "Simplex Method", chapter: "Ch 10 · Iterative Improvement" });
 
   const PRESETS = {
-    bakery: { sense: "max", c: "3,5", cons: "x + y <= 4\nx + 3y <= 6", label: "Course example: max 3x + 5y" },
+    bakery: { sense: "max", c: "3,5", cons: "x + y <= 4\nx + 3y <= 6", label: "Levitin §10.1 example: max 3x + 5y" },
     three: { sense: "max", c: "2,3", cons: "x + 2y <= 8\n3x + 2y <= 12\ny <= 3", label: "Three constraints" },
     min: { sense: "min", c: "2,3", cons: "x + y >= 4\nx + 3y >= 6\nx <= 5", label: "Minimize (needs Phase I)" },
     unbounded: { sense: "max", c: "1,1", cons: "x - y <= 1", label: "Unbounded" },

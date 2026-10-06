@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuckoo Hashing and Modern Filters · Algorithm Forge</title>
+<meta name="description" content="Cuckoo hashing with two tables and the kick-out chain, a Bloom filter next to a cuckoo filter (fingerprints, partial-key cuckoo hashing, deletion, measured false-positive rate), and xor-filter construction by peeling.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 440px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  label.field { max-width: 100%; min-width: 0; }
+  .field input[type="text"] { max-width: 100%; }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel-2); }
+  .seg button + button { border-left: 1px solid var(--line-2); }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+  .calc { font-family: var(--mono); font-size: .82rem; color: var(--ink-2); background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-height: 2.4em; overflow-wrap: anywhere; }
+  .calc b { color: var(--ember-2); }
+  .twin { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 700px) { .twin { grid-template-columns: 1fr; } }
+  .twin h3 { font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips .chip { cursor: pointer; }
+  .chart { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .chart text { font-family: var(--mono); }
+  .refs li { margin-bottom: 4px; }
+  .ok-t { color: var(--ok); font-weight: 700; }
+  .bad-t { color: var(--bad); font-weight: 700; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Ch 18 · The Frontier</div>
+    <h1>Cuckoo Hashing and Modern Filters</h1>
+    <p class="lead muted">Give every key exactly two possible homes and let newcomers kick old keys out, like a cuckoo chick. That one idea gives hash tables with worst-case two-probe lookups, and filters that beat the Bloom filter on space and can delete. Finish with the xor filter, built by peeling a hypergraph.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="seg" role="group" aria-label="Choose a part">
+      <button class="btn" id="modeA" data-mode="A">① Cuckoo hashing</button>
+      <button class="btn" id="modeB" data-mode="B">② Bloom vs cuckoo filter</button>
+      <button class="btn" id="modeC" data-mode="C">③ Xor filter</button>
+    </div>
+
+    <div id="ctlA" style="margin-top:12px">
+      <div class="row">
+        <label class="field">Key (integer 0–999999 or a word) <input id="aKey" type="text" value="32" style="width:150px"></label>
+        <button class="btn steel" id="aIns">Insert</button>
+        <button class="btn steel" id="aFind">Lookup</button>
+        <button class="btn steel" id="aDel">Delete</button>
+        <button class="btn" id="aRand">Insert 5 random</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="field">Build from keys <input id="aKeys" type="text" value="20, 21, 65, 54, 64, 11, 31" style="min-width:240px"></label>
+        <label class="field">Table size m (each) <input id="aM" type="number" value="11" min="5" max="23" style="width:76px"></label>
+        <label class="field">MaxLoop (rounds) <input id="aLoop" type="number" value="10" min="1" max="50" style="width:76px"></label>
+        <button class="btn primary" id="aBuild">Build</button>
+        <button class="btn" id="aExample">Classic example</button>
+      </div>
+    </div>
+
+    <div id="ctlB" style="margin-top:12px" hidden>
+      <div class="row">
+        <label class="field">Item (any word) <input id="bItem" type="text" value="apple" style="width:140px"></label>
+        <button class="btn steel" id="bIns">Insert</button>
+        <button class="btn steel" id="bFind">Lookup</button>
+        <button class="btn steel" id="bDel">Delete</button>
+        <button class="btn" id="bRand">Insert 8 random</button>
+        <button class="btn" id="bReset">Empty both</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="field">Buckets B <select id="bB"><option>4</option><option>8</option><option selected>16</option><option>32</option></select></label>
+        <label class="field">Fingerprint bits f <input id="bF" type="number" value="8" min="4" max="12" style="width:70px"></label>
+        <label class="field">Bloom hashes k <input id="bK" type="number" value="4" min="1" max="10" style="width:70px"></label>
+        <label class="field" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="bForce"> let Delete clear Bloom bits too (see what breaks)</label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <span class="small muted">Inserted (click to look up):</span>
+        <div class="chips" id="bChips"></div>
+      </div>
+      <p class="small muted" style="margin:8px 0 0">Same memory for both: the Bloom filter gets m = 4·B·f bits, exactly the bits of the cuckoo filter's B buckets × 4 slots × f bits.</p>
+    </div>
+
+    <div id="ctlC" style="margin-top:12px" hidden>
+      <div class="row">
+        <label class="field">Keys (2–10 words) <input id="cKeys" type="text" value="ant, bee, cat, dog, eel, fox, gnu" style="min-width:240px"></label>
+        <button class="btn primary" id="cBuild">Build xor filter</button>
+        <button class="btn" id="cRand">Random keys</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="field">Query <input id="cQ" type="text" value="cat" style="width:120px"></label>
+        <button class="btn steel" id="cFind">Lookup</button>
+        <button class="btn" id="cTest">Test 10,000 non-members</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="calc" id="calc" aria-live="polite"></div>
+      <div id="stageHost"></div>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel" id="expA">
+        <div class="panel-title">Experiment · how full can two tables get?</div>
+        <p class="small muted" style="margin-top:0">Random hash functions, keys inserted one by one until the first insertion fails (500 rounds of kicking). Repeated 30 times per size.</p>
+        <div class="row">
+          <label class="field">m per table <select id="expM"><option>101</option><option selected>503</option><option>2003</option></select></label>
+          <button class="btn steel" id="expRun">Run</button>
+        </div>
+        <div id="expOut" class="small" style="margin-top:8px"></div>
+        <svg class="chart" id="expChart" role="img" aria-label="Average kicks per insertion versus load factor" style="margin-top:10px" hidden></svg>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" id="measB" style="margin-top:16px" hidden>
+    <h2>Measured false-positive rate vs theory (at scale)</h2>
+    <p class="small muted" style="margin-top:0">A cuckoo filter with 1,024 buckets × 4 slots is filled until an insertion fails (or 95% of slots are used). A Bloom filter gets the same number of bits and the best k = (m/n) ln 2. Then both are asked about 50,000 items that were never inserted, and the false-positive (FP) rate is the fraction that wrongly get "maybe".</p>
+    <div class="row">
+      <button class="btn steel" id="measRun">Measure at current f</button>
+      <button class="btn" id="measSweep">Sweep f = 4 … 16</button>
+      <span class="small muted" id="measNote"></span>
+    </div>
+    <div class="scroll-x"><table class="t" id="measTab" style="margin-top:12px"></table></div>
+    <svg class="chart" id="measChart" role="img" aria-label="False positive rate versus bits per item for Bloom and cuckoo filters" style="margin-top:12px" hidden></svg>
+    <div class="legend" id="measLegend" style="margin-top:6px" hidden>
+      <span><i style="background:var(--steel)"></i>Bloom filter (dots measured, line theory)</span>
+      <span><i style="background:var(--ember)"></i>cuckoo filter, b = 4 (dots measured, line theory)</span>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>① Two tables, two hash functions</dt>
+      <dd>Key x may live only in T1[h1(x)] or T2[h2(x)]. A lookup checks those two cells and nothing else, so it costs at most 2 probes even in the worst case. Each cell shows its key and, in small print, the key's <i>other</i> home. Inserting always puts the new key in its T1 home; whoever was there is kicked out (the purple "in hand" box) and flies to its own other home, possibly kicking someone else. Orange arrows trace the kick-out chain.</dd>
+      <dt>When kicking never ends</dt>
+      <dd>If the chain returns to a configuration it has already been in, it is a cycle and would repeat forever. If it simply runs too long (MaxLoop rounds) we also give up. Either way: rehash, meaning pick new random hash functions (and grow the tables if the load factor α = n / 2m has reached 1/2), then re-insert everything.</dd>
+      <dt>② Fingerprints in buckets of 4</dt>
+      <dd>A cuckoo filter stores only a short f-bit fingerprint of each item, in B buckets of 4 slots. It never sees the item again after inserting, so it can't recompute h2 from the item. Partial-key cuckoo hashing solves that: i2 = i1 xor hash(fingerprint). Because xor undoes itself, any fingerprint's other bucket is "my bucket xor hash(me)", whichever bucket it is in now.</dd>
+      <dd>The Bloom filter beside it sets k bits per item. Probed bits are yellow, newly set bits red, a 0 bit that proves absence blue. Bits are shared, so a Bloom filter can't delete; the cuckoo filter just removes one copy of the fingerprint.</dd>
+      <dt>③ Xor filter</dt>
+      <dd>Each key touches 3 cells, one per segment. A key's fingerprint must equal the xor of its 3 cells. Building works backwards: repeatedly peel a cell that only one remaining key touches (push it on a stack), then pop the stack and set each key's private cell so its xor comes out right.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>A kick-out chain.</b> In part ① press <b>Classic example</b> (7 keys, m = 11, h1(K) = K mod 11, h2(K) = ⌊K/11⌋ mod 11), then step through inserting <code>32</code>. The tables are only 32% full, yet 32 kicks out 65, which kicks out 64, then 20, then 21, which kicks 32 itself back out; then 31 … After 12 kicks the tables are back in a state they have already been in: a cycle. The reason: 32 and six stored keys all have their T1 home in cells 9 or 10 and their T2 home in cells 1, 2, 4 or 5. That is 7 keys for 6 cells. No amount of kicking can fit them, so the sim rehashes with random functions.</li>
+      <li><b>Worst-case lookup.</b> After any build, look up a stored key and a missing key. Both take at most 2 probes, never a chain or a cluster. Compare with linear probing in the Hashing Lab.</li>
+      <li><b>The 50% wall.</b> Run the experiment with m = 2003. With two tables and one key per cell, the first failure comes at a load factor close to 0.5, and kicks per insert shoot up as α approaches it. That is why the bucketed version in part ② (4 slots per bucket) is used in practice: it reaches about 95%.</li>
+      <li><b>Xor in action.</b> In part ②, insert <code>apple</code> and answer the 🤔 question: i2 is i1 xor hash(f), bit by bit. Then insert 8 random items until a bucket overflows and watch fingerprints move to "my bucket xor hash(me)".</li>
+      <li><b>Delete.</b> Insert <code>apple</code>, then Delete it: the cuckoo filter answers "no" afterwards, while the Bloom filter still says "maybe" (it can't delete). Tick "let Delete clear Bloom bits", insert a few items, delete one, then look up the others: one may now be a <b>false negative</b>, which a filter must never produce.</li>
+      <li><b>Space vs accuracy.</b> Press <b>Sweep f</b>. With few bits per item the Bloom filter is more accurate; from about 11–12 bits per item (false-positive rates below roughly 0.5%) the cuckoo filter's dots drop below the Bloom filter's at the same space, and the gap widens as f grows. The reason: a Bloom filter needs 1.44 log₂(1/ε) bits per item for false-positive rate ε, the cuckoo filter (log₂(1/ε) + 3)/α. The 1.44 factor eventually beats the "+3". (The paper's semi-sorting trick saves about one more bit per item and moves the crossover to larger ε.)</li>
+      <li><b>Peeling.</b> In part ③ build the default keys and answer which key gets its value first. Then look up a non-member: it passes only if the xor of its 3 cells happens to equal its 8-bit fingerprint, about 1 in 256.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson: Chapter 18 The Frontier</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena: Level 7 Frontier problems</a>
+      <a href="../atlas.html#membership-filters">🗺️ Atlas: membership filters</a>
+      <a href="../atlas.html#hash-tables">🗺️ Atlas: hash tables</a>
+      <a href="../arena/problem.html?id=open-hashing-chains">Arena: open-hashing-chains</a>
+      <a href="bloom-filter.html">🎮 Bloom Filter</a>
+      <a href="hashing.html">🎮 Hashing Lab</a>
+      <a href="skip-list.html">🎮 Skip List</a>
+      <a href="vector-search.html">🎮 Vector Search</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>R. Pagh and F. F. Rodler, “Cuckoo hashing,” <i>Journal of Algorithms</i> 51(2), 2004 (conference version at the European Symposium on Algorithms (ESA), 2001). The insertion loop with MaxLoop and rehash shown in part ①.</li>
+      <li>B. Fan, D. G. Andersen, M. Kaminsky and M. D. Mitzenmacher, “Cuckoo Filter: Practically Better Than Bloom,” Conference on emerging Networking EXperiments and Technologies (CoNEXT), 2014. <a href="https://www.cs.cmu.edu/~dga/papers/cuckoo-conext2014.pdf">paper</a>. Partial-key cuckoo hashing i2 = i1 ⊕ hash(f), buckets of 4 at about 95% occupancy, 500 kicks, false-positive bound ≈ 2b/2<sup>f</sup>, (log₂(1/ε) + log₂(2b))/α bits per item, safe deletion only of inserted items.</li>
+      <li>T. M. Graf and D. Lemire, “Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters,” <i>ACM Journal of Experimental Algorithmics</i> (ACM = Association for Computing Machinery), 2020. <a href="https://arxiv.org/abs/1912.08258">arXiv:1912.08258</a>. Capacity ⌊1.23n⌋ + 32, three segments, construction by peeling, about 9.84 bits per key at a 0.39% false-positive rate with 8-bit fingerprints.</li>
+      <li>B. H. Bloom, “Space/time trade-offs in hash coding with allowable errors,” <i>Communications of the ACM</i> 13(7), 1970.</li>
+      <li>Levitin §7.3 (hashing) for the open- and closed-hashing baseline.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/cuckoo-filters.js"></script>
+</body>
+</html>

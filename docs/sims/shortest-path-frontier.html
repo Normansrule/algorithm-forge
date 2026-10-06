@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shortest Paths: Dijkstra to the 2025 Frontier · Algorithm Forge</title>
+<meta name="description" content="One weighted directed graph, five shortest-path methods side by side: Bellman–Ford rounds, Dijkstra with a binary heap and the sorting barrier, Dial's bucket queue, Δ-stepping, and an illustration of the FindPivots step of the 2025 algorithm by Duan, Mao, Mao, Shu and Yin.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/shortest-path-frontier-core.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .78rem; }
+  label.field { min-width: 0; max-width: 100%; }
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes .btn.on { background: var(--ember); border-color: var(--ember); color: #1b0f05; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; flex-wrap: wrap; }
+  .seg button { background: var(--panel-2); color: var(--ink-2); border: 0; padding: 6px 10px; font: 600 .82rem var(--font); cursor: pointer; }
+  .seg button.on { background: var(--steel); color: #04121f; }
+  #stage { touch-action: manipulation; }
+  #stage .nd { cursor: pointer; }
+  .ds { font-family: var(--mono); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 30px; }
+  .ds .lbl { font-family: var(--font); color: var(--muted); font-size: .78rem; font-weight: 600; margin-right: 4px; }
+  .ds .it { padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel-2); }
+  .ds .it.top { border-color: var(--ember); background: var(--ember-soft); font-weight: 700; }
+  .ds .it.pv { border-color: var(--c-pivot); background: color-mix(in srgb, var(--c-pivot) 22%, transparent); font-weight: 700; }
+  .ds .it.w { border-color: var(--c-compare); background: color-mix(in srgb, var(--c-compare) 18%, transparent); }
+  .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 4px; width: 100%; }
+  .slot { border: 1px solid var(--line-2); border-radius: 7px; padding: 3px 5px; background: var(--bg-2); min-height: 44px; }
+  .slot.cur { border-color: var(--ember); background: var(--ember-soft); }
+  .slot .h { font-size: .68rem; color: var(--muted); }
+  .bars2 { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 8px; align-items: center; font-size: .8rem; }
+  .bars2 .b { height: 12px; border-radius: 4px; }
+  #orderSvg, #benchSvg { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  table.t.cmp td, table.t.cmp th { text-align: right; }
+  table.t.cmp td:first-child, table.t.cmp th:first-child { text-align: left; }
+  table.t.cmp td.ok { color: var(--ok); font-weight: 700; }
+  table.t.cmp td.bad { color: var(--bad); font-weight: 700; }
+  textarea { width: 100%; font-family: var(--mono); font-size: .8rem; min-height: 110px; }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  .refs li { margin-bottom: 4px; }
+  .outline { font-family: var(--mono); font-size: .8rem; white-space: pre; overflow-x: auto; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .bench-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .bench-legend svg { vertical-align: middle; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 18 · The Frontier</div>
+    <h1>Shortest paths, from Dijkstra to the 2025 frontier</h1>
+    <p class="lead muted">One weighted directed graph, five ways to compute Single-Source Shortest Paths (SSSP). Watch Dijkstra settle vertices in sorted order — the "sorting barrier" — and see how buckets, Δ-stepping and the key step of the 2025 algorithm that broke the barrier avoid sorting everything.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="modes" role="tablist" aria-label="Algorithm">
+      <button class="btn" data-mode="bf" role="tab">Bellman–Ford</button>
+      <button class="btn on" data-mode="dij" role="tab">Dijkstra (binary heap)</button>
+      <button class="btn" data-mode="dial" role="tab">Dial's buckets</button>
+      <button class="btn" data-mode="delta" role="tab">Δ-stepping</button>
+      <button class="btn" data-mode="piv" role="tab">FindPivots (2025, illustrated)</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field">Graph
+        <select id="preset">
+          <option value="small">Small example (10 vertices)</option>
+          <option value="random">Random sparse (m ≈ 2n)</option>
+          <option value="grid">Grid of one-way roads</option>
+          <option value="custom" disabled>Custom (edited)</option>
+        </select>
+      </label>
+      <label class="field" id="nBox">Vertices n ≈ <b id="nOut">60</b><input type="range" id="n" min="8" max="200" value="60" style="width:140px" aria-label="Number of vertices"></label>
+      <label class="field">Max weight C = <b id="COut">9</b><input type="range" id="C" min="1" max="20" value="9" style="width:110px" aria-label="Maximum edge weight"></label>
+      <label class="field">Seed <input type="number" id="seed" value="7" style="width:76px"></label>
+      <button class="btn" id="rand">Random</button>
+      <span class="field" style="gap:4px">Click a vertex to
+        <span class="seg" role="group" aria-label="Click action"><button id="clkSrc" class="on" type="button">make it the source</button><button id="clkEdge" type="button">add / remove an edge</button></span>
+      </span>
+      <label class="field">New edge weight <input type="number" id="newW" value="3" min="1" max="99" style="width:64px"></label>
+      <label class="small muted"><input type="checkbox" id="fine"> every single edge (small graphs)</label>
+    </div>
+    <div class="row" id="optDelta" style="margin-top:10px" hidden>
+      <label class="field">Bucket width Δ = <b id="DOut">4</b><input type="range" id="D" min="1" max="40" value="4" style="width:160px" aria-label="Bucket width delta"></label>
+      <span class="small muted">Light edges: w ≤ Δ (relaxed in phases inside a bucket). Heavy edges: w &gt; Δ (relaxed once, when the bucket is done).</span>
+    </div>
+    <div class="row" id="optPiv" style="margin-top:10px" hidden>
+      <label class="field">Already finished: <b id="FOut">30%</b> of vertices<input type="range" id="F" min="0" max="80" step="5" value="30" style="width:150px" aria-label="Fraction finished"></label>
+      <label class="field">Band bound B: <b id="BOut">b + 20% of the rest</b><input type="range" id="Bb" min="5" max="100" step="5" value="20" style="width:140px" aria-label="Distance bound B"></label>
+      <label class="field">Rounds k = <b id="KOut">3</b><input type="range" id="K" min="1" max="6" value="3" style="width:110px" aria-label="Rounds k"></label>
+      <span class="small muted">0% finished = the top-level call, S = {source}. The paper uses k = ⌊log<sup>1/3</sup> n⌋; here you choose k to see its effect.</span>
+    </div>
+    <details style="margin-top:10px">
+      <summary class="small" style="cursor:pointer;font-weight:700">Edit the edge list (one edge per line: from to weight)</summary>
+      <p class="small muted" style="margin:6px 0">Vertices are numbered 0..n−1. A first line <code>n 12</code> sets the number of vertices and <code>source 3</code> picks the source; weights are integers ≥ 1. Edited graphs get a circular layout.</p>
+      <textarea id="edgeText" aria-label="Edge list" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn steel" id="apply">Apply</button><span id="err" class="err"></span></div>
+    </details>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Weighted directed graph with tentative distances"></svg>
+      <div class="legend" id="legend"></div>
+      <div class="panel" style="padding:10px 12px"><div class="ds" id="ds"></div></div>
+      <div id="player"></div>
+      <div class="panel" id="predictHost"></div>
+      <div class="panel" id="orderPanel">
+        <div class="panel-title" id="orderTitle">Distances in the order they were settled</div>
+        <svg id="orderSvg" role="img" aria-label="Distance of each vertex against the order in which it was settled"></svg>
+        <p class="small muted" id="orderNote" style="margin:8px 0 0"></p>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pivPanel" hidden><div class="panel-title">Why the frontier shrinks</div><div id="pivSum"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Same graph, every algorithm</h2>
+    <p class="small muted" style="margin-top:0">All four complete algorithms run on the graph above (with the Δ you chose). "Agrees" compares every final distance with Dijkstra's. <b>Work</b> = edge relaxations plus the bookkeeping each method pays for its priority structure: heap comparisons (Dijkstra), bucket steps (Dial, Δ-stepping), or full extra passes (Bellman–Ford).</p>
+    <div class="scroll-x"><table class="t cmp" id="cmp"></table></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Work as the graph grows</h2>
+    <div class="row">
+      <label class="field">Graph family
+        <select id="benchFam"><option value="random">Random sparse (m ≈ 2n)</option><option value="grid">Grid of one-way roads</option></select>
+      </label>
+      <label class="field">Show
+        <select id="benchMetric"><option value="per">work per edge (work ÷ m)</option><option value="total">total work (log scale)</option></select>
+      </label>
+      <span class="small muted" id="benchNote">n = 25 … 3,200, three seeded graphs per size, C and Δ from the controls above.</span>
+    </div>
+    <div class="row bench-legend small" id="benchLegend" style="margin-top:10px"></div>
+    <svg id="benchSvg" role="img" aria-label="Work against number of vertices for each algorithm" style="margin-top:8px"></svg>
+    <details style="margin-top:8px"><summary class="small" style="cursor:pointer;font-weight:700">Table view</summary><div class="scroll-x"><table class="t cmp" id="benchTable" style="margin-top:8px"></table></div></details>
+    <p class="small muted" style="margin:10px 0 0">Per edge, Dijkstra's binary heap costs a factor that grows like log n — the sorting barrier in action. Dial's buckets cost a constant per edge (plus one step per distance value). Bellman–Ford's cost per edge is its number of rounds, which grows with the number of edges on the shortest paths. The 2025 algorithm brings the per-edge factor down to log<sup>2/3</sup> n in theory; it is not plotted, because nobody runs it on graphs this small (see below).</p>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>The 2025 algorithm: what this page shows, and what it doesn't</h2>
+    <p>Duan, Mao, Mao, Shu and Yin compute shortest-path <i>distances</i> on directed graphs with real, non-negative weights in <b>O(m log<sup>2/3</sup> n)</b> time, deterministically, in the comparison-addition model — faster than Dijkstra's O(m + n log n) on sparse graphs. It won the best paper award at the ACM Symposium on Theory of Computing (STOC) 2025. Dijkstra is stuck near n log n because it hands out vertices in sorted order. The new algorithm never sorts the whole frontier.</p>
+    <p>Its main routine, Bounded Multi-Source Shortest Path (BMSSP), takes a bound B and a frontier S and finishes every vertex whose distance is below B and whose shortest path goes through S. It is recursive, with about (log n)/t levels where t = ⌊log<sup>2/3</sup> n⌋. At each level it first calls <b>FindPivots</b>, the step animated above: k = ⌊log<sup>1/3</sup> n⌋ rounds of Bellman–Ford-style relaxation from S, then the <i>pivots</i>, the vertices of S whose tight-edge trees have at least k vertices. Lemma 3.2 of the paper: there are at most |W|/k pivots, and every vertex below B that goes through S is either already complete in W or has a complete pivot on its shortest path. Only the pivots go into a special data structure (Lemma 3.3) that supports inserts, batch-prepends and pulls of the next few smallest items without keeping everything sorted. BMSSP then recurses on those batches with smaller bounds.</p>
+    <div class="outline">BMSSP(level l, bound B, frontier S)          // outline, not animated here
+    if l = 0 then BaseCase: a small Dijkstra from the single vertex in S, stopped after k + 1 vertices
+    P, W ← FindPivots(B, S)                        // ← the step this page animates
+    D ← the partial-sorting structure of Lemma 3.3, filled with the pivots
+    while D is not empty and not too much work has been done do
+        Sᵢ, Bᵢ ← pull a batch of the smallest pivots from D, with a bound Bᵢ
+        Bᵢ′, Uᵢ ← BMSSP(l − 1, Bᵢ, Sᵢ)           // recursion finishes everything below Bᵢ′
+        relax the edges out of Uᵢ; insert or batch-prepend the vertices they improve into D
+    return the bound reached and every vertex finished</div>
+    <p class="small muted" style="margin:10px 0 0">What is simplified here: the paper first transforms the graph so every vertex has in- and out-degree at most 2, and assumes all path lengths are distinct (so the tight edges form a forest); this page uses the graph as drawn and breaks ties by the smallest-numbered parent. The frontier S is built the way BMSSP's requirement allows: everything below b is finished and S is what Dijkstra's heap would hold at that moment. The answer key under "Why the frontier shrinks" checks Lemma 3.2 against the true distances on every run.</p>
+  </section>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Vertices.</b> Grey = not reached yet. Blue = reached, with a tentative distance (shown next to it on small graphs). Green = <b>settled</b>: the algorithm knows the distance is final. Orange = the vertex being processed. The double ring is the source.</li>
+        <li><b>Edges.</b> Each arrow carries its weight. Orange arrows form the current shortest-path tree (each vertex's best known parent). Yellow arrows are being relaxed right now.</li>
+        <li><b>The strip under the graph</b> is the algorithm's priority structure: Dijkstra's heap in array order (root first), Dial's circle of C + 1 buckets (each slot labeled with the distance it currently stands for), Δ-stepping's buckets of width Δ, or FindPivots' sets S, W and P.</li>
+        <li><b>The order chart</b> plots each vertex's distance against the moment it was settled. Dijkstra and Dial draw a staircase that only goes up: they output vertices sorted by distance. Δ-stepping is sorted only bucket by bucket. Bellman–Ford never certifies anything early; the chart shows when each distance became correct.</li>
+        <li><b>FindPivots colors.</b> Faded green = finished before the call. Blue = the frontier S and what the rounds reach. Yellow = reached in the current round, then the trees of pivots. Purple = pivots. Green = in a small tree: done without any heap. Dark grey = reached, but at distance ≥ B (outside this band).</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>See the sorting barrier.</b> Run Dijkstra on the small example and watch the order chart: every new point is at least as high as the last. Switch to Bellman–Ford: the points jump around, because it fixes distances in whatever order the edge list allows — and it needs several full passes to be sure.</li>
+        <li><b>Buckets instead of comparisons.</b> Pick Dial on a random graph with n = 120 and seed 7. There are no heap comparisons at all; instead the pointer steps through the buckets. With C = 3 it takes 25 bucket steps, with C = 20 it takes 128: Dial is O(m + n·C), great for small integer weights only.</li>
+        <li><b>Turn the Δ dial.</b> Same graph (C = 9), Δ-stepping. With Δ = 1 every bucket is a single distance value: no re-insertions, but 53 phases, one per distance. With Δ = 40 there are only 2 buckets and 20 phases, but 31 re-insertions — vertices get improved again and again inside the big bucket, as in Bellman–Ford. Values in between keep both small; that trade-off is why Δ-stepping is the standard parallel SSSP algorithm.</li>
+        <li><b>Watch the frontier shrink.</b> FindPivots mode on that graph with 30% finished and k = 3: Dijkstra's heap would hold |S| = 20 vertices, but only |P| = 2 pivots remain. The "frontier sweep" table repeats the experiment at other moments: |P| is usually a small fraction of |S|, and never more than |W|/k.</li>
+        <li><b>Make it grow fast.</b> Set "already finished" to 0% (the top-level call, S = {source}) and k = 4: within a round or two |W| exceeds k·|S| = 4, so FindPivots stops early and returns P = S. With one vertex in S there is nothing to shrink — the savings appear when S is large.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson 18 · The Frontier (Card 6)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/14-advanced-graphs/README.md">📖 Lesson 14 · Advanced graphs</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/09-greedy/README.md">📖 Lesson 9 · Greedy (Dijkstra)</a>
+      <a href="../atlas.html#shortest-paths">🗺️ Atlas · Shortest-paths ladder</a>
+      <a href="../arena/problem.html?id=find-pivots-bounded-relaxation">🧩 Problem: FindPivots</a>
+      <a href="../arena/problem.html?id=dijkstra-distances">🧩 Problem: Dijkstra distances</a>
+      <a href="../arena/problem.html?id=network-delay-heap">🧩 Problem: network delay with a heap</a>
+      <a href="../arena/problem.html?id=bellman-ford">🧩 Problem: Bellman–Ford</a>
+      <a href="../arena/problem.html?id=zero-one-bfs">🧩 Problem: 0-1 Breadth-First Search (BFS)</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena Level 7 · Frontier</a>
+      <a href="greedy-graphs.html">🎮 Dijkstra step by step</a>
+      <a href="shortest-paths-plus.html">🎮 Bellman–Ford and A*</a>
+      <a href="heap-lab.html">🎮 Heap lab</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>R. Duan, J. Mao, X. Mao, X. Shu and L. Yin, "Breaking the Sorting Barrier for Directed Single-Source Shortest Paths," STOC 2025, Best Paper Award — <a href="https://arxiv.org/abs/2504.17033">arXiv:2504.17033</a>. Algorithm 1 (FindPivots) and Lemma 3.2 are what this page illustrates; Lemma 3.3 is the batch data structure.</li>
+      <li>E. W. Dijkstra, "A note on two problems in connexion with graphs," <i>Numerische Mathematik</i> 1, 1959. M. L. Fredman and R. E. Tarjan, "Fibonacci heaps and their uses in improved network optimization algorithms," <i>Journal of the ACM</i> 34(3), 1987.</li>
+      <li>R. Bellman, "On a routing problem," <i>Quarterly of Applied Mathematics</i> 16, 1958; L. R. Ford Jr., <i>Network Flow Theory</i>, RAND Corporation, 1956.</li>
+      <li>R. B. Dial, "Algorithm 360: Shortest-path forest with topological ordering," <i>Communications of the ACM</i> 12(11), 1969 — the bucket queue.</li>
+      <li>U. Meyer and P. Sanders, "Δ-stepping: a parallelizable shortest path algorithm," <i>Journal of Algorithms</i> 49(1), 2003.</li>
+      <li>B. Haeupler, R. Hladík, V. Rozhoň, R. E. Tarjan and J. Tětek, "Universal Optimality of Dijkstra via Beyond-Worst-Case Heaps," IEEE Symposium on Foundations of Computer Science (FOCS) 2024 — <a href="https://arxiv.org/abs/2311.11793">arXiv:2311.11793</a>: if you must output vertices <i>in order</i>, Dijkstra with the right heap is optimal on every graph.</li>
+      <li>A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed. — Dijkstra's algorithm (§9.3) and heaps (§6.4).</li>
+    </ul>
+  </section>
+</main>
+<script src="js/shortest-path-frontier.js"></script>
+</body>
+</html>

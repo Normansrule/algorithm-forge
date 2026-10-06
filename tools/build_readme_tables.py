@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Regenerates the generated sections of README.md (between <!-- NAME:START --> / <!-- NAME:END --> markers):
-  COURSE-MAP  one row per chapter: lesson · what you'll build · simulations · Arena problems · textbook
+  CHAPTER-MAP  one row per chapter: lesson · what you'll build · simulations · Arena problems · textbook
   STARTERS    the first problem of every level, with direct links
 Data comes from docs/assets/js/forge-hub.js (chapter metadata), docs/sims/*.html (<title>), and the problem bank
 (via tools/bank_summary.mjs). Usage: python3 tools/build_readme_tables.py
@@ -58,11 +58,11 @@ def main():
             seen.add(name)
             sims.append(f"[{sim_title(name)}]({SITE}sims/{name}.html)")
         arena = f"[{count.get(n, 0)} problems]({SITE}arena/?chapter={n})" if count.get(n) else "—"
-        book = BOOK.get(n, "Beyond" if n >= 13 else "—")
+        book = BOOK.get(n, "Frontier" if n == 18 else "Beyond" if n >= 13 else "—")
         tag = " 🚀" if c.get("beyond") else ""
         rows.append(f"| {n} | {lesson}{tag} | {c['hook']} | {' · '.join(sims) or '—'} | {arena} | {book} |")
     md = open(os.path.join(ROOT, "README.md"), encoding="utf8").read()
-    md = replace(md, "COURSE-MAP", "\n".join(rows) + "\n\n🚀 = Beyond the textbook (senior-engineer level).")
+    md = replace(md, "CHAPTER-MAP", "\n".join(rows) + "\n\n🚀 = Beyond the textbook (senior-engineer level).")
 
     lv = ["| Level | Name | Problems | Try this first |", "|---|---|---|---|"]
     for L in b["levels"]:

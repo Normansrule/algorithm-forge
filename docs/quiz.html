@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quiz · Algorithm Forge</title>
-<meta name="description" content="Interactive multiple-choice quiz for algorithm analysis and design, Chapters 1–12: course quizzes plus original questions, with explanations, scoring, mistake review and flashcards.">
+<meta name="description" content="Interactive multiple-choice quiz for algorithm analysis and design, Chapters 1–12: core questions plus practice and original questions, with explanations, scoring, mistake review and flashcards.">
 <link rel="stylesheet" href="assets/css/forge.css">
 <link rel="stylesheet" href="assets/css/forge-hub.css">
 <script src="assets/js/forge-kit.js"></script>
@@ -85,8 +85,8 @@
   <header class="hero" id="quiz-hero">
     <div class="eyebrow">Quiz · Chapters 1–12</div>
     <h1>Check yourself</h1>
-    <p class="lead">Multiple-choice questions from the CSC 501 course quizzes (Algorithm Analysis and Design) plus
-      practice and original questions. Every answer explains why it is right <i>and</i> why the other options are wrong —
+    <p class="lead">Multiple-choice questions on algorithm analysis and design, following Levitin's Chapters 1–12:
+      a core set organized by topic plus practice and original questions. Every answer explains why it is right <i>and</i> why the other options are wrong —
       read the explanation even when you get it right.</p>
     <p class="small muted" style="max-width:900px">Acronyms you'll meet: Depth-First Search (DFS), Breadth-First Search (BFS), Directed Acyclic Graph (DAG),
       Traveling Salesman Problem (TSP), Minimum Spanning Tree (MST), Binary Search Tree (BST), Binary Reflected Gray Code (BRGC),
@@ -101,7 +101,7 @@
         <div class="field-label">Questions from</div>
         <div class="seg" id="src-seg" role="group" aria-label="Question source">
           <button type="button" data-v="all" class="on">All sources</button>
-          <button type="button" data-v="course">Course quizzes only</button>
+          <button type="button" data-v="core">Core questions only</button>
           <button type="button" data-v="new">Practice &amp; original</button>
         </div>
         <div class="field-label">How many</div>
@@ -212,6 +212,8 @@ Forge.page({ title: "Quiz" });
 
   /* ---------- settings ---------- */
   const settings = Object.assign({ chapters: [], src: "all", n: 10, order: "shuffle" }, store.settings);
+  const LEGACY_SRC = { course: "core" }; // values saved by an older version of this page
+  if (LEGACY_SRC[settings.src]) settings.src = LEGACY_SRC[settings.src];
   const params = new URLSearchParams(location.search);
   if (params.get("ch")) settings.chapters = params.get("ch").split(",").map(Number).filter((n) => CH[n]);
   const chipsEl = $("chips");
@@ -234,7 +236,7 @@ Forge.page({ title: "Quiz" });
   const syncSrc = seg("src-seg", "src", String), syncN = seg("n-seg", "n", Number), syncO = seg("o-seg", "order", String);
   function pool() {
     return Q.filter((q) => (!settings.chapters.length || settings.chapters.includes(q.ch)) &&
-      (settings.src === "all" || (settings.src === "course" ? q.course : !q.course)));
+      (settings.src === "all" || (settings.src === "core" ? q.core : !q.core)));
   }
   function syncSetup() {
     allChip.classList.toggle("on", !settings.chapters.length);

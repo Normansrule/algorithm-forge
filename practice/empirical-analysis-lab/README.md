@@ -1,6 +1,6 @@
 # 🧪 Lab: Empirical Analysis of Insertion Sort
 
-> Course project companion for CSC 501 — "Empirical Analysis of Algorithms" (Levitin §2.6 style).
+> A complete empirical study built on Levitin Exercises 2.6.1–2.6.3 (§2.6, "Empirical Analysis of Algorithms").
 > You will find a bug in a comparison counter, fix it, run a real experiment in Java (and Python),
 > plot the results, fit a model, and predict what happens at n = 10,000 **before** you measure it.
 
@@ -33,14 +33,15 @@ ALGORITHM SortAnalysis(A[0..n-1])
 ```
 
 The goal of `count` is to be the number of **key comparisons** `A[j] > v` — the basic operation of insertion sort
-(Levitin §4.1). The project asks you to run it on random arrays of sizes 1000, 1500, 2000, …, 9500, make a
-scatter plot, and analyze the result.
+(Levitin §4.1). Levitin Exercise 2.6.1 asks whether the counter is in the right place. Exercises 2.6.2–2.6.3
+then ask you to run the corrected program on random arrays, analyze the counts and the times, and extrapolate to a
+bigger size. This lab uses a laptop-friendly version of that experiment: 20 random arrays at each of the sizes
+1000, 1500, 2000, …, 9500, a scatter plot, a fitted model, and a prediction for n = 10,000.
 
-> **How we read "20 random arrays".** The sizes 1000, 1500, …, 9500 are **18** sizes, so "20 random arrays"
-> cannot mean one array per size. We interpret it as: **for each of the 18 sizes, run 20 independent random
-> arrays** (360 runs total), record **every** run, and also report the per-size mean. Every script takes the
-> number of trials as a parameter (`java SortAnalysis 20`, `python3 sort_analysis.py --trials 20`), so if your
-> instructor meant something else you only change one number. Say which interpretation you used in your write-up.
+> **What "20 random arrays" means here.** There are **18** sizes (1000, 1500, …, 9500), and for **each** size we run
+> 20 independent random arrays (360 runs total), record **every** run, and also report the per-size mean. Every
+> script takes the number of trials as a parameter (`java SortAnalysis 20`, `python3 sort_analysis.py --trials 20`),
+> so a different design is a one-number change. Say which design you used in your write-up.
 
 ---
 
@@ -302,7 +303,7 @@ works out to about **0.2 ns per key comparison** here: roughly half a clock cycl
 unrolled and the processor overlaps iterations. On your laptop the constant will be different. The **shape**
 (quadratic) will not.
 
-> **Counts are machine-independent; times are not.** This is exactly the point of Quiz A question 3: running
+> **Counts are machine-independent; times are not.** This is exactly the point of quiz-bank question Q1.3: running
 > time is roughly $T(n) \approx c_{op} \cdot C(n)$, where the constant $c_{op}$ belongs to the machine, the language
 > and the compiler. Our Python run (see [`results/python/fit_summary.txt`](results/python/fit_summary.txt)) has the
 > same comparison constant (0.2505) but about 45 ns per comparison, roughly 230 times slower.

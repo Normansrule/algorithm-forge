@@ -82,10 +82,10 @@ ForgeProblems.add({
   level: 1, chapter: 2, difficulty: 2,
   topics: ["empirical analysis", "insertion sort", "counting operations"],
   strategy: "Empirical analysis",
-  source: "CSC 501 project · Levitin §2.6 & Exercise 2.6.1",
+  source: "Levitin §2.6 & Exercise 2.6.1 · empirical-analysis lab",
   summary: "Insertion sort that returns the exact number of key comparisons A[j] > v.",
   statement: `
-<p>The course project gives an insertion sort with a comparison counter — but the counter is in the wrong place:</p>
+<p>Levitin Exercise 2.6.1 gives an insertion sort with a comparison counter — but the counter is in the wrong place:</p>
 <pre>while j ≥ 0 and A[j] > v do
     count ← count + 1      // only counts comparisons that were TRUE
     A[j + 1] ← A[j]
@@ -201,7 +201,7 @@ ForgeProblems.add({
   level: 3, chapter: 6, difficulty: 3,
   topics: ["comparisons", "lower bounds", "transform-and-conquer"],
   strategy: "Pairwise processing",
-  source: "CSC 501 Midterm 1 sample, Q3 · Levitin Exercise 5.1.2-style",
+  source: "Classic exam problem (Practice Exam 1, Problem A3) · Levitin Exercise 5.1.2-style",
   summary: "Find both the smallest and largest element using at most ⌈3n/2⌉ − 2 element comparisons.",
   statement: `
 <p>Given <code>A[0..n-1]</code> (n ≥ 1), return <code>[min, max]</code>.</p>
@@ -406,13 +406,13 @@ ForgeProblems.add({
   level: 2, chapter: 4, difficulty: 2,
   topics: ["arrays", "partitioning", "decrease-and-conquer", "in-place"],
   strategy: "Two pointers / decrease-by-one",
-  source: "CSC 501 Midterm 1, Q2",
+  source: "Classic exam problem (Practice Exam 1, Problem B2)",
   summary: "Rearrange an array in place so all negative numbers come before all non-negative ones, in linear time.",
   statement: `
 <p>Rearrange the elements of <code>A[0..n-1]</code> <b>in place</b> so that every negative element comes before every
 non-negative element (zeros count as non-negative). The relative order inside each group does not matter. The grader checks the
 array itself after your algorithm finishes.</p>
-<p>Your algorithm must be <b>linear</b> — Θ(n). On the exam you'd write it twice: once recursively (decrease-and-conquer) and
+<p>Your algorithm must be <b>linear</b> — Θ(n). On an exam you'd write it twice: once recursively (decrease-and-conquer) and
 once with a loop. Try both here!</p>`,
   entry: "Rearrange",
   params: ["A"],

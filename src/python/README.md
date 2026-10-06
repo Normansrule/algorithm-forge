@@ -1,8 +1,8 @@
 # 🐍 `algoforge` — the Algorithm Forge Python library
 
 A tested, beginner-readable Python implementation of every algorithm in the Algorithm Forge lessons:
-Levitin's *Introduction to the Design and Analysis of Algorithms* (3rd ed.), chapters 1–12, plus four
-"beyond the book" chapters (13–16) that take you to senior-engineer territory.
+Levitin's *Introduction to the Design and Analysis of Algorithms* (3rd ed.), chapters 1–12, plus six
+"beyond the book" chapters (13–18) that take you to senior-engineer territory and on to the research frontier.
 
 - **Readable over clever.** Each function is short, named after what it does, and written the way you would
   trace it by hand. No third-party packages — Python 3.10+ standard library only.
@@ -21,7 +21,11 @@ Adelson-Velsky and Landis tree (AVL tree) · Minimum Spanning Tree (MST) · Trav
 Dynamic Programming (DP) · Longest Common Subsequence (LCS) · Longest Increasing Subsequence (LIS) ·
 Knuth–Morris–Pratt (KMP) · Longest Proper Prefix which is also Suffix (LPS) · Least Significant Digit (LSD) ·
 Conjunctive Normal Form (CNF) · Nondeterministic Polynomial time (NP) · First-Fit Decreasing (FFD) ·
-Strongly Connected Components (SCC) · Least Recently Used (LRU) ·
+Strongly Connected Components (SCC) · Least Recently Used (LRU) · Log-Structured Merge (LSM) ·
+Write-Ahead Log (WAL) · Algorithms for Recovery and Isolation Exploiting Semantics (ARIES) · Input/Output (I/O) ·
+Conflict-free Replicated Data Type (CRDT) · Secure Hash Algorithm (SHA) · Locality-Sensitive Hashing (LSH) ·
+Number-Theoretic Transform (NTT) · Longest Common Prefix (LCP) · Burrows–Wheeler Transform (BWT) ·
+First-In First-Out (FIFO) · Single-Source Shortest Paths (SSSP) · exclusive or (XOR) ·
 Cormen, Leiserson, Rivest and Stein, *Introduction to Algorithms*, 3rd ed. (CLRS).
 
 ## Quick start
@@ -410,15 +414,103 @@ cases and space). Levitin references point to sections (§) or end-of-section ex
 | `CountMinSketch` (class) | Approximate item frequencies in a stream using a small depth x width table. Methods: `add`, `estimate`. | O(d) | — |
 | `miller_rabin()` | Probabilistic primality test (Miller-Rabin). | O(rounds · log^3 n) | — |
 
+### Chapter 17 (beyond) · Algorithms inside production systems — `algoforge.ch17_systems`
+
+Caches, storage engines, load balancers, rate limiters and replicated databases. Pure functions where the real
+thing would need a network, so every rule can be tested exhaustively.
+
+| Name | What it does | Headline cost | Levitin |
+|---|---|---|---|
+| `LRUCache` (class) | LRU cache with hit/miss statistics, built on `OrderedDict` (the from-scratch version is in Chapter 13). Methods: `get`, `put`, `keys_most_recent_first`. | O(1) | — |
+| `lru_hits()` | Number of hits when a page-request sequence is served by an LRU cache. | Θ(n) | — |
+| `belady_hits()` | Hits of the optimal offline cache (evict the page used farthest in the future): the oracle for testing caches. | Θ(n log n) | — |
+| `lsm_compact()` | Merge sorted LSM runs: the newest version of each key wins; tombstones hide older versions. | O(N log r) | §5.1 |
+| `lsm_get()` | LSM read path: search runs newest to oldest; a tombstone means "deleted". | O(r log N) | §4.4 |
+| `wal_recover()` | Crash recovery from a WAL: analysis, redo every update, undo losers backwards (simplified ARIES). | Θ(L) | — |
+| `external_sort_plan()` | External merge sort cost model: (initial runs, passes, page I/Os) for N pages and B buffers. | O(passes) | — |
+| `external_merge_sort()` | External merge sort simulated in memory: runs of `memory` items, (memory − 1)-way merges. | O(n log n) | — |
+| `ConsistentHashRing` (class) | Consistent hashing: servers at hashed points (virtual nodes) on a ring; a key goes clockwise to the next point. Methods: `add_server`, `remove_server`, `lookup`, `servers`. | O(log(N · vnodes)) | — |
+| `jump_consistent_hash()` | Lamping–Veach jump hash: a bucket for a 64-bit key with no memory; growing moves only 1/(n + 1) of the keys. | O(log n) | — |
+| `rendezvous_hash()` | Highest Random Weight (HRW) hashing: the server with the largest hash(key, server) wins. | Θ(N) | — |
+| `TokenBucket` (class) | Rate limiter with a lazy refill: capacity C, rate r tokens per second. Methods: `allow`. | O(1) | — |
+| `token_bucket_decisions()` | Allow/deny for each request time, bucket full at time 0. | Θ(n) | — |
+| `backoff_schedule()` | Retry sleeps: capped exponential backoff with no, full, equal or decorrelated jitter, within a deadline. | Θ(attempts) | — |
+| `lamport_timestamps()` | Lamport clock of every event (local, send, receive). | Θ(events) | — |
+| `vector_timestamps()` | Vector clock of every event; V(e) < V(f) exactly when e happens before f. | Θ(events · processes) | — |
+| `vc_merge()` | Entry-wise maximum of two vector clocks. | Θ(processes) | — |
+| `vc_compare()` | "equal", "before", "after" or "concurrent" for two vector clocks. | Θ(processes) | — |
+| `raft_append_entries()` | Raft follower's log-matching check: reject on a gap or conflict, else truncate conflicts and append. | O(log + entries) | — |
+| `raft_commit_index()` | Raft leader's commit rule: largest N on a majority whose entry is from the current term (the Figure 8 trap). | O(s log s) | — |
+| `raft_log_up_to_date()` | Raft voting rule: is the candidate's log at least as up to date? | O(1) | — |
+| `merkle_tree()` | Hash tree in an array (root at index 1), SHA-256 by default. | Θ(n) | — |
+| `merkle_diff()` | Differing leaves of two replicas, descending only into subtrees whose hashes differ. | O(d log n) | — |
+| `gcounter_merge()` | Merge two Grow-only Counter (G-Counter) states: entry-wise maximum (commutative, associative, idempotent). | Θ(replicas) | — |
+| `GCounter` (class) | G-Counter CRDT: one slot per replica, value = sum. Methods: `increment`, `merge`, `value`. | O(1) | — |
+| `PNCounter` (class) | Positive-Negative Counter (PN-Counter) CRDT: two G-Counters, value = P − N. Methods: `increment`, `decrement`, `merge`, `value`. | O(1) | — |
+
+### Chapter 18 (beyond) · The frontier — `algoforge.ch18_frontier`
+
+Working versions of the algorithms in [Lesson 18](../../lessons/18-the-frontier/README.md). Each docstring cites the
+paper and year, and states the model behind the bound. `find_pivots` is only the pivot-finding sub-step of the
+2025 shortest-path algorithm, not the whole algorithm.
+
+| Name | What it does | Headline cost | Levitin |
+|---|---|---|---|
+| `natural_runs()` | Split a sequence into maximal sorted runs (strictly descending runs are reversed). | Θ(n) | — |
+| `galloping_merge()` | Stable merge that switches to exponential search when one run keeps winning (Timsort). | O(n) | §5.1 |
+| `min_run_length()` | Timsort's minimum run length (32..64 for n ≥ 64). | O(log n) | — |
+| `timsort()` | Timsort's structure: natural runs, minrun, run stack with the corrected merge rule, galloping. Stable. | O(n log n) | §5.1 |
+| `node_power()` | Powersort's power of the boundary between two neighbouring runs. | O(log n) | — |
+| `powersort()` | Natural runs merged by the node-power policy (CPython 3.11+). Stable. | O(n + nH) | §5.1 |
+| `pdqsort()` | Pattern-defeating quicksort: insertion sort, ninther, equal-key partition, heapsort fallback. | O(n log n) | §5.2 |
+| `SkipList` (class) | Sorted set with random express lanes (Pugh). Methods: `contains`, `insert`, `delete`, `level_sizes`. | O(log n) expected | — |
+| `ZipNode` (class) | A zip-tree node: key, rank, children. | — | — |
+| `ZipTree` (class) | Binary search tree heap-ordered by random geometric ranks (a skip list as a tree). Methods: `random_rank`, `insert`, `delete`, `contains`, `preorder`, `inorder`, `depth`, `is_valid`. | O(log n) expected | §4.5 |
+| `shrinking_cone_segments()` | Greedy ShrinkingCone segmentation: every key within ε of its segment's line. | Θ(n) | — |
+| `LearnedIndex` (class) | Learned index: predict a position, then binary-search only 2ε + 1 slots. Methods: `predict`, `window`, `lookup`. | O(log s + log ε) | §4.5 |
+| `CuckooHashTable` (class) | Two homes per key; at most two probes per lookup; rebuilds on long eviction chains. Methods: `get`, `put`, `delete`, `keys`. | O(1) | §7.3 |
+| `CuckooFilter` (class) | Fingerprints in a cuckoo table: no false negatives, supports deletion. Methods: `insert`, `contains`, `delete`, `load_factor`, `expected_false_positive_rate`. | O(1) | — |
+| `XorFilter` (class) | Static filter built by peeling; three cells XOR to the fingerprint, about 1.23 f bits per key. Methods: `contains`, `bits_per_key`. | Θ(n) build, O(1) query | — |
+| `HyperLogLog` (class) | Distinct counting in m tiny registers, standard error about 1.04/√m. Methods: `add`, `estimate`, `merge`, `standard_error`. | O(1) per add | — |
+| `cvm_threshold()` | Buffer size of the CVM algorithm (Chakraborty, Vinodchandran and Meel, 2022) for a (1 ± ε) answer with probability 1 − δ. | O(1) | — |
+| `cvm_estimate()` | CVM distinct elements: sampling only, no hashing; halve p when the buffer fills. | O(n) expected | — |
+| `CountMinSketch` (class) | Count-Min with optional conservative update; never undercounts. Methods: `for_error`, `add`, `estimate`. | O(depth) | — |
+| `misra_gries()` | Heavy hitters with k − 1 counters; each count is within N/k below the truth. | O(n) amortized | — |
+| `jaccard()` | Jaccard similarity of two sets. | Θ(\|A\| + \|B\|) | — |
+| `minhash_signature()` | MinHash signature: the minimum of each random hash over the set. | Θ(\|items\| · hashes) | — |
+| `minhash_similarity()` | Fraction of equal signature entries: an unbiased Jaccard estimate. | Θ(hashes) | — |
+| `lsh_candidate_pairs()` | LSH banding: pairs equal on every row of some band. | Θ(items · bands) | — |
+| `lsh_candidate_probability()` | The S-curve 1 − (1 − s^r)^b. | O(1) | — |
+| `squared_distance()` | Squared Euclidean distance. | Θ(d) | — |
+| `brute_force_knn()` | Exact k nearest neighbours by scanning: the oracle for vector search. | Θ(n d + n log n) | §3.3 |
+| `HNSW` (class) | Small Hierarchical Navigable Small World (HNSW) index: greedy descent, then a beam search of width ef. Methods: `add`, `search`. | about O(log n) per query (empirical) | — |
+| `recall_at_k()` | Fraction of the true k nearest neighbours returned. | Θ(k) | — |
+| `blelloch_scan()` | Work-efficient exclusive scan by up-sweep and down-sweep (any associative operation). | Θ(n) work, Θ(log n) span | — |
+| `ntt()` | NTT: the Fast Fourier Transform over integers mod 998244353. | Θ(n log n) | — |
+| `ntt_multiply()` | Exact polynomial multiplication through the NTT. | Θ(n log n) | — |
+| `suffix_array()` | Suffix array by prefix doubling. | O(n log² n) | — |
+| `lcp_array()` | Kasai's LCP array from a suffix array. | Θ(n) | — |
+| `bwt()` | Burrows–Wheeler Transform via the suffix array. | O(n log² n) | — |
+| `inverse_bwt()` | Undo the BWT with the Last-to-First (LF) mapping. | Θ(n log n) | — |
+| `FMIndex` (class) | FM-index backward search: count and locate patterns. Methods: `count`, `locate`. | O(m) per count | — |
+| `dinic_max_flow()` | Dinic: BFS level graph plus blocking flows; returns the same `MaxFlowResult` as Chapter 10. | O(\|V\|² \|E\|) | §10.2 |
+| `push_relabel_max_flow()` | FIFO push–relabel (Goldberg–Tarjan): push excess downhill, relabel when stuck. | O(\|V\|³) | §10.2 |
+| `boruvka_mst()` | MST by Borůvka rounds: every component adds its cheapest outgoing edge. | O(\|E\| log \|V\|) | §9.2 |
+| `delta_stepping()` | SSSP with distance buckets of width Δ: light edges inside a bucket, heavy edges after. | O(\|V\| + \|E\| + dL) average (random weights) | §9.3 |
+| `find_pivots()` | The FindPivots sub-step of Duan et al. (2025): k bounded relaxation rounds, then the roots of large tight-edge trees. | O(k \|W\| + edges out of W) | §9.3 |
+
 ## Tests
 
-`tests/` holds one file per chapter (chapters 1–2, 13–14 and 15–16 share files). The style is:
+`tests/` holds one file per chapter (chapters 1–2, 13–14, 15–16 and 17–18 share files). The style is:
 
 1. **Textbook-style examples** you can check against a hand trace.
 2. **Randomized tests against a brute-force oracle**, with fixed seeds so failures are reproducible.
 3. **Operation-count tests** that pin down the formulas from the analysis (for example, selection sort makes
    exactly $n(n-1)/2$ comparisons; bottom-up heap construction makes $2(n - \log_2(n+1))$ comparisons in the
    worst case for a full tree).
+4. **Statistical tests** for the probabilistic structures of chapters 16–18: no false negatives, and measured
+   false-positive rates and estimation errors close to the theory, over fixed seeds (filters, HyperLogLog, CVM,
+   Count-Min, MinHash, Locality-Sensitive Hashing, HNSW recall).
 
 Run one chapter with `python3 -m pytest -q tests/test_ch08_dynamic_programming.py`, or a single test with `-k`.
 

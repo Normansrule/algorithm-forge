@@ -49,7 +49,7 @@ the gallery in `docs/assets/js/forge-hub.js`.
 ## Regenerating generated files
 
 ```bash
-python3 tools/build_readme_tables.py   # README course map + level table
+python3 tools/build_readme_tables.py   # README chapter map + level table
 python3 tools/make_readme_visuals.py   # assets/svg/*.svg
 python3 tools/take_screenshots.py      # assets/img/*.png (needs Playwright + Chromium)
 python3 tools/build_cheatsheet.py      # docs/cheatsheet.html from cheatsheets/*.md

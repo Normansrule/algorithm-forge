@@ -91,7 +91,7 @@ ALGORITHM ComparisonCountingSort(A[0..n-1])
 ```
 
 ### ✋ Trace it by hand
-Input `60, 35, 81, 98, 14, 47` (the course's Assignment 1 instance). Each row is the `Count` array after the outer pass `i` has finished all its `j` comparisons.
+Input `60, 35, 81, 98, 14, 47` (the instance from Levitin Exercise 1.3.1, worked in [Problem Set 1](../../practice/problem-sets/set-1-foundations.md)). Each row is the `Count` array after the outer pass `i` has finished all its `j` comparisons.
 
 | after pass | Count[0] (60) | Count[1] (35) | Count[2] (81) | Count[3] (98) | Count[4] (14) | Count[5] (47) |
 |---|---|---|---|---|---|---|
@@ -111,12 +111,12 @@ Try records `(3,a) (1,b) (3,c) (2,d) (3,e)`:
 
 | record | (3,a) | (1,b) | (3,c) | (2,d) | (3,e) |
 |---|---|---|---|---|---|
-| Count with `<` (book / slide version) | 4 | 0 | 3 | 1 | 2 |
+| Count with `<` (book version) | 4 | 0 | 3 | 1 | 2 |
 | Count with `≤` (one-character fix) | 2 | 0 | 3 | 1 | 4 |
 
 With `<` the output is `(1,b) (2,d) (3,e) (3,c) (3,a)` — the three 3s come out in **exactly reversed** order. With `≤` it is `(1,b) (2,d) (3,a) (3,c) (3,e)` — stable.
 
-**Conclusion.** The version in Levitin §7.1 and on the course slides (`if A[i] < A[j] then Count[j]++ else Count[i]++`) is **not stable** — the Assignment 1 answer is correct. It is not randomly unstable, either: it is deterministically *anti-stable*, reversing every group of equal keys. The reason is that for equal keys, `Count[i]` = (number of smaller items) + (number of equal items *to its right*). Changing `<` to `≤` credits the later copy instead, which makes it stable. (We checked both claims on 2,000 random arrays with duplicates.) It is also **not in place**: it needs the extra arrays `Count` and `S`.
+**Conclusion.** The version in Levitin §7.1 (`if A[i] < A[j] then Count[j]++ else Count[i]++`) is **not stable**, as Problem Set 1 claims. It is not randomly unstable, either: it is deterministically *anti-stable*, reversing every group of equal keys. The reason is that for equal keys, `Count[i]` = (number of smaller items) + (number of equal items *to its right*). Changing `<` to `≤` credits the later copy instead, which makes it stable. (We checked both claims on 2,000 random arrays with duplicates.) It is also **not in place**: it needs the extra arrays `Count` and `S`.
 
 ### 💻 Code
 
@@ -200,7 +200,7 @@ Nobody ships this sort for speed, but the idea "compute each item's final rank, 
 Given `A[0..n-1]` whose keys are integers in a small known range `[l, u]` → return the items sorted, **stably**, in linear time, without ever comparing two keys.
 
 ### 📖 Story
-A teacher returns graded quizzes (grades 0–3). She first counts: two 0s, one 1, three 2s, two 3s. So the 0s occupy slots 0–1, the 1 occupies slot 2, the 2s occupy slots 3–5 and the 3s occupy slots 6–7. Now she walks the pile once and drops each quiz straight into its slot. No quiz is ever compared with another quiz.
+A mail clerk sorts parcels by delivery zone (zones 0–3). She first counts: two 0s, one 1, three 2s, two 3s. So the 0s occupy slots 0–1, the 1 occupies slot 2, the 2s occupy slots 3–5 and the 3s occupy slots 6–7. Now she walks the pile once and drops each parcel straight into its slot. No parcel is ever compared with another parcel.
 
 ### 👀 See it
 In [Sorting Studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) choose *Distribution counting*. Watch the `D` array turn from frequencies into "last slot for this key" and count down as the right-to-left pass places records.
@@ -247,7 +247,7 @@ ALGORITHM DistributionCountingSort(A[0..n-1], l, u)
 ```
 
 ### ✋ Trace it by hand
-Records (grade, name): `(2,Ava) (0,Ben) (3,Cy) (2,Dee) (0,Eli) (1,Fay) (3,Gus) (2,Hal)`, range `[0, 3]`.
+Records (zone, name): `(2,Ava) (0,Ben) (3,Cy) (2,Dee) (0,Eli) (1,Fay) (3,Gus) (2,Hal)`, range `[0, 3]`.
 
 Frequencies `D = [2, 1, 3, 2]`; running totals `D = [2, 3, 6, 8]`.
 
@@ -484,7 +484,7 @@ static int[] radixSortLSD(int[] a) {
 Given `n` real numbers drawn roughly **uniformly** from `[0, 1)` → sort them in expected linear time by dropping each into one of `n` equal-width buckets, sorting each (tiny) bucket, and concatenating.
 
 ### 📖 Story
-Sorting a stack of exam papers by score: you lay out ten trays labelled 0–9, 10–19, …, 90–99 and drop each paper in its tray. Each tray holds only a few papers, so sorting inside a tray is quick, and reading the trays left to right gives the whole ranking.
+Sorting a stack of race results by finishing time: you lay out ten trays labelled 0–9, 10–19, …, 90–99 minutes and drop each result card in its tray. Each tray holds only a few cards, so sorting inside a tray is quick, and reading the trays left to right gives the whole ranking.
 
 ### 👀 See it
 [Sorting Studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) → *Bucket sort*. Then type a skewed input (every value below 0.2) to see what happens when the uniform assumption fails.
@@ -803,7 +803,7 @@ Good-suffix tables (all computed from the definition and checked in Python):
 |---|---|---|---|---|---|
 | `BAOBAB` | 2 | 5 | 5 | 5 | 5 |
 | `ABCBAB` | 2 | 4 | 4 | 4 | 4 |
-| `WOWWOW` (course slide) | 2 | 5 | 3 | 3 | 3 |
+| `WOWWOW` (a classic example) | 2 | 5 | 3 | 3 | 3 |
 
 For `BAOBAB` with `k = 1` (suffix `B`, preceded by `A`): the other `B` at index 3 is preceded by `O` ≠ `A`, so align it: shift 2. With `k = 2` (suffix `AB`): no other `AB` exists; the longest part of `AB` that is also a prefix is `B`, which needs a shift of 5.
 
@@ -983,7 +983,7 @@ You are reading a stream of characters over a network and cannot rewind. You've 
 ### 👀 See it
 [String Match](https://normansrule.github.io/algorithm-forge/sims/string-match.html) → *KMP*. Notice that the text pointer only ever moves right; only the pattern pointer falls back.
 
-`LPS` for `ababaca` (course slide) and for our pattern `ABABCABAB`:
+`LPS` for `ababaca` (the classic textbook pattern) and for our pattern `ABABCABAB`:
 
 | index | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1072,7 +1072,7 @@ ALGORITHM BuildLPS(P[0..m-1])
 
 Total: 21 character comparisons for n = 19 — never more than $2n$.
 
-The course's slide exercise (text `ababcababcac`, pattern `ababaca`) ends with **no occurrence** after 17 comparisons: both partial matches `abab` break on a `c`.
+The classic exercise (text `ababcababcac`, pattern `ababaca`) ends with **no occurrence** after 17 comparisons: both partial matches `abab` break on a `c`.
 
 ### 💻 Code
 (Forge Pseudocode: `BuildLPS` and `KMPSearch` above.)
@@ -1665,7 +1665,7 @@ Chaining: $U = \alpha = 0.9$. Linear probing: $U \approx \frac12(1 + 1/(1-0.9)^2
 About $1.18\sqrt{1000} \approx 38$ keys (birthday paradox). Direct computation: 38 keys → collision probability ≈ 0.51.
 </details>
 
-**11.** Using the course's hash function `h(K) = K mod 1003`, where does the key 314159265 go?
+**11.** Using the hash function `h(K) = K mod 1003`, where does the key 314159265 go?
 
 <details><summary>Answer</summary>
 
@@ -1695,8 +1695,8 @@ $h \le \lfloor \log_{50}((10^8 + 1)/4) \rfloor + 1 = 5$, so at most 6 nodes (hei
 - [cp-algorithms: Prefix function and KMP](https://cp-algorithms.com/string/prefix-function.html) and [String hashing](https://cp-algorithms.com/string/string-hashing.html).
 - [VisuAlgo: Hash Table](https://visualgo.net/en/hashtable) (linear probing, double hashing, separate chaining) and [VisuAlgo: Sorting](https://visualgo.net/en/sorting) (counting and radix sort).
 - [David Galles' B-Tree visualization (University of San Francisco)](https://www.cs.usfca.edu/~galles/visualization/BTree.html).
-- [Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 Introduction to Algorithms (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/) — lectures on hashing and linear-time sorting.
+- [Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 Introduction to Algorithms (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/) — video sessions on hashing and linear-time sorting.
 - Cormen, Leiserson, Rivest, Stein (CLRS), *Introduction to Algorithms*: chapters "Sorting in Linear Time", "Hash Tables", "B-Trees", and "String Matching".
-- Abdul Bari's YouTube lectures on KMP and hashing (search "Abdul Bari KMP algorithm").
+- Abdul Bari's YouTube videos on KMP and hashing (search "Abdul Bari KMP algorithm").
 
 ➡️ Next: [Chapter 8 · Dynamic Programming](../08-dynamic-programming/README.md) — the third space-for-time flavor, storing intermediate results.

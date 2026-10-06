@@ -86,7 +86,7 @@
       <ol>
         <li>US coins 25, 10, 5, 1 and 48¢: greedy gives 25 + 10 + 10 + 1 + 1 + 1 (6 coins), which is optimal. Press “Find a counterexample” — none exists for this canonical set.</li>
         <li>Coins 1, 3, 4 and amount 6: greedy takes 4 + 1 + 1 (3 coins) but 3 + 3 needs only 2. Try coins 1, 5, 10, 20, 25 and amount 40 too.</li>
-        <li>Activity selection with the lecture's data (start 1, 3, 0, 5, 8, 5 / end 2, 4, 6, 7, 9, 9): earliest finish picks indices 0, 1, 3, 4 — four activities, the maximum.</li>
+        <li>Activity selection with the classic interview data (start 1, 3, 0, 5, 8, 5 / end 2, 4, 6, 7, 9, 9): earliest finish picks indices 0, 1, 3, 4 — four activities, the maximum.</li>
         <li>Switch the activity rule to “earliest start” or “shortest duration” and load the matching trap preset. The greedy count drops below the brute-force optimum.</li>
         <li>Knapsack “0/1 greedy fails” preset (W = 50): fractional greedy earns 240, which is optimal when cutting is allowed. Without cutting, greedy by ratio gets 160 but the best 0/1 choice is 220.</li>
       </ol>

@@ -132,7 +132,7 @@ $$F(i) = \max\{\,c_i + F(i-2),\ F(i-1)\,\},\qquad F(0) = 0,\ F(1) = c_1.$$
 ```
 
 ### ✋ Trace it by hand
-Coins `5, 1, 2, 10, 6, 2` (the course example):
+Coins `5, 1, 2, 10, 6, 2` (the example of Levitin §8.1):
 
 | i | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
 |---|---|---|---|---|---|---|---|
@@ -548,7 +548,7 @@ A few cells worked out: `V[3, 4] = max(V[2, 4], 20 + V[2, 1]) = max(22, 30) = 30
 
 **Backtracking:** `V[4,5] = 37 ≠ V[3,5] = 32` → item 4 in, `j = 3`. `V[3,3] = 22 = V[2,3]` → item 3 out. `V[2,3] = 22 ≠ V[1,3] = 12` → item 2 in, `j = 2`. `V[1,2] = 12 ≠ V[0,2] = 0` → item 1 in, `j = 0`. **Optimal subset {1, 2, 4}, weight 5, value 37.**
 
-### ✋ Trace it by hand — the course practice instance
+### ✋ Trace it by hand — a practice instance
 Capacity `W = 5`; items: 1: (3, 13), 2: (2, 10), 3: (1, 6), 4: (2, 9).
 
 | i \ j | 0 | 1 | 2 | 3 | 4 | 5 |
@@ -563,7 +563,7 @@ Row 3 details: `V[3,3] = max(13, 6 + V[2,2]) = max(13, 16) = 16`; `V[3,4] = max(
 
 **Backtracking:** `25 ≠ 23` → item 4 in, `j = 3`; `V[3,3] = 16 ≠ V[2,3] = 13` → item 3 in, `j = 2`; `V[2,2] = 10 ≠ V[1,2] = 0` → item 2 in, `j = 0`. **Optimal subset {2, 3, 4}, weight 5, value 25.**
 
-> Heads-up: the practice slide lists item 3's value as 6 in the item list but as 5 in the table's row label. With value 5 the table's last two rows become `0 5 10 15 18 23` and `0 5 10 15 19 24`, and the optimal subset is **still {2, 3, 4}**, now worth 24.
+> Try a variant: change item 3's value from 6 to 5. The table's last two rows become `0 5 10 15 18 23` and `0 5 10 15 19 24`, and the optimal subset is **still {2, 3, 4}**, now worth 24.
 
 ### ✋ Memory function (top-down with a table)
 Bottom-up fills all 20 non-trivial cells even though the answer needs only some of them. The **memory function** version recurses from `(n, W)` like plain recursion but stores each result, so each cell is computed at most once — and cells that are never needed are never computed. For the classic instance (— = never computed):
@@ -713,7 +713,7 @@ $$C[i, j] = \min_{i \le k \le j}\{\,C[i, k-1] + C[k+1, j]\,\} + \sum_{s=i}^{j} p
 **Block 4 — reconstruct:** the root of the whole tree is `R[1, n]`; its left subtree's root is `R[1, R[1,n]−1]`, and so on recursively.
 
 ### ✋ Trace it by hand
-Keys A, B, C, D with probabilities 0.1, 0.2, 0.4, 0.3 (the course example).
+Keys A, B, C, D with probabilities 0.1, 0.2, 0.4, 0.3 (a classic example).
 
 Every candidate root, computed:
 
@@ -877,7 +877,7 @@ Practical rule for Warshall by hand: a 0 becomes 1 in round `k` exactly when its
 **Block 4 — the result** is `R(n)` / `D(n)`. To recover actual shortest paths in Floyd, also store `Next[i, j]` (or the last `k` that improved the cell).
 
 ### ✋ Trace it by hand — Warshall
-Digraph on a, b, c, d with edges a→c, b→a, b→d, d→b (the course example):
+Digraph on a, b, c, d with edges a→c, b→a, b→d, d→b:
 
 ```
         R(0)          R(1)          R(2)          R(3)          R(4)
@@ -1510,11 +1510,11 @@ tails: [3] → [1] → [1,4] → [1,4] → [1,4,5] → [1,4,5,9] → [1,2,5,9] �
 - LCS, edit distance and LIS are not in Levitin; see below.
 
 **English-language resources**
-- [Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 Introduction to Algorithms (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/) — the four "Dynamic Programming" lectures use the SRTBOT framework (subproblems, relations, topological order, base cases, original problem, time), a close cousin of our 5-step recipe.
+- [Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 Introduction to Algorithms (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/) — the four "Dynamic Programming" sessions use the SRTBOT framework (subproblems, relations, topological order, base cases, original problem, time), a close cousin of our 5-step recipe.
 - [MIT OpenCourseWare 6.046J Design and Analysis of Algorithms (Spring 2015)](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/) — advanced DP and all-pairs shortest paths.
 - [cp-algorithms: Longest increasing subsequence](https://cp-algorithms.com/sequences/longest_increasing_subsequence.html) and [Floyd–Warshall](https://cp-algorithms.com/graph/all-pair-shortest-path-floyd-warshall.html).
 - Cormen, Leiserson, Rivest, Stein (CLRS), *Introduction to Algorithms*: "Dynamic Programming" (rod cutting, matrix chain, LCS, optimal BST) and "All-Pairs Shortest Paths."
 - Dasgupta, Papadimitriou, Vazirani, *Algorithms*, Chapter 6 "Dynamic programming" (edit distance, knapsack, chain matrix multiplication).
-- Abdul Bari's YouTube lectures on 0/1 knapsack, optimal BST and Floyd–Warshall; Back To Back SWE (Software Engineering) on LCS and edit distance.
+- Abdul Bari's YouTube videos on 0/1 knapsack, optimal BST and Floyd–Warshall; Back To Back SWE (Software Engineering) on LCS and edit distance.
 
 ⬅️ Previous: [Chapter 7 · Space-and-Time Trade-Offs](../07-space-time-tradeoffs/README.md) · ➡️ Next: [Chapter 9 · Greedy Technique](../09-greedy/README.md)

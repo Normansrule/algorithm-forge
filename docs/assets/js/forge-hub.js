@@ -4,10 +4,10 @@
    Shared by the landing page, the Learning Path, the simulation
    gallery and the quiz. Load AFTER forge-kit.js.
 
-     ForgeHub.CHAPTERS        Ch 0–17: title, hook, lesson folder, level, sims
+     ForgeHub.CHAPTERS        Ch 0–18: title, hook, lesson folder, level, sims
      ForgeHub.SIMS            every planned simulation: title, blurb, glyph()
-     ForgeHub.LEVELS          Levels 0–6 with "what you can do after"
-     ForgeHub.WEEKS           suggested week-by-week plan (CSC 501 order)
+     ForgeHub.LEVELS          Levels 0–7 with "what you can do after"
+     ForgeHub.WEEKS           12-week study plan (chapter order) + Beyond/Frontier
      ForgeHub.lessonUrl(ch)   GitHub URL of a chapter's lesson
      ForgeHub.progress()      reads localStorage "forge-arena-v1" safely
      ForgeHub.loadProblems()  Promise<ForgeProblems|null> — loads the
@@ -59,10 +59,10 @@
       sims: [["dp-studio"], ["optimal-bst"], ["warshall-floyd"]] },
     { n: 9, title: "Greedy Technique", folder: "09-greedy", level: 4,
       hook: "Grab the best-looking piece every time — and prove it never backfires.",
-      sims: [["greedy-graphs"], ["huffman"], ["greedy-choices"]] },
+      sims: [["greedy-graphs"], ["huffman"], ["greedy-choices"], ["mst-modern", "Beyond Prim and Kruskal: Borůvka's parallel rounds and Filter-Kruskal."]] },
     { n: 10, title: "Iterative Improvement", folder: "10-iterative-improvement", level: 4,
       hook: "Start feasible, keep improving, prove you're done: simplex, flows, matchings.",
-      sims: [["simplex"], ["max-flow"], ["bipartite-matching"], ["stable-marriage"]] },
+      sims: [["simplex"], ["max-flow"], ["bipartite-matching"], ["stable-marriage"], ["flow-modern", "Dinic and push–relabel: the faster maximum-flow algorithms production solvers use."]] },
     { n: 11, title: "Limitations of Algorithm Power", folder: "11-limitations", level: 5,
       hook: "Lower bounds, decision trees, and deterministic Polynomial time (P) versus Nondeterministic Polynomial time (NP).",
       sims: [["decision-trees"], ["p-np"]] },
@@ -74,15 +74,20 @@
       sims: [["union-find"], ["segment-tree"], ["trie"]] },
     { n: 14, title: "Advanced Graphs", folder: "14-advanced-graphs", level: 5, beyond: true,
       hook: "Negative edges, heuristics, components, bridges — modeling real problems as graphs.",
-      sims: [["shortest-paths-plus"], ["scc"]] },
+      sims: [["shortest-paths-plus"], ["scc"], ["shortest-path-frontier", "Dial's buckets, Δ-stepping and the 2025 result that beat Dijkstra on sparse directed graphs."], ["flow-modern", "Dinic's level graphs and push–relabel, the flow algorithms production solvers use."]] },
     { n: 15, title: "DP & Interview Patterns", folder: "15-dp-and-interview-patterns", level: 5, beyond: true,
       hook: "Recognize the pattern in seconds: two pointers, sliding window, monotonic stack, and more.",
-      sims: [["patterns"]] },
+      sims: [["patterns"], ["suffix-structures", "Suffix arrays, LCP, the Burrows–Wheeler Transform and FM-index search — how genome aligners index text."]] },
     { n: 16, title: "Randomized, Amortized & Streaming", folder: "16-randomized-amortized-streaming", level: 5, beyond: true,
       hook: "Why array doubling is cheap on average, and how sketches count billions in kilobytes.",
-      sims: [["amortized"], ["bloom-filter"]] },
+      sims: [["amortized"], ["bloom-filter"], ["streaming-sketches", "HyperLogLog, CVM, Count–Min and Misra–Gries on one stream, against the exact count."]] },
     { n: 17, title: "Senior Engineer Playbook", folder: "17-senior-engineer-playbook", level: 5, beyond: true,
-      hook: "Clarify, estimate, choose, prove, test, ship — the process behind every good design.", sims: [] },
+      hook: "Clarify, estimate, choose, prove, test, ship — the process behind every good design.",
+      sims: [["raft-consensus", "How replicated databases agree: leader election, log replication and the commit rule."]] },
+    { n: 18, title: "The Frontier", folder: "18-the-frontier", level: 7, beyond: true,
+      hook: "From the classic to the cutting edge: the algorithms inside today's standard libraries, databases, vector search engines and recent research.",
+      sims: [["sorting-evolution"], ["vector-search"], ["cuckoo-filters"], ["skip-list"], ["parallel-prefix"],
+             ["streaming-sketches"], ["shortest-path-frontier"], ["flow-modern"], ["suffix-structures"], ["mst-modern"], ["raft-consensus"]] },
   ];
   Hub.lessonUrl = (ch) => REPO + "lessons/" + Hub.CHAPTERS[ch].folder + "/README.md";
 
@@ -102,30 +107,30 @@
       can: "You can recognize intractable problems, prove lower bounds, and still ship great answers — plus the patterns and process senior engineers use daily." },
     { n: 6, name: "Expert: Algorithm Designer", chapters: [12, 13, 14, 15, 16, 17],
       can: "You can design the algorithm nobody handed you: exponential-to-polynomial rewrites, linear-time string and graph algorithms, cut structure, and data-structure design under real constraints." },
+    { n: 7, name: "Modern Systems & Research Frontier", chapters: [18],
+      can: "You can read a modern systems or algorithms paper, recognize which classic idea it extends, and implement the core of it: the algorithms inside today's databases, vector search engines, standard libraries and distributed systems." },
   ];
 
-  /* ---------- week-by-week plan (lecture N covers chapter N) ---------- */
+  /* ---------- 12-week study plan (chapter order), then the Beyond and Frontier tracks ---------- */
   Hub.WEEKS = [
-    { w: "1", lec: "Lecture 1", ch: [1], goal: "Say what an algorithm is; trace Euclid's algorithm; know the basic data structures." },
-    { w: "2", lec: "Lecture 2 (part 1)", ch: [2], goal: "Input size, basic operation, best/worst/average case; O, Ω and Θ." },
-    { w: "3", lec: "Lecture 2 (part 2)", ch: [2], goal: "Sums for loops, recurrences for recursion; run the empirical-analysis lab.", extra: ["Assignment 1", "practice/assignments/assignment-1.md"] },
-    { w: "4", lec: "Lecture 3", ch: [3], goal: "Selection/bubble sort, string matching, exhaustive search, Depth-First Search (DFS) and Breadth-First Search (BFS)." },
-    { w: "5", lec: "Lecture 4", ch: [4], goal: "Insertion sort, topological sort, generating permutations and subsets, binary search.", extra: ["Assignment 2", "practice/assignments/assignment-2.md"] },
-    { w: "6", lec: "Lecture 5", ch: [5], goal: "Master Theorem; mergesort, quicksort, tree traversals, Karatsuba, closest pair." },
-    { w: "7", lec: "Midterm 1 review", ch: [1, 2, 3, 4, 5], review: true, goal: "Timed practice exam; redo every missed question from a blank page.", extra: ["Midterm 1 review", "practice/midterm-1/README.md"] },
-    { w: "8", lec: "Lecture 6", ch: [6], goal: "Presorting, Gaussian elimination, balanced search trees, heaps, Horner's rule." },
-    { w: "9", lec: "Lecture 7", ch: [7], goal: "Counting sorts, Horspool and Boyer–Moore, hashing, B-trees." },
-    { w: "10", lec: "Lecture 8", ch: [8], goal: "Coin-row, knapsack and memory functions, optimal search trees, Warshall and Floyd." },
-    { w: "11", lec: "Lecture 9", ch: [9], goal: "Prim, Kruskal, Dijkstra, Huffman codes — and when greedy is optimal." },
-    { w: "12", lec: "Lecture 10", ch: [10], goal: "Simplex, maximum flow, bipartite matching, stable marriage." },
-    { w: "13", lec: "Lecture 11", ch: [11], goal: "Lower-bound arguments, decision trees, P, NP and NP-completeness." },
-    { w: "14", lec: "Lecture 12", ch: [12], goal: "Backtracking, branch-and-bound, approximation algorithms, root finding." },
-    { w: "15", lec: "Final review", ch: [6, 7, 8, 9, 10, 11, 12], review: true, goal: "Mixed quizzes across all chapters; one Arena problem per strategy." },
-    { w: "16+", lec: "Beyond 1", ch: [13], beyond: true, goal: "Union–find, Fenwick and segment trees, tries, caches." },
-    { w: "17+", lec: "Beyond 2", ch: [14], beyond: true, goal: "Bellman–Ford, A*, strongly connected components, bridges." },
-    { w: "18+", lec: "Beyond 3", ch: [15], beyond: true, goal: "Interview patterns and the dynamic-programming pipeline." },
-    { w: "19+", lec: "Beyond 4", ch: [16], beyond: true, goal: "Amortized analysis, randomized algorithms, streaming sketches." },
-    { w: "20+", lec: "Beyond 5", ch: [17], beyond: true, goal: "The senior engineer's process: clarify, estimate, prove, test, ship." },
+    { w: "1", label: "Getting started", ch: [1], goal: "Say what an algorithm is; trace Euclid's algorithm; know the basic data structures." },
+    { w: "2", label: "Measuring efficiency", ch: [2], goal: "Input size, basic operation, O, Ω and Θ; sums for loops, recurrences for recursion; run the empirical-analysis lab.", extra: ["Problem Set 1", "practice/problem-sets/set-1-foundations.md"] },
+    { w: "3", label: "Try everything", ch: [3], goal: "Selection/bubble sort, string matching, exhaustive search, Depth-First Search (DFS) and Breadth-First Search (BFS)." },
+    { w: "4", label: "Shrink the problem", ch: [4], goal: "Insertion sort, topological sort, generating permutations and subsets, binary search.", extra: ["Problem Set 2", "practice/problem-sets/set-2-brute-force-and-decrease.md"] },
+    { w: "5", label: "Split the problem", ch: [5], goal: "Master Theorem; mergesort, quicksort, tree traversals, Karatsuba, closest pair. Checkpoint A (Chapters 1–5): Practice Exam 1 under a timer, then Practice Exam 2.", extra: ["Practice Exam 1", "practice/exams/practice-exam-1.md"] },
+    { w: "6", label: "Change the problem", ch: [6], goal: "Presorting, Gaussian elimination, balanced search trees, heaps, Horner's rule." },
+    { w: "7", label: "Trade space for time", ch: [7], goal: "Counting sorts, Horspool and Boyer–Moore, hashing, B-trees." },
+    { w: "8", label: "Remember subproblems", ch: [8], goal: "Coin-row, knapsack and memory functions, optimal search trees, Warshall and Floyd." },
+    { w: "9", label: "Choose greedily", ch: [9], goal: "Prim, Kruskal, Dijkstra, Huffman codes — and when greedy is optimal." },
+    { w: "10", label: "Improve step by step", ch: [10], goal: "Simplex, maximum flow, bipartite matching, stable marriage." },
+    { w: "11", label: "Know the limits", ch: [11], goal: "Lower-bound arguments, decision trees, P, NP and NP-completeness." },
+    { w: "12", label: "Cope with hardness", ch: [12], goal: "Backtracking, branch-and-bound, approximation algorithms, root finding. Checkpoint B (Chapters 6–12): timed mixed quizzes on Chapters 6–12 and one Arena problem per design strategy.", extra: ["Quiz bank", "practice/quizzes/README.md"] },
+    { w: "13+", label: "Beyond 1", ch: [13], beyond: true, goal: "Union–find, Fenwick and segment trees, tries, caches." },
+    { w: "14+", label: "Beyond 2", ch: [14], beyond: true, goal: "Bellman–Ford, A*, strongly connected components, bridges." },
+    { w: "15+", label: "Beyond 3", ch: [15], beyond: true, goal: "Interview patterns and the dynamic-programming pipeline." },
+    { w: "16+", label: "Beyond 4", ch: [16], beyond: true, goal: "Amortized analysis, randomized algorithms, streaming sketches." },
+    { w: "17+", label: "Beyond 5", ch: [17], beyond: true, goal: "The senior engineer's process: clarify, estimate, prove, test, ship." },
+    { w: "18+", label: "Frontier", ch: [18], beyond: true, goal: "The optional finale: ten families grown from classics you already know: modern sorting, skip lists and learned indexes, hash tables and filters, vector search, distinct counting, shortest paths, max flow, matrix and integer multiplication, and consensus." },
   ];
 
   /* ---------- tiny SVG glyph builders (viewBox 0 0 96 56) ---------- */
@@ -211,7 +216,7 @@
       `<rect x="41" y="44" width="14" height="6" rx="2" fill="${COL.c}"/><rect x="71" y="44" width="10" height="6" rx="2" fill="${COL.e}"/>`);
   sim("fibonacci", "Fibonacci Four Ways", "Naive recursion vs. memo vs. loop vs. matrix power — see the same subproblem solved again and again.",
     () => btree(["t", "tt", "tsst", "ss.s...."], { dy: 13, r: 4, label: (d, i) => ["5", ["4", "3"][i], ["3", "2", "2", "1"][i], ["2", "1", "", "1"][i]][d] }));
-  sim("sorting-studio", "Sorting Studio", "Every sort in the course on your own array, with comparisons and swaps counted live.",
+  sim("sorting-studio", "Sorting Studio", "Every classic sort on your own array, with comparisons and swaps counted live.",
     () => bars([5, 9, 3, 7, 2, 8, 4, 6], "bbcbsbdd"));
   sim("string-match", "String Match", "Slide a pattern over a text and count character comparisons, from brute force to shift tables.",
     () => cells(["B", "A", "R", "B", "E", "R", "S"], 6, 10, 12, 12, "   dddd ", 7) + cells(["B", "E", "R"], 42, 30, 12, 12, "ddd", 7) + `<path d="M24 38 h14" stroke="${COL.e}" stroke-width="2"/><path d="M38 38 l-4 -3 v6z" fill="${COL.e}"/>`);
@@ -316,6 +321,47 @@
   sim("bloom-filter", "Bloom Filter", "Hash each key to a few bits: never a false 'no', occasionally a false 'yes' — in a tiny amount of memory.",
     () => cells(Array(10).fill(""), 3, 38, 9, 10, " e  e   e ", 6) + `<circle cx="42" cy="10" r="6" fill="${COL.t}"/>` +
       [7.5, 34.5, 70.5].map((x) => `<path d="M42 16 L${x} 36" stroke="${COL.e}" stroke-width="1.3"/>`).join(""));
+
+  sim("sorting-evolution", "Sorting Evolution", "From insertion sort to Timsort and pdqsort: natural runs, galloping merges, depth limits and pattern-defeating partitions.",
+    () => bars([2, 3, 5, 7, 6, 4, 1, 3, 4, 8], "ttttppppee") + `<rect x="9" y="5" width="31" height="46" rx="3" fill="none" stroke="${COL.t}" stroke-width="1.2" stroke-dasharray="3 2"/>` +
+      `<rect x="40" y="5" width="31" height="46" rx="3" fill="none" stroke="${COL.p}" stroke-width="1.2" stroke-dasharray="3 2"/>`);
+  sim("vector-search", "Vector Search", "Nearest neighbors from brute force to k-d trees, Locality-Sensitive Hashing (LSH) and Hierarchical Navigable Small World (HNSW) graphs.",
+    () => graph([[14, 40], [26, 18], [40, 34, "t"], [52, 12], [62, 42, "t"], [76, 24, "e"], [86, 46]],
+      [[0, 2], [1, 2], [2, 4, "t"], [3, 5], [4, 5, "e"], [5, 6], [1, 3]], 3.8) + `<circle cx="72" cy="30" r="3" fill="none" stroke="${COL.c}" stroke-width="1.6"/>`);
+  sim("cuckoo-filters", "Cuckoo Hashing & Filters", "Kick-out chains in cuckoo hashing, then Bloom vs cuckoo vs xor filters: deletions, fingerprints and bits per item.",
+    () => cells(["7", "", "3", "9"], 8, 8, 18, 14, " e  ", 7) + cells(["", "5", "", "1"], 8, 34, 18, 14, "   t", 7) +
+      `<path d="M17 22 C 30 30, 44 30, 51 34" fill="none" stroke="${COL.e}" stroke-width="1.6"/><path d="M60 34 C 66 28, 70 26, 72 22" fill="none" stroke="${COL.t}" stroke-width="1.6"/>`);
+  sim("skip-list", "Skip List", "Towers of express lanes built by coin flips: search, insert and delete in expected O(log n), as in Redis and LevelDB.",
+    () => [0, 1, 2].map((lvl) => { const xs = [[10, 30, 46, 62, 78, 88], [10, 46, 78, 88], [10, 78, 88]][lvl]; const y = 46 - lvl * 16;
+      return xs.map((x, k) => (k ? `<line x1="${xs[k - 1] + 3}" y1="${y}" x2="${x - 3}" y2="${y}" stroke="${lvl === 2 || (lvl === 1 && x <= 78) ? COL.e : COL.l}" stroke-width="1.4"/>` : "") +
+        `<rect x="${x - 3}" y="${y - 3}" width="6" height="6" rx="1" fill="${lvl === 0 && x === 62 ? COL.c : COL.t}"/>`).join(""); }).join(""));
+  sim("parallel-prefix", "Parallel Prefix Sums", "Sequential scan vs Hillis–Steele vs Blelloch's work-efficient scan: work, span and Brent's theorem on p processors.",
+    () => { let o = ""; for (let i = 0; i < 8; i++) o += `<circle cx="${10 + i * 11}" cy="8" r="3" fill="${COL.t}"/><circle cx="${10 + i * 11}" cy="48" r="3" fill="${COL.d}"/>`;
+      [[1, 22, 1], [2, 22, 3], [3, 34, 2]].forEach(([s, y]) => { for (let i = 0; i < 8; i++) { const j = i - (s === 3 ? 4 : s); if (j >= 0) o += `<line x1="${10 + j * 11}" y1="${y - 10}" x2="${10 + i * 11}" y2="${y}" stroke="${COL.e}" stroke-width=".9" opacity=".8"/>`; } });
+      return o; });
+
+  sim("streaming-sketches", "Streaming Sketches", "Count a stream in kilobytes: HyperLogLog registers, the CVM sampler, Count–Min and Misra–Gries heavy hitters versus the exact answer.",
+    () => cells(["3", "1", "4", "2", "5", "1", "2", "3"], 6, 34, 10.5, 14, "  e  e  ", 6.5) +
+      [14, 30, 46, 62, 78].map((x, k) => `<circle cx="${x}" cy="12" r="${2.2 + (k % 3)}" fill="${k === 2 ? COL.e : COL.t}" opacity=".85"/>`).join("") +
+      `<path d="M8 25 H88" stroke="${COL.l}" stroke-width="1" stroke-dasharray="2 2"/>`);
+  sim("raft-consensus", "Raft Consensus", "Five servers agree on one log despite crashes and partitions: elections, terms, AppendEntries and the commit rule.",
+    () => graph([[48, 8, "e"], [80, 22], [70, 48], [26, 48], [16, 22]], [[0, 1, "e", 1], [0, 2, "e", 1], [0, 3, "e", 1], [0, 4, "e", 1]], 5) +
+      `<text x="48" y="10.5" text-anchor="middle" font-size="6" font-weight="700" fill="var(--bg)">L</text>`);
+  sim("shortest-path-frontier", "Shortest Paths: to the 2025 Frontier", "Bellman–Ford, heap Dijkstra, Dial's buckets, Δ-stepping and the FindPivots step that broke the sorting barrier.",
+    () => graph([[10, 28, "e"], [32, 10, "t"], [32, 46, "t"], [56, 20], [56, 44], [84, 30]],
+      [[0, 1, "e", 1], [0, 2, "e", 1], [1, 3, 0, 1], [2, 4, 0, 1], [3, 5, 0, 1], [4, 5, 0, 1], [1, 4, 0, 1]], 4) +
+      `<path d="M44 4 V52" stroke="${COL.p}" stroke-width="1.2" stroke-dasharray="3 2"/>`);
+  sim("flow-modern", "Max Flow: Dinic & Push–Relabel", "Level graphs and blocking flows, then heights, excess and relabels — plus where almost-linear-time flow comes from.",
+    () => graph([[10, 28, "t"], [36, 12], [36, 44], [60, 18], [60, 40], [86, 28, "d"]],
+      [[0, 1, "e", 1], [0, 2, "e", 1], [1, 3, "e", 1], [2, 4, 0, 1], [3, 5, "e", 1], [4, 5, 0, 1], [2, 1, 0, 1]], 4) +
+      [23, 48, 73].map((x) => `<path d="M${x} 4 V52" stroke="${COL.l}" stroke-width=".8" stroke-dasharray="2 2"/>`).join(""));
+  sim("suffix-structures", "Suffix Arrays, BWT & FM-Index", "Sort every suffix, read the Burrows–Wheeler Transform off the last column, then count a pattern by backward search.",
+    () => ["$banana", "a$banan", "ana$ban", "anana$b", "banana$"].map((w, r) =>
+      txt(16, 12 + r * 9.5, w.slice(0, 6), 6.5, r === 2 || r === 3 ? "e" : "i", "start") + txt(59, 12 + r * 9.5, w.slice(6), 6.5, "t", "start")).join("") +
+      `<rect x="57" y="5" width="11" height="48" rx="2" fill="none" stroke="${COL.t}" stroke-width="1.2"/>`);
+  sim("mst-modern", "MST: Borůvka & Filter-Kruskal", "Every component grabs its cheapest edge at once, then contracts; Filter-Kruskal skips sorting edges that can never matter.",
+    () => graph([[12, 14, "e"], [28, 40, "e"], [48, 16, "t"], [62, 44, "t"], [82, 18, "d"], [86, 46, "d"]],
+      [[0, 1, "e"], [2, 3, "t"], [4, 5, "d"], [1, 3, "c"], [2, 4, "c"], [0, 2], [3, 5]], 4.2));
 
   Hub.SIMS = S;
   Hub.simGlyph = function (id) {

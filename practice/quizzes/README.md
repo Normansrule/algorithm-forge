@@ -2,9 +2,9 @@
 
 Two parts:
 
-- **Part 1 — The course quizzes (A–D), organized by topic.** These are the 20 questions from the CSC 501 quizzes,
-  with the answers that were graded correct. The option lists were reconstructed from notes, so the wording of the
-  distractors may differ slightly from the originals. The answers and the reasoning are what matter.
+- **Part 1 — 19 core questions, organized by topic.** The essentials of Levitin Chapters 1–4: what an algorithm
+  is, how efficiency is measured, orders of growth, recurrences, brute force, graph traversal and
+  decrease-and-conquer. Several are classic trick questions, so read the explanations even when you are right.
 - **Part 2 — 58 new practice questions** in the same style, covering Levitin Chapters 1–12.
 
 **How to use it:** answer on paper *before* opening a `<details>` block. Every explanation says **why the right
@@ -19,7 +19,7 @@ Traveling Salesman Problem (TSP), Minimum Spanning Tree (MST), Binary Search Tre
 
 ## Contents
 
-- [Part 1 — Course quizzes A–D](#part-1--course-quizzes-ad)
+- [Part 1 — Core questions by topic](#part-1--core-questions-by-topic)
   - [1.1 Algorithms and programs](#11-algorithms-and-programs)
   - [1.2 Analysis framework and cost measures](#12-analysis-framework-and-cost-measures)
   - [1.3 Amortized analysis](#13-amortized-analysis)
@@ -32,11 +32,11 @@ Traveling Salesman Problem (TSP), Minimum Spanning Tree (MST), Binary Search Tre
 
 ---
 
-# Part 1 — Course quizzes A–D
+# Part 1 — Core questions by topic
 
 ## 1.1 Algorithms and programs
 
-**Q1.1 (Quiz A #1).** Which formula describes what a program is made of?
+**Q1.1.** Which formula describes what a program is made of?
 
 - a) Program = Algorithm + Hardware
 - b) Program = Algorithm + Data Structure
@@ -59,7 +59,7 @@ compiler are how a program is *expressed and translated*, not what it is concept
 
 ## 1.2 Analysis framework and cost measures
 
-**Q1.2 (Quiz A #2).** What are the two main approaches to analyzing an algorithm's efficiency?
+**Q1.2.** What are the two main approaches to analyzing an algorithm's efficiency?
 
 - a) Best case and worst case
 - b) Theoretical (mathematical) and empirical (experimental)
@@ -79,7 +79,7 @@ space are *what resource* you measure, also within either approach. d) Recursive
 algorithm is written*; each kind can be analyzed both ways.
 </details>
 
-**Q1.3 (Quiz A #3, regraded).** True or False: "Counting the number of basic operations is different from finding the running time."
+**Q1.3.** True or False: "Counting the number of basic operations is different from finding the running time."
 
 - a) True
 - b) False
@@ -98,7 +98,7 @@ Python, while the time per comparison was about 0.2 ns in Java and about 45 ns i
 they are not the same thing. The count ignores the other operations, memory effects and the machine constant.
 </details>
 
-**Q1.4 (Quiz A #4).** Space complexity of an algorithm is best described as…
+**Q1.4.** Space complexity of an algorithm is best described as…
 
 - a) the size of the source code
 - b) the amount of memory the algorithm uses, as a function of the input size
@@ -117,7 +117,7 @@ depth-n recursion.
 whose size depends on n, and it misses recursion depth. d) That is a property of the machine, not of the algorithm.
 </details>
 
-**Q1.5 (Quiz B #5).** What is the space complexity of the recursive factorial algorithm `F(n) = F(n − 1) · n`, `F(0) = 1`?
+**Q1.5.** What is the space complexity of the recursive factorial algorithm `F(n) = F(n − 1) · n`, `F(0) = 1`?
 
 - a) O(1)
 - b) O(log n)
@@ -139,7 +139,7 @@ here is quadratic.
 
 ## 1.3 Amortized analysis
 
-**Q1.6 (Quiz A #5, and again as Quiz C #1).** Which statements about amortized analysis are true?
+**Q1.6.** Which statements about amortized analysis are true?
 I. It analyzes the running time of a *sequence* of operations performed on a data structure.
 II. It focuses on the cost of *each individual* operation.
 III. It finds the average running time per operation over the sequence.
@@ -168,7 +168,7 @@ total divided by the number of operations.
 
 ## 1.4 Orders of growth
 
-**Q1.7 (Quiz B #1).** Order these from highest to lowest order of growth: (a) $2^n$, (b) $n!$, (c) $n^{100}$.
+**Q1.7.** Order these from highest to lowest order of growth: (a) $2^n$, (b) $n!$, (c) $n^{100}$.
 
 - a) a > b > c
 - b) b > a > c
@@ -188,7 +188,7 @@ $\lim n^{100}/2^n = 0$.
 Order of growth is about the limit, not about small n.
 </details>
 
-**Q1.8 (Quiz B #3).** True or False: "An algorithm with a lower big-O class is always faster than one with a higher class, for all input sizes."
+**Q1.8.** True or False: "An algorithm with a lower big-O class is always faster than one with a higher class, for all input sizes."
 
 - a) True
 - b) False
@@ -208,7 +208,7 @@ Nothing is promised below $n_0$.
 
 ## 1.5 Recurrences
 
-**Q1.9 (Quiz B #2).** Solve $T(n) = T(n-1) + n$ for $n > 1$, $T(1) = 0$.
+**Q1.9.** Solve $T(n) = T(n-1) + n$ for $n > 1$, $T(1) = 0$.
 
 - a) $n(n+1)/2$
 - b) $n(n+1)/2 - 1$
@@ -225,10 +225,10 @@ Check: $T(2) = T(1) + 2 = 2$, and $2\cdot3/2 - 1 = 2$ ✔.
 
 **Why not the others:** a) would need $T(1) = 1$; it ignores that the sum starts at 2. c) is the solution of
 $T(n) = T(n-1) + (n-1)$. d) is the right order (Θ(n²)) but not the exact value. It is the answer to a different
-problem (Q(n) in Assignment 1).
+problem (Q(n) in Problem Set 1).
 </details>
 
-**Q1.10 (Quiz B #4).** What is the time complexity of this function?
+**Q1.10.** What is the time complexity of this function?
 ```
 ALGORITHM Mystery(n)
     if n ≤ 1 then
@@ -256,7 +256,7 @@ does O(1). d) Nothing is quadratic.
 
 ## 1.6 Brute force and exhaustive search
 
-**Q1.11 (Quiz C #2).** Brute-force computation of $a^n$ multiplies a by itself repeatedly. Let b be the number of bits of n. Which are true?
+**Q1.11.** Brute-force computation of $a^n$ multiplies a by itself repeatedly. Let b be the number of bits of n. Which are true?
 I. $M(n) = n$ (the number of multiplications is linear in n).
 II. $M(b) \approx 2^b$ (as a function of the input size in bits, it is exponential).
 III. The algorithm is polynomial in the size of its input.
@@ -271,14 +271,14 @@ III. The algorithm is polynomial in the size of its input.
 **Answer: b) I and II.**
 
 **Why:** the loop multiplies n times (n − 1 if it starts from a instead of 1), so I holds. Since
-$2^{b-1} \le n < 2^b$, that count is $\Theta(2^b)$, so II holds. (Levitin Exercise 3.1.2; see Assignment 2, Problem 1.)
+$2^{b-1} \le n < 2^b$, that count is $\Theta(2^b)$, so II holds. (Levitin Exercise 3.1.2; see Problem Set 2, Problem 1.)
 
 **Why not III:** the input *size* of a number is b bits, and the work is exponential in b. "Linear in n" sounds
 polynomial, but n is the *value* of the input, not its size. This distinction is exactly why factoring by trial
 division is not a polynomial-time algorithm.
 </details>
 
-**Q1.12 (Quiz C #3).** True or False: "Exhaustive search for the knapsack problem is O(2ⁿ), and exhaustive search for the assignment problem is O(n!)."
+**Q1.12.** True or False: "Exhaustive search for the knapsack problem is O(2ⁿ), and exhaustive search for the assignment problem is O(n!)."
 
 - a) True
 - b) False
@@ -294,7 +294,7 @@ candidate gives $\Theta(n2^n)$ and $\Theta(n\cdot n!)$ respectively. The dominan
 **Why "False" is tempting:** mixing up the two candidate spaces (subsets vs. permutations) is the usual slip.
 </details>
 
-**Q1.13 (Quiz C #4).** What is the time efficiency of the brute-force closest-pair algorithm for n points in k-dimensional space?
+**Q1.13.** What is the time efficiency of the brute-force closest-pair algorithm for n points in k-dimensional space?
 
 - a) O(n²)
 - b) O(k·n)
@@ -316,7 +316,7 @@ brute force always has two loops over points, whatever k is.
 
 ## 1.7 Graph traversal
 
-**Q1.14 (Quiz C #5).** For a given undirected graph, consider two claims about Depth-First Search (DFS) forests.
+**Q1.14.** For a given undirected graph, consider two claims about Depth-First Search (DFS) forests.
 A. All DFS forests of the graph (for any starting vertex and any neighbour order) have the same number of trees.
 B. All DFS forests of the graph have the same number of tree edges and the same number of back edges.
 
@@ -344,7 +344,7 @@ does the number of trees. Answers a), b) and d) each reject a claim that is true
 
 ## 1.8 Decrease-and-conquer
 
-**Q1.15 (Quiz D #1).** The source-removal algorithm for topological sorting runs on a digraph with n vertices and m edges stored as an **adjacency matrix**. Its time efficiency is…
+**Q1.15.** The source-removal algorithm for topological sorting runs on a digraph with n vertices and m edges stored as an **adjacency matrix**. Its time efficiency is…
 
 - a) O(n + m)
 - b) O(n² + m)
@@ -353,7 +353,7 @@ does the number of trees. Answers a), b) and d) each reject a claim that is true
 
 <details><summary>Answer and explanation</summary>
 
-**Answer: b) O(n² + m)** (the course answer key).
+**Answer: b) O(n² + m).**
 
 **Why:** with a matrix, computing all in-degrees means scanning every column, which is Θ(n²). Removing a source means
 scanning its row (Θ(n)) to decrement its successors' in-degrees; over n removals that is Θ(n²) again. Keeping the
@@ -365,7 +365,7 @@ matrix, just reading the structure costs n². c) There is no sorting or log fact
 version costs if it searches the whole matrix again for a new source after every removal: n searches × Θ(n²).
 </details>
 
-**Q1.16 (Quiz D #2).** A decrease-and-conquer (decrease-by-one) algorithm generates the power set of an n-element set. Its time efficiency is…
+**Q1.16.** A decrease-and-conquer (decrease-by-one) algorithm generates the power set of an n-element set. Its time efficiency is…
 
 - a) O(n)
 - b) O(n²)
@@ -385,7 +385,7 @@ here is exponential.)
 **Why not the others:** a) and b) are smaller than the output. d) $n!$ counts **permutations**, not subsets.
 </details>
 
-**Q1.17 (Quiz D #3).** True or False: "Insertion sort implemented on a linked list is also O(n²)."
+**Q1.17.** True or False: "Insertion sort implemented on a linked list is also O(n²)."
 
 - a) True
 - b) False
@@ -403,7 +403,7 @@ cases (Levitin Exercise 4.1.9).
 insertion point dominates.
 </details>
 
-**Q1.18 (Quiz D #4).** Which algorithm is the classic example of decrease-and-conquer (decrease by a constant factor)?
+**Q1.18.** Which algorithm is the classic example of decrease-and-conquer (decrease by a constant factor)?
 
 - a) Mergesort
 - b) Binary search
@@ -423,7 +423,7 @@ c) Selection sort is the textbook's *brute-force* example (though see Q1.19 for 
 d) Heapsort is transform-and-conquer (it transforms the array into a heap first).
 </details>
 
-**Q1.19 (Quiz D #5).** Which statements are true?
+**Q1.19.** Which statements are true?
 A. Insertion sort is a decrease-and-conquer algorithm (loosely described as "recursively breaking down" the problem).
 B. Euclid's algorithm for the gcd is a decrease-and-conquer algorithm.
 C. Selection sort can be viewed as a decrease-and-conquer algorithm.
@@ -435,7 +435,7 @@ C. Selection sort can be viewed as a decrease-and-conquer algorithm.
 
 <details><summary>Answer and explanation</summary>
 
-**Answer: d) A, B and C** (per the course answer key).
+**Answer: d) A, B and C.**
 
 **Why each is true, in Levitin's framework:**
 - **A. Insertion sort = decrease-by-one.** To sort `A[0..n-1]`, sort `A[0..n-2]` (a smaller instance), then insert
@@ -446,8 +446,8 @@ C. Selection sort can be viewed as a decrease-and-conquer algorithm.
   and by how much it shrinks varies from step to step (§4.5).
 - **C. Selection sort viewed as decrease-by-one.** Each pass puts the minimum of the unsorted part in its final
   place, which leaves an unsorted part one element smaller. That is the same problem on size n − 1. Levitin
-  *presents* selection sort as brute force (§3.1), but the decrease-by-one reading is legitimate, and it is what
-  this quiz intended.
+  *presents* selection sort as brute force (§3.1), but the decrease-by-one reading is legitimate, and it is the
+  view this question is testing.
 
 **Why not the others:** each of a), b), c) leaves out a statement that holds under the decrease-and-conquer view.
 </details>
@@ -497,7 +497,7 @@ iteration. d) 24 is not even the gcd (it is 12).
 
 <details><summary>Answer and explanation</summary>
 
-**Answer: c).** Example: sort students by grade. A stable sort keeps students who have the same grade in their
+**Answer: c).** Example: sort employees by department. A stable sort keeps employees who are in the same department in their
 earlier (say, alphabetical) order.
 **Why not the others:** a) describes an *in-place* algorithm. b) and d) describe input-insensitive algorithms, like
 selection sort, which is **not** stable.
@@ -1276,5 +1276,5 @@ approximation clearly works.
 
 ---
 
-⬅️ [Practice home](../README.md) · [Midterm review](../midterm-1/README.md) ·
+⬅️ [Practice home](../README.md) · [Practice Exam 1](../exams/practice-exam-1.md) ·
 [Arena](https://normansrule.github.io/algorithm-forge/arena/)

@@ -12,7 +12,7 @@ produces byte-identical files. Every SVG
     actually running the algorithm here, so the pictures cannot drift from
     the truth.
 
-Usage:  python3 tools/make_readme_visuals.py            # writes all nine files
+Usage:  python3 tools/make_readme_visuals.py            # writes all ten files
         python3 tools/make_readme_visuals.py hero dp    # only names containing these words
 """
 import math
@@ -28,7 +28,9 @@ LINE, LINE2 = "#2a3448", "#36425b"
 INK, INK2, MUTED = "#e8edf5", "#b4bfd1", "#7f8ba3"
 EMBER, EMBER2, STEEL = "#ff8a3d", "#ffb07a", "#5ab0ff"
 COMPARE, SWAP, DONE, ACTIVE, PIVOT, DIM, BAR = "#ffd24d", "#ff5d73", "#3ddc97", "#5ab0ff", "#c38bff", "#3a4458", "#6b7fa6"
-LV = ["#3ddc97", "#7bd88f", "#5ab0ff", "#c38bff", "#ff8a3d", "#ff5d73", "#ffd24d"]  # level colours (forge-hub.css)
+LV = ["#3ddc97", "#ff7ad9", "#5ab0ff", "#c38bff", "#ff8a3d", "#ff5d73", "#ffd24d", "#4de1ff"]  # level colours (forge-hub.css)
+# Atlas stage colours (dark theme of docs/atlas/atlas.css): first idea, classic, advanced, in production, research frontier
+STAGE_COL = {"first": "#8d9cb6", "classic": "#5ab0ff", "advanced": "#c38bff", "production": "#ff8a3d", "frontier": "#ffd24d"}
 
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace"
@@ -239,13 +241,14 @@ def hero():
            f'<rect x="11" y="12" width="6" height="17" rx="1.5" fill="{STEEL}" opacity=".8"/>'
            f'<rect x="19" y="6" width="6" height="23" rx="1.5" fill="{EMBER}"/>'
            f'<path d="M22 2l2 3-2 1-2-1z" fill="{COMPARE}"/></g>')
-    cv.text(34, 70, "LEVITIN CH 1–12 + BEYOND 13–17", size=11, fill=EMBER, weight=700, letter_spacing="1.4")
+    cv.text(34, 70, "LEVITIN CH 1–12 · BEYOND 13–17 · FRONTIER 18", size=11, fill=EMBER, weight=700, letter_spacing="1.1")
     cv.text(88, 120, f'Algorithm <tspan fill="{EMBER}">Forge</tspan>', size=40, fill=INK, weight=800, raw=True, letter_spacing="-0.8")
     cv.text(34, 166, "Build algorithms from scratch —", size=19, fill=INK, weight=600)
     cv.text(34, 192, f'see them, write them, <tspan fill="{EMBER}">prove them</tspan>', size=19, fill=INK, weight=600, raw=True)
-    cv.text(34, 226, "Lessons, interactive simulations and a graded", size=13.5, fill=INK2)
-    cv.text(34, 245, "pseudocode Arena — from first loop to senior patterns.", size=13.5, fill=INK2)
-    chips = [("📖", "17 chapters"), ("👀", "48 sims"), ("✅", "213 problems")]
+    cv.text(34, 226, "Lessons, interactive simulations and a graded pseudocode", size=13.5, fill=INK2)
+    cv.text(34, 245, "Arena — from first loop to the research frontier.", size=13.5, fill=INK2)
+    n_lessons, n_sims = site_counts()
+    chips = [("📖", f"{n_lessons} lessons"), ("👀", f"{n_sims} sims"), ("✅", f"{sum(level_counts())} problems")]
     cx = 34
     for em, lab in chips:
         wdt = 40 + len(lab) * 7.6
@@ -253,7 +256,7 @@ def hero():
         cv.text(cx + 11, 289, em, size=13, cls="e")
         cv.text(cx + 30, 289, lab, size=12.5, fill=INK, weight=600)
         cx += wdt + 8
-    cv.text(34, 330, "Levels 0 → 5 · runs in the browser · no installs", size=12, fill=MUTED)
+    cv.text(34, 330, f"Levels 0 → {NLV - 1} · runs in the browser · no installs", size=12, fill=MUTED)
 
     # --- right: insertion sort --------------------------------------------------
     PX, PY, PW = 438, 20, 440
@@ -475,49 +478,67 @@ def learning_loop():
 
 
 # ============================================================================
-# 3. levels.svg - the Level 0-5 ladder with problem counts from the bank
+# 3. levels.svg - the Level 0-7 ladder with problem counts from the bank
 # ============================================================================
-LEVEL_COUNTS_FALLBACK = [14, 33, 27, 26, 38, 52, 23]
+LEVEL_COUNTS_FALLBACK = [14, 33, 27, 26, 38, 56, 34, 24]
 NLV = len(LEVEL_COUNTS_FALLBACK)
+_LEVEL_CACHE = []
 
 
 def level_counts():
     """Problem counts per level, read from the Arena bank via the validator (node).
-    Falls back to the last known counts if node is unavailable."""
+    Falls back to the last known counts if node is unavailable. Cached per run."""
     import json
     import subprocess
+    if _LEVEL_CACHE:
+        return list(_LEVEL_CACHE)
+    counts = list(LEVEL_COUNTS_FALLBACK)
     try:
         out = subprocess.run(["node", os.path.join(ROOT, "tools", "validate-problems.mjs"), "--quiet"], cwd=ROOT,
-                             capture_output=True, text=True, timeout=120).stdout
+                             capture_output=True, text=True, timeout=180).stdout
         for line in out.splitlines():
             if line.startswith("by level:"):
                 d = json.loads(line.split(":", 1)[1])
-                return [int(d.get(str(k), 0)) for k in range(NLV)]
+                counts = [int(d.get(str(k), 0)) for k in range(NLV)]
     except (OSError, ValueError, subprocess.SubprocessError):
         pass
-    return list(LEVEL_COUNTS_FALLBACK)
+    _LEVEL_CACHE[:] = counts
+    return list(counts)
+
+
+def site_counts():
+    """(lessons, simulations) counted from the repository: lesson folders with a README, and
+    docs/sims/*.html minus the gallery (index.html) and the authoring template (_template.html)."""
+    les = os.path.join(ROOT, "lessons")
+    n_lessons = sum(1 for d in os.listdir(les) if d[:2].isdigit() and os.path.isfile(os.path.join(les, d, "README.md")))
+    sims = os.path.join(ROOT, "docs", "sims")
+    n_sims = sum(1 for f in os.listdir(sims) if f.endswith(".html") and f not in ("index.html", "_template.html"))
+    return n_lessons, n_sims
 
 
 def levels():
     T = 12.0
     counts = level_counts()
     total = sum(counts)
-    cv = Card(1000, 430, T, "Levels 0 to 6",
-              f"A seven-step ladder from Foundations to Expert: Algorithm Designer, with the chapters and the number of Arena problems at each level ({total} in all).")
-    cv.header("Levels", "Seven levels, from first loop to algorithm designer")
+    W_CARD, H_CARD = 1100, 450
+    cv = Card(W_CARD, H_CARD, T, f"Levels 0 to {NLV - 1}",
+              f"An eight-step ladder from Foundations to Frontier: Cutting-Edge, with the chapters and the number of Arena "
+              f"problems at each level ({total} in all).")
+    cv.header("Levels", "Eight levels, from first loop to the research frontier")
     info = [
         (["Foundations"], "Start + Ch 1–2", "Loops, arrays, counting"),
         (["Brute Force &", "Analysis"], "Ch 2–3", "Solve it, count it"),
         (["Decrease &", "Divide"], "Ch 4–5", "Shrink it, split it"),
-        (["Transform &", "Space-Time"], "Ch 6–7", "Presort, heaps, hashing"),
+        (["Transform &", "Space-Time"], "Ch 6–7", "Heaps, trees, hashing"),
         (["Dynamic Prog.,", "Greedy &", "Improvement"], "Ch 8–10", "Tables, greedy, flows"),
         (["Hard Problems &", "Senior Patterns"], "Ch 11–17", "NP, pruning, patterns"),
         (["Expert:", "Algorithm", "Designer"], "Ch 12–17", "The hardest set"),
+        (["Frontier:", "Cutting-Edge"], "Ch 18", "Today's best ideas"),
     ]
-    X0, W, G, BASE = 30, 128, 6, 410
-    heights = [120 + 30 * k for k in range(NLV)]
-    arrive = [1.0 + 1.25 * k for k in range(NLV)]
-    t_done = arrive[-1] + 0.6
+    assert len(info) == NLV
+    X0, W, G, BASE = 25, 126, 6, 430
+    heights = [128 + 28 * k for k in range(NLV)]
+    arrive = [0.9 + 1.12 * k for k in range(NLV)]
     fade_out = T - 0.7
     maxc = max(counts)
     for k in range(NLV):
@@ -548,20 +569,20 @@ def levels():
         run += counts[k]
         t1 = arrive[k + 1] if k + 1 < NLV else fade_out + 0.3
         cls = cv.show(arrive[k], t1, fade=0.15)
-        cv.text(970, 52, f'<tspan fill="{LV[k]}" font-size="26" font-weight="800">{run}</tspan><tspan fill="{MUTED}"> of {total} problems</tspan>',
+        cv.text(W_CARD - 30, 52, f'<tspan fill="{LV[k]}" font-size="26" font-weight="800">{run}</tspan><tspan fill="{MUTED}"> of {total} problems</tspan>',
                 size=13, anchor="end", raw=True, cls=cls)
     cv.text(28, 88, "Climb in order — or jump in at your level.", size=12.5, fill=MUTED,
             cls=cv.show(0, arrive[0], fade=0.2))
-    cv.text(28, 88, "Levitin Ch 1–12, then the Beyond chapters 13–17.", size=12.5, fill=MUTED,
+    cv.text(28, 88, "Levitin Ch 1–12, the Beyond chapters 13–17, then the Frontier (Ch 18).", size=12.5, fill=MUTED,
             cls=cv.show(arrive[0], None, fade=0.2))
     # climber hops from the floor onto each step
-    pos = [(X0 - 14, BASE - 10)] + [(X0 + k * (W + G) + 30, BASE - heights[k] - 12) for k in range(NLV)]
+    pos = [(X0 - 12, BASE - 10)] + [(X0 + k * (W + G) + 30, BASE - heights[k] - 12) for k in range(NLV)]
     ch = []
     for k in range(NLV):
         (x0, y0), (x1, y1) = pos[k], pos[k + 1]
-        t = arrive[k] - 0.55
-        ch.append((t, {"transform": tr((x0 + x1) / 2, min(y0, y1) - 34)}, 0.3))
-        ch.append((t + 0.3, {"transform": tr(x1, y1)}, 0.25))
+        t = arrive[k] - 0.5
+        ch.append((t, {"transform": tr((x0 + x1) / 2, min(y0, y1) - 30)}, 0.27))
+        ch.append((t + 0.27, {"transform": tr(x1, y1)}, 0.23))
     ch.append((fade_out, {"opacity": 0}, 0.4))
     ch.append((T - 0.15, {"transform": tr(*pos[0])}, 0.05))
     ch.append((T - 0.1, {"opacity": 1}, 0.1))
@@ -1392,8 +1413,219 @@ def arena_flow():
     return cv
 
 
+# ============================================================================
+# 10. evolution.svg - three Atlas families as metro lines, first idea -> research frontier
+# ============================================================================
+STAGES = [("first", "First idea", "The obvious method: correct, but slow"),
+          ("classic", "Classic", "The textbook algorithm"),
+          ("advanced", "Advanced", "Sharper bounds, smarter structures"),
+          ("production", "In production", "What real systems run today"),
+          ("frontier", "Research frontier", "New results from research papers")]
+
+# One station per stage and family. The first field is the rung's exact `name` in docs/atlas/atlas-data.js;
+# its year and stage are read from that file when node is available (the values here are the fallback and are
+# checked against it). "\n" splits a label over two lines; "^{...}" is a superscript.
+EVOLUTION = [
+    ("Sorting", "sorting", [
+        ("Insertion sort (and other quadratic sorts)", None, "first", "Insertion sort", "", "Θ(n^{2})"),
+        ("Mergesort", 1945, "classic", "Mergesort", "", "Θ(n log n)"),
+        ("Introsort", 1997, "advanced", "Introsort", "", "O(n log n) worst"),
+        ("Timsort", 2002, "production", "Timsort", "", "O(n log n), adaptive"),
+        ("Powersort", 2018, "frontier", "Powersort", "Munro & Wild", "O(n + nH)"),
+    ]),
+    ("Shortest paths", "shortest-paths", [
+        ("Breadth-First Search (BFS)", 1959, "first", "Breadth-first\nsearch", "", "Θ(V + E)"),
+        ("Dijkstra's algorithm (binary heap)", 1959, "classic", "Dijkstra\n(binary heap)", "", "O((V + E) log V)"),
+        ("Dijkstra with a Fibonacci heap", 1987, "advanced", "Dijkstra +\nFibonacci heap", "", "O(E + V log V)"),
+        ("Goal-directed search and preprocessing (A*, contraction hierarchies)", 2008, "production",
+         "Contraction\nhierarchies", "", "fast after preprocessing"),
+        ("Breaking the sorting barrier", 2025, "frontier", "Breaking the\nsorting barrier", "Duan et al.", "O(m log^{2/3} n)"),
+    ]),
+    ("Vector search", "vector-search", [
+        ("Brute-force scan", None, "first", "Brute-force\nscan", "", "Θ(n · d)"),
+        ("k-d tree", 1975, "classic", "k-d tree", "", "fast for small d"),
+        ("Locality-Sensitive Hashing (LSH)", 1998, "advanced", "Locality-sensitive\nhashing", "", "n^{ρ} per query, ρ < 1"),
+        ("Hierarchical Navigable Small World (HNSW) graphs", 2016, "production", "HNSW graph", "", "empirically ~log n"),
+        ("RaBitQ (quantization with error bounds)", 2024, "frontier", "RaBitQ", "Gao & Long", "error-bounded bits"),
+    ]),
+]
+
+
+def atlas_rungs():
+    """{family id: {rung name: (year, stage)}} from docs/atlas/atlas-data.js via node, or None without node."""
+    import json
+    import subprocess
+    js = ("globalThis.self=globalThis;require(process.argv[1]);const o={};"
+          "for(const f of FORGE_ATLAS.families){o[f.id]={};for(const r of f.rungs)o[f.id][r.name]=[r.year,r.stage];}"
+          "process.stdout.write(JSON.stringify(o));")
+    try:
+        out = subprocess.run(["node", "-e", js, os.path.join(ROOT, "docs", "atlas", "atlas-data.js")],
+                             capture_output=True, text=True, timeout=60)
+        if out.returncode == 0 and out.stdout:
+            return json.loads(out.stdout)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return None
+
+
+def sup_markup(s):
+    """'O(m log^{2/3} n)' -> SVG text with a raised, smaller exponent."""
+    out, i = [], 0
+    while i < len(s):
+        j = s.find("^{", i)
+        if j < 0:
+            out.append(esc(s[i:]))
+            break
+        k = s.index("}", j)
+        out.append(esc(s[i:j]))
+        out.append(f'<tspan dy="-4" font-size="75%">{esc(s[j + 2:k])}</tspan><tspan dy="4"> </tspan>')
+        i = k + 1
+    return "".join(out)
+
+
+def evolution():
+    T = 13.0
+    W_CARD, H_CARD = 900, 450
+    atlas = atlas_rungs()
+    lanes = []
+    for lane, fid, picks in EVOLUTION:
+        row = []
+        for (aname, year, stage, label, who, bound) in picks:
+            if atlas is not None:
+                fam = atlas.get(fid)
+                assert fam is not None, f"Atlas family {fid!r} not found"
+                assert aname in fam, f"Atlas rung {aname!r} not found in {fid!r}"
+                year, stage = fam[aname]
+            row.append((year, stage, label, who, bound))
+        assert [r[1] for r in row] == [s[0] for s in STAGES], f"{lane}: one station per stage expected, got {[r[1] for r in row]}"
+        lanes.append((lane, row))
+    cv = Card(W_CARD, H_CARD, T, "From first idea to the research frontier",
+              "Three algorithm families drawn as metro lines - sorting, shortest paths and vector search. "
+              "Stations light up left to right through five stages (first idea, classic, advanced, in production, research "
+              "frontier), each with its year and running time, ending at results from 2018 to 2025.")
+    cv.header("Algorithm Atlas · evolution ladders", "From first idea to the research frontier")
+    cv.brand()
+    COLX = [190, 340, 490, 640, 790]
+    X_START = 146
+    LANE_Y = [170, 266, 362]
+    CHIP_Y = 98
+    t_stage = [1.2 + 1.85 * k for k in range(len(STAGES))]
+    lane_off = 0.12
+    fade_out = T - 1.1
+
+    # --- gradients for the coloured segments (shared by all lanes: horizontal lines) ---
+    for k in range(1, len(STAGES)):
+        c0, c1 = STAGE_COL[STAGES[k - 1][0]], STAGE_COL[STAGES[k][0]]
+        cv.defs.append(f'<linearGradient id="seg{k}" gradientUnits="userSpaceOnUse" x1="{COLX[k - 1]}" y1="0" x2="{COLX[k]}" y2="0">'
+                       f'<stop offset="0" stop-color="{c0}"/><stop offset="1" stop-color="{c1}"/></linearGradient>')
+    for k, (sid, _, _) in enumerate(STAGES):
+        col = STAGE_COL[sid]
+        cv.defs.append(f'<linearGradient id="band{k}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{col}" stop-opacity="0"/>'
+                       f'<stop offset=".5" stop-color="{col}" stop-opacity=".10"/><stop offset="1" stop-color="{col}" stop-opacity="0"/></linearGradient>')
+
+    # --- spotlight band on the current stage + dashed column guides ---
+    for k in range(len(STAGES)):
+        t1 = t_stage[k + 1] + 0.2 if k + 1 < len(STAGES) else fade_out
+        cv.rect(COLX[k] - 72, CHIP_Y + 16, 144, LANE_Y[-1] + 42 - CHIP_Y - 16, fill=f"url(#band{k})", rx=12,
+                cls=cv.show(t_stage[k] - 0.35, t1, fade=0.45))
+
+    # --- stage chips ---
+    for k, (sid, lab, _) in enumerate(STAGES):
+        col = STAGE_COL[sid]
+        wdt = 34 + len(lab) * 6.7
+        x0 = COLX[k] - wdt / 2
+        cv.rect(x0, CHIP_Y - 12, wdt, 24, fill=PANEL2, rx=12, stroke=LINE2)
+        cv.add(f'<circle cx="{num(x0 + 13)}" cy="{CHIP_Y}" r="8" fill="{DIM}"/>')
+        cv.text(x0 + 13, CHIP_Y + 4, k + 1, size=10.5, fill=INK2, weight=800, anchor="middle")
+        cv.text(x0 + 27, CHIP_Y + 4.5, lab, size=12, fill=MUTED, weight=700)
+        lit = cv.track({"opacity": 0}, [(t_stage[k] - 0.15, {"opacity": 1}, 0.3), (fade_out, {"opacity": 0}, 0.6)])
+        cv.open_g(cls=lit)
+        cv.rect(x0, CHIP_Y - 12, wdt, 24, fill=col, fill_opacity=".16", rx=12, stroke=col)
+        cv.add(f'<circle cx="{num(x0 + 13)}" cy="{CHIP_Y}" r="8" fill="{col}"/>')
+        cv.text(x0 + 13, CHIP_Y + 4, k + 1, size=10.5, fill=BG, weight=800, anchor="middle")
+        cv.text(x0 + 27, CHIP_Y + 4.5, lab, size=12, fill=INK, weight=700)
+        cv.close_g()
+
+    # --- stage caption, top right ---
+    for k, (sid, lab, cap) in enumerate(STAGES):
+        t1 = t_stage[k + 1] - 0.35 if k + 1 < len(STAGES) else t_stage[k] + 1.8
+        cv.text(W_CARD - 28, 64, cap, size=12.5, fill=STAGE_COL[sid], weight=600, anchor="end",
+                cls=cv.show(t_stage[k] - 0.1, t1, fade=0.22))
+    cv.text(W_CARD - 28, 64, "Every station is cited in the Algorithm Atlas", size=12.5, fill=INK2, anchor="end",
+            cls=cv.show(t_stage[-1] + 2.1, fade_out, fade=0.25))
+
+    # --- lanes ---
+    for li, (lane, row) in enumerate(lanes):
+        y = LANE_Y[li]
+        off = li * lane_off
+        cv.text(28, y + 5, lane, size=13.5, fill=INK, weight=800)
+        # base track + an open-ended dashed continuation past the frontier
+        cv.add(f'<line x1="{X_START}" y1="{y}" x2="{COLX[-1]}" y2="{y}" stroke="{LINE2}" stroke-width="6" stroke-linecap="round"/>')
+        cv.add(f'<line x1="{COLX[-1] + 14}" y1="{y}" x2="{COLX[-1] + 60}" y2="{y}" stroke="{LINE2}" stroke-width="3" '
+               f'stroke-linecap="round" stroke-dasharray="1 7"/>')
+        cv.add(f'<circle cx="{X_START}" cy="{y}" r="5" fill="{LINE2}"/>')
+        # coloured segments drawing in, one per stage
+        for k in range(len(STAGES)):
+            x1 = X_START if k == 0 else COLX[k - 1]
+            x2 = COLX[k]
+            L = x2 - x1
+            stroke = STAGE_COL["first"] if k == 0 else f"url(#seg{k})"
+            t0 = t_stage[k] + off - 0.95
+            cls = cv.track({"stroke-dashoffset": f"{L}px", "opacity": 1},
+                           [(t0, {"stroke-dashoffset": "0px"}, 0.9), (fade_out, {"opacity": 0}, 0.6),
+                            (T - 0.3, {"stroke-dashoffset": f"{L}px"}, 0.05), (T - 0.2, {"opacity": 1}, 0.05)])
+            cv.add(f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{stroke}" stroke-width="6" stroke-dasharray="{L} {L + 20}" '
+                   f'class="{cls}"/>')
+        # "you are here" ring travelling with the head of the line
+        ch = []
+        for k in range(len(STAGES)):
+            ch.append((t_stage[k] + off - 0.95, {"transform": tr(COLX[k], y)}, 0.9))
+        ch.append((fade_out, {"opacity": 0}, 0.5))
+        ch.append((T - 0.3, {"transform": tr(X_START, y)}, 0.05))
+        ch.append((T - 0.2, {"opacity": 1}, 0.1))
+        ring = cv.track({"transform": tr(X_START, y), "opacity": 1}, ch)
+        cv.add(f'<g class="{ring}"><circle r="13" fill="none" stroke="{INK}" stroke-width="2" stroke-opacity=".85"/></g>')
+        # stations
+        for k, (year, stage, label, who, bound) in enumerate(row):
+            x = COLX[k]
+            col = STAGE_COL[stage]
+            tk = t_stage[k] + off
+            cv.add(f'<circle cx="{x}" cy="{y}" r="8" fill="{PANEL2}" stroke="{LINE2}" stroke-width="3"/>')
+            pulses = [(tk - 0.01, {"opacity": 0.9}, 0.01), (tk, {"transform": "scale(2.7)", "opacity": 0}, 1.0),
+                      (tk + 1.05, {"transform": "scale(1)"}, 0.01)]
+            if stage == "frontier":
+                for tp in (tk + 1.4, tk + 2.8):
+                    pulses += [(tp - 0.01, {"opacity": 0.8}, 0.01), (tp, {"transform": "scale(2.7)", "opacity": 0}, 1.0),
+                               (tp + 1.05, {"transform": "scale(1)"}, 0.01)]
+            pc = cv.track({"opacity": 0, "transform": "scale(1)"}, pulses)
+            cv.add(f'<circle cx="{x}" cy="{y}" r="8" fill="none" stroke="{col}" stroke-width="2.5" class="{pc}" '
+                   f'style="transform-box:fill-box;transform-origin:50% 50%"/>')
+            dot = cv.track({"opacity": 0, "transform": "scale(.4)"},
+                           [(tk - 0.05, {"opacity": 1, "transform": "scale(1.35)"}, 0.22), (tk + 0.2, {"transform": "scale(1)"}, 0.25),
+                            (fade_out, {"opacity": 0}, 0.6), (T - 0.3, {"transform": "scale(.4)"}, 0.05)])
+            cv.add(f'<circle cx="{x}" cy="{y}" r="8" fill="{col}" stroke="{BG}" stroke-width="2.5" class="{dot}" '
+                   f'style="transform-box:fill-box;transform-origin:50% 50%"/>')
+            # labels: name above (one or two lines), year and running time below
+            name_c = cv.track({"fill": MUTED}, [(tk - 0.05, {"fill": INK}, 0.3), (fade_out, {"fill": MUTED}, 0.6)])
+            lines = label.split("\n")
+            for i, ln in enumerate(lines):
+                cv.text(x, y - 16 - (len(lines) - 1 - i) * 14, ln, size=12, weight=700, anchor="middle", fill=MUTED, cls=name_c)
+            ytxt = "no clear origin" if year is None else str(year)
+            if who:
+                ytxt += f" · {who}"
+            year_c = cv.track({"fill": MUTED}, [(tk, {"fill": col}, 0.3), (fade_out, {"fill": MUTED}, 0.6)])
+            cv.text(x, y + 25, ytxt, size=11, weight=700, anchor="middle", fill=MUTED, cls=year_c)
+            bnd_c = cv.track({"opacity": 0.35}, [(tk + 0.1, {"opacity": 1}, 0.3), (fade_out, {"opacity": 0.35}, 0.6)])
+            cv.text(x, y + 39, sup_markup(bound), size=10.5, anchor="middle", fill=INK2, mono=True, raw=True, cls=bnd_c)
+
+    cv.text(28, H_CARD - 16, "V, E (or n, m) = vertices, edges  ·  d = dimensions  ·  H = entropy of the sorted-run lengths  ·  "
+            "HNSW = Hierarchical Navigable Small World", size=10.5, fill=MUTED)
+    return cv
+
+
 VISUALS = {"hero": hero, "learning_loop": learning_loop, "levels": levels, "binary_search": binary_search, "growth": growth,
-           "recursion_tree": recursion_tree, "dp_table": dp_table, "graph_bfs": graph_bfs, "arena_flow": arena_flow}
+           "recursion_tree": recursion_tree, "dp_table": dp_table, "graph_bfs": graph_bfs, "arena_flow": arena_flow,
+           "evolution": evolution}
 
 
 def main(argv):

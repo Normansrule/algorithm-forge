@@ -60,7 +60,7 @@ ForgeProblems.add({
   level: 5, chapter: 11, difficulty: 1,
   topics: ["NP", "satisfiability", "verification", "Boolean logic"],
   strategy: "Polynomial-time verification",
-  source: "Levitin §11.3 · Lecture 11 (CNF-SAT example)",
+  source: "Levitin §11.3 (CNF-SAT example)",
   summary: "Check in linear time whether a given true/false assignment satisfies a formula in Conjunctive Normal Form (CNF).",
   statement: `
 <p>The class <b>Nondeterministic Polynomial time (NP)</b> is about problems whose proposed answers — <i>certificates</i> — can be
@@ -176,7 +176,7 @@ ForgeProblems.add({
   level: 5, chapter: 11, difficulty: 1,
   topics: ["NP", "vertex cover", "graphs", "verification"],
   strategy: "Polynomial-time verification",
-  source: "Lecture 11 (VERTEX-COVER is in NP) · Levitin §11.3",
+  source: "VERTEX-COVER is in NP · Levitin §11.3",
   summary: "Given edges, a budget K and a proposed set W, check that W has at most K vertices and touches every edge.",
   statement: `
 <p>VERTEX-COVER asks: does graph G have a set W of <b>at most K</b> vertices such that every edge has at least one endpoint in W?
@@ -265,7 +265,7 @@ ForgeProblems.add({
   level: 5, chapter: 11, difficulty: 1,
   topics: ["NP", "clique", "graphs", "verification"],
   strategy: "Polynomial-time verification",
-  source: "Lecture 11 (CLIQUE is in NP) · Levitin §11.3",
+  source: "CLIQUE is in NP · Levitin §11.3",
   summary: "Check that a proposed set of at least K vertices is pairwise connected.",
   statement: `
 <p>A <b>clique</b> is a set of vertices in which <b>every pair</b> is joined by an edge — a group of people who all know each other.
@@ -340,7 +340,7 @@ every edge appears in both lists) — the size target <code>K</code>, and the ce
     explain: "There are k(k − 1)/2 pairs; with an adjacency matrix each test is O(1), so the check is Θ(k²) — polynomial. (With adjacency lists each test costs up to deg(v), still polynomial.) That is the 'verify' half of CLIQUE ∈ NP.",
   },
   complexity: "Θ(k²) pair tests",
-  followUp: "Reduction twist: G has a vertex cover of size K exactly when its complement graph has a clique of size n − K (Lecture 11) — so a CLIQUE solver is also a VERTEX-COVER solver.",
+  followUp: "Reduction twist: G has a vertex cover of size K exactly when its complement graph has a clique of size n − K — so a CLIQUE solver is also a VERTEX-COVER solver.",
   distractors: ["for j ← 0 to k - 1 do", "if k > K then"],
   visual: "sims/p-np.html",
   lesson: "lessons/11-limitations/README.md",
@@ -438,7 +438,7 @@ ForgeProblems.add({
   level: 5, chapter: 11, difficulty: 2,
   topics: ["NP-complete", "satisfiability", "exhaustive search", "bit masks"],
   strategy: "Exhaustive search (guess + verify)",
-  source: "Levitin §11.3 · Lecture 11 (truth-assignment table)",
+  source: "Levitin §11.3 (truth-assignment table)",
   summary: "Solve Conjunctive Normal Form satisfiability (CNF-SAT) by checking all 2ⁿ assignments, or report that none exists.",
   statement: `
 <p>A <i>nondeterministic</i> algorithm "guesses" a certificate and verifies it (Levitin §11.3). A real computer can't guess,
@@ -457,7 +457,7 @@ true, or the empty list <code>[]</code> if the formula is <b>unsatisfiable</b>. 
     { args: [3, [[1], [2], [3]]], expect: [true, true, true], explain: "Only the all-true assignment works — make sure you try the LAST pattern 2ⁿ − 1." },
     { args: [2, [[-1], [-2]]], expect: [false, false], name: "Only all-false", explain: "Only pattern 0 works — make sure you try the FIRST pattern too." },
     { args: [2, [[1, 2], [1, -2], [-1, 2], [-1, -2]]], expect: [], name: "Every pattern blocked", explain: "Each clause rules out one of the four assignments." },
-    { args: [5, [[1, -2, -3], [1, 2], [-2, -4, 5], [-4, -5]]], expect: [true, false, false, false, false], name: "Lecture 11 formula" },
+    { args: [5, [[1, -2, -3], [1, 2], [-2, -4, 5], [-4, -5]]], expect: [true, false, false, false, false], name: "Worked-example formula" },
     { args: [4, []], expect: [false, false, false, false], name: "Empty formula", explain: "No clauses: any assignment works." },
     { args: [6, [[1, 2], [3, 4], [5, 6], [-1, -3], [-1, -5], [-3, -5], [-2, -4], [-2, -6], [-4, -6]]], expect: [], name: "3 pigeons, 2 holes", explain: "x(2p−1)/x(2p) = pigeon p in hole 1/2. Three pigeons can't share two holes one-per-hole → unsatisfiable." },
   ],
@@ -548,7 +548,7 @@ ForgeProblems.add({
   level: 5, chapter: 11, difficulty: 2,
   topics: ["reductions", "NP-complete", "subset sum", "partition"],
   strategy: "Polynomial-time reduction",
-  source: "Lecture 11 practice (SUBSET-SUM ⇄ SET-PARTITION) · Levitin §11.3",
+  source: "Reduction practice (SUBSET-SUM ⇄ SET-PARTITION) · Levitin §11.3",
   summary: "Transform a SUBSET-SUM instance (X, K) into a PARTITION instance with the same yes/no answer.",
   statement: `
 <p>A <b>reduction</b> turns every instance of problem A into an instance of problem B with the <b>same yes/no answer</b>, in
@@ -1410,7 +1410,7 @@ ForgeProblems.add({
   level: 5, chapter: 12, difficulty: 2,
   topics: ["backtracking", "graph coloring", "graphs", "NP-complete"],
   strategy: "Backtracking over vertices",
-  source: "Levitin Exercise 12.1.10b · Lecture 11 (graph coloring is NP-complete)",
+  source: "Levitin Exercise 12.1.10b (graph coloring is NP-complete)",
   summary: "Color the vertices with at most m colors so no edge joins two equal colors, or report that it's impossible.",
   statement: `
 <p><b>Graph coloring</b> models scheduling with conflicts: exams that share a student (an edge) can't be in the same time slot
@@ -1711,7 +1711,7 @@ PackG.nearestNeighbor = function (D, variant) {
   if (variant !== "open") tour.push(0);
   return tour;
 };
-PackG.lecture4 = [[0, 1, 3, 6], [1, 0, 2, 3], [3, 2, 0, 1], [6, 3, 1, 0]];
+PackG.small4 = [[0, 1, 3, 6], [1, 0, 2, 3], [3, 2, 0, 1], [6, 3, 1, 0]];
 PackG.levitin5 = [[0, 4, 8, 9, 12], [4, 0, 6, 8, 9], [8, 6, 0, 10, 11], [9, 8, 10, 0, 7], [12, 9, 11, 7, 0]];
 
 ForgeProblems.add({
@@ -1733,7 +1733,7 @@ approximation algorithm.</p>`,
   entry: "NearestNeighbor",
   params: ["D"],
   tests: [
-    { args: [PackG.lecture4], expect: [0, 1, 2, 3, 0], explain: "0 →(1) 1 →(2) 2 →(1) 3 →(6) 0: length 10. The optimal tour 0–1–3–2–0 has length 8, so the accuracy ratio is 10/8 = 1.25 (Lecture 12)." },
+    { args: [PackG.small4], expect: [0, 1, 2, 3, 0], explain: "0 →(1) 1 →(2) 2 →(1) 3 →(6) 0: length 10. The optimal tour 0–1–3–2–0 has length 8, so the accuracy ratio is 10/8 = 1.25 (after Levitin §12.3)." },
     { args: [PackG.levitin5], expect: [0, 1, 2, 3, 4, 0], explain: "Length 4 + 6 + 10 + 7 + 12 = 39." },
     { args: [[[0, 2, 2, 5], [2, 0, 3, 1], [2, 3, 0, 4], [5, 1, 4, 0]]], expect: [0, 1, 3, 2, 0], name: "Tie", explain: "Cities 1 and 2 are both at distance 2 from 0 — take the smaller index, 1. From 1 the nearest is 3, not 2." },
     { args: [[[0]]], expect: [0, 0], name: "One city" },
@@ -1859,7 +1859,7 @@ tree children in <b>increasing index order</b>. Input: symmetric distance matrix
   params: ["D"],
   tests: [
     { args: [PackG.levitin5], expect: [0, 1, 2, 3, 4, 0], explain: "Levitin's example: MST edges 0–1, 1–2, 1–3, 3–4. The walk 0,1,2,1,3,4,3,1,0 shortcut to 0,1,2,3,4,0 (length 39)." },
-    { args: [PackG.lecture4], expect: [0, 1, 2, 3, 0], explain: "MST is the path 0–1–2–3; its preorder is the tour." },
+    { args: [PackG.small4], expect: [0, 1, 2, 3, 0], explain: "MST is the path 0–1–2–3; its preorder is the tour." },
     { args: [[[0, 2, 3, 3], [2, 0, 4, 4], [3, 4, 0, 5], [3, 4, 5, 0]]], expect: [0, 1, 2, 3, 0], name: "Star MST", explain: "Every city hangs off city 0 in the MST; children are visited in index order 1, 2, 3." },
     { args: [[[0]]], expect: [0, 0], name: "One city" },
     { args: [[[0, 5], [5, 0]]], expect: [0, 1, 0], name: "Two cities" },
@@ -1962,7 +1962,7 @@ ALGORITHM Walk(parent, u, tour)
     explain: "Prim with a matrix is Θ(n²) and the walk (scanning parent[] at each vertex) is Θ(n²), so the whole algorithm is Θ(n²). Why ratio 2: MST ≤ optimal tour (drop an edge of the tour), the walk costs 2·MST, and with the triangle inequality each shortcut never makes it longer.",
   },
   complexity: "Θ(n²) with a distance matrix",
-  followUp: "Christofides' algorithm adds a minimum-weight perfect matching on the MST's odd-degree vertices and gets ratio 1.5 (Lecture 12) — for decades the best guarantee known for metric TSP.",
+  followUp: "Christofides' algorithm adds a minimum-weight perfect matching on the MST's odd-degree vertices and gets ratio 1.5 (Levitin §12.3) — for decades the best guarantee known for metric TSP.",
   distractors: ["if not inTree[v] and D[u][v] ≤ dist[v] then", "dist[v] ← dist[u] + D[u][v]"],
   visual: "sims/tsp-approx.html",
   lesson: "lessons/12-coping-with-limitations/README.md",
@@ -2098,7 +2098,7 @@ ForgeProblems.add({
   level: 5, chapter: 12, difficulty: 1,
   topics: ["approximation", "bin packing", "online algorithms", "greedy"],
   strategy: "Greedy (first bin with room)",
-  source: "Levitin Exercise 12.3.7 · Lecture 12 (first-fit)",
+  source: "Levitin Exercise 12.3.7 (first-fit)",
   summary: "Place each item, in the given order, into the first bin with enough room; open a new bin if none fits.",
   statement: `
 <p><b>Bin packing</b> — pack items into as few equal-capacity bins as possible — is Nondeterministic Polynomial (NP)-hard; think of virtual machines (VMs) onto servers or files onto
@@ -2110,7 +2110,7 @@ disks. <b>First Fit (FF)</b> is the classic fast heuristic: take the items <b>in
   entry: "FirstFit",
   params: ["s", "C"],
   tests: [
-    { args: [[4, 2, 6, 7], 10], expect: [0, 0, 1, 2], explain: "Lecture 12's example (sizes 0.4, 0.2, 0.6, 0.7 scaled by 10): 4 and 2 share bin 0, then 6 and 7 each need a new bin — 3 bins, one more than optimal." },
+    { args: [[4, 2, 6, 7], 10], expect: [0, 0, 1, 2], explain: "The classic example (sizes 0.4, 0.2, 0.6, 0.7 scaled by 10): 4 and 2 share bin 0, then 6 and 7 each need a new bin — 3 bins, one more than optimal." },
     { args: [[5, 5, 5, 5], 10], expect: [0, 0, 1, 1], name: "Exact fill", explain: "5 + 5 = 10 fits exactly — a full bin is allowed." },
     { args: [[6, 5, 4, 3], 10], expect: [0, 1, 0, 1], explain: "4 goes back to bin 0 (the FIRST bin with room), not just the newest bin." },
     { args: [[5, 7, 3, 2], 10], expect: [0, 1, 0, 0], explain: "3 fits in both bins; First Fit picks bin 0 even though bin 1 would be a tighter fit." },
@@ -2212,7 +2212,7 @@ ForgeProblems.add({
   level: 5, chapter: 12, difficulty: 2,
   topics: ["approximation", "bin packing", "sorting", "greedy"],
   strategy: "Presort (transform) + First Fit",
-  source: "Levitin Exercise 12.3.8 · Lecture 12 (first-fit decreasing)",
+  source: "Levitin Exercise 12.3.8 (first-fit decreasing)",
   summary: "Sort the items from largest to smallest, then run First Fit; return the contents of each bin.",
   statement: `
 <p><b>First Fit Decreasing (FFD)</b> improves First Fit with one transform: <b>sort the items in decreasing order</b> first, then place
@@ -2355,7 +2355,7 @@ ForgeProblems.add({
   level: 6, chapter: 12, difficulty: 3,
   topics: ["branch-and-bound", "assignment problem", "priority queue", "lower bounds"],
   strategy: "Best-first branch-and-bound",
-  source: "Levitin §12.2 (assignment problem) · Lecture 12",
+  source: "Levitin §12.2 (assignment problem)",
   summary: "Assign n people to n jobs at minimum total cost, pruning with a row-minimum lower bound.",
   statement: `
 <p><b>Branch-and-bound</b> is backtracking for optimization: every node of the state-space tree gets a <b>bound</b> on the best

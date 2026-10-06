@@ -1,10 +1,10 @@
-# Lesson 16 · Randomized, Amortized and Streaming Algorithms (Beyond the Textbook)
+# Chapter 16 · Randomized, Amortized and Streaming Algorithms (Beyond the Textbook)
 
 > **Why this matters.** Two ideas quietly power most large systems. **Amortized analysis** explains why "sometimes expensive" operations (resizing a hash table, compressing paths in union-find) are cheap on the whole. **Randomization** gives simple algorithms with excellent expected performance (randomized quicksort), fast tests that are wrong with astronomically small probability (Miller–Rabin), and tiny summaries of huge data streams (Bloom filters, Count-Min, HyperLogLog). Levitin touches both (average-case quicksort in §5.2, hashing in §7.3, the "amortized efficiency" remark in §2.1); this lesson turns them into working tools with proofs.
 
 | 🎮 Simulations | 🏟️ Arena | 🐍 Code |
 |---|---|---|
-| [Amortized (dynamic array doubling, potential method)](https://normansrule.github.io/algorithm-forge/sims/amortized.html) · [Bloom filter](https://normansrule.github.io/algorithm-forge/sims/bloom-filter.html) · also [sorting-studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) (quicksort), [search-lab](https://normansrule.github.io/algorithm-forge/sims/search-lab.html) (quickselect), [hashing](https://normansrule.github.io/algorithm-forge/sims/hashing.html) | [Chapter 16 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=16) | [`ch16_randomized.py`](../../src/python/algoforge/ch16_randomized.py) |
+| [Amortized (dynamic array doubling, potential method)](https://normansrule.github.io/algorithm-forge/sims/amortized.html) · [Bloom filter](https://normansrule.github.io/algorithm-forge/sims/bloom-filter.html) · also [sorting-studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) (quicksort), [search-lab](https://normansrule.github.io/algorithm-forge/sims/search-lab.html) (quickselect), [hashing](https://normansrule.github.io/algorithm-forge/sims/hashing.html) · [Streaming sketches](https://normansrule.github.io/algorithm-forge/sims/streaming-sketches.html) | [Chapter 16 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=16) | [`ch16_randomized.py`](../../src/python/algoforge/ch16_randomized.py) |
 
 **Prerequisites:** [Lesson 2](../02-analysis-framework/README.md) (worst/average case, summations), [Lesson 5](../05-divide-and-conquer/README.md) (quicksort), [Lesson 7](../07-space-time-tradeoffs/README.md) (hashing), [Lesson 13](../13-advanced-data-structures/README.md) (dynamic arrays, union-find).
 
@@ -32,7 +32,7 @@ Then **streaming** algorithms add a fourth constraint: the data passes by once, 
 
 # Part A · Amortized analysis done right
 
-> 📝 **Course quiz insight.** Amortized analysis bounds the **average cost per operation over a worst-case sequence** of operations. It is **not** an average over random inputs (that is average-case analysis), it involves **no probability**, and it is **not** a bound on each operation separately (a single operation may be expensive). If an amortized bound is $O(1)$, then **any** sequence of $m$ operations costs $O(m)$ in total, guaranteed.
+> 📝 **Classic quiz trap.** Amortized analysis bounds the **average cost per operation over a worst-case sequence** of operations. It is **not** an average over random inputs (that is average-case analysis), it involves **no probability**, and it is **not** a bound on each operation separately (a single operation may be expensive). If an amortized bound is $O(1)$, then **any** sequence of $m$ operations costs $O(m)$ in total, guaranteed.
 
 ## Build Card 1 · Three methods on three classic examples
 
@@ -1281,7 +1281,7 @@ class RandomizedPack {
 - **CLRS**: Cormen, Leiserson, Rivest and Stein (CLRS), *Introduction to Algorithms*, 3rd ed.: Ch. 17 (Amortized Analysis: aggregate, accounting, potential; binary counter; multipop; dynamic tables), Ch. 5 (Probabilistic Analysis and Randomized Algorithms: indicator random variables, random permutations), Section 7.3–7.4 (randomized quicksort analysis), Section 9.2 (randomized select), Section 11.3.3 (universal hashing), Section 31.8 (primality testing, Miller–Rabin).
 - **Motwani & Raghavan, *Randomized Algorithms*** (1995): the classic text; Karger's min cut, Las Vegas vs Monte Carlo, and more.
 - **Mitzenmacher & Upfal, *Probability and Computing***: Bloom filters, balls-and-bins, and the probability tools behind sketches.
-- **Massachusetts Institute of Technology (MIT) OpenCourseWare** [6.046J Design and Analysis of Algorithms (Spring 2015)](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/): lectures on amortized analysis, randomized algorithms (quicksort, Karger's min cut), and universal/perfect hashing.
+- **Massachusetts Institute of Technology (MIT) OpenCourseWare** [6.046J Design and Analysis of Algorithms (Spring 2015)](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/): video sessions on amortized analysis, randomized algorithms (quicksort, Karger's min cut), and universal/perfect hashing.
 - **cp-algorithms.com** pages: [Primality tests](https://cp-algorithms.com/algebra/primality_tests.html) (Fermat, Miller–Rabin, deterministic bases), [Randomized Heap](https://cp-algorithms.com/data_structures/randomized_heap.html), "String Hashing".
 - **Papers (English):** B. Bloom, "Space/Time Trade-offs in Hash Coding with Allowable Errors" (1970); G. Cormode & S. Muthukrishnan, "An Improved Data Stream Summary: The Count-Min Sketch and its Applications" (2005); P. Flajolet et al., "HyperLogLog: the analysis of a near-optimal cardinality estimation algorithm" (2007); J. S. Vitter, "Random Sampling with a Reservoir" (1985); D. Karger et al., "Consistent Hashing and Random Trees" (1997); J. Lamping & E. Veach, "A Fast, Minimal Memory, Consistent Hash Algorithm" (2014).
 - **Redis documentation** on HyperLogLog (`PFADD`, `PFCOUNT`, `PFMERGE`): a short, practical tour of a production sketch.

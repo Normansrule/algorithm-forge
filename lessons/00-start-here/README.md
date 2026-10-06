@@ -1,4 +1,4 @@
-# 00 · Start Here — How to Learn in the Forge
+# Chapter 0 · Start Here — How to Learn in the Forge
 
 > **Algorithm Forge** teaches you to *build* algorithms from nothing — picture first, then words, then blocks of
 > pseudocode, then real code, then the math that proves how fast it is. You do not need to be "a math person" or
@@ -10,7 +10,7 @@
 
 ## 1. What this repo is (and the order to use it in)
 
-Every chapter of the course (and of Levitin's *Introduction to the Design and Analysis of Algorithms*, 3rd ed.) has:
+Every chapter here (each one follows a chapter of Levitin's *Introduction to the Design and Analysis of Algorithms*, 3rd ed.) has:
 
 | Piece | Where | What it is for |
 |---|---|---|
@@ -18,7 +18,7 @@ Every chapter of the course (and of Levitin's *Introduction to the Design and An
 | 🎮 Simulation | `docs/sims/*.html` (live on the site) | Watch the algorithm run step by step on *your* input, with the current pseudocode line highlighted |
 | 🏟️ Arena | `docs/arena/` (live on the site) | Write Forge Pseudocode, run it against hidden tests, see operation counts |
 | 🐍 / ☕ Code | `src/python/algoforge/`, `src/java/` | Tested, instrumented implementations (they count basic operations for you) |
-| 📝 Practice | `practice/` | Quizzes, assignment-style sets, midterm-style questions, the empirical-analysis lab |
+| 📝 Practice | `practice/` | Quiz bank, problem sets, practice exams, the empirical-analysis lab |
 
 A good loop for one algorithm takes 30–60 minutes:
 
@@ -151,7 +151,7 @@ blocks — the state is richer and the decision is smarter.
 
 ## 4. The design-strategy map
 
-The course is organized by **design strategy**, not by problem. Each strategy is a *question you ask* about a new
+Algorithm Forge is organized by **design strategy**, not by problem. Each strategy is a *question you ask* about a new
 problem. They are roughly ordered from "least cleverness required" to "most."
 
 ```mermaid
@@ -309,7 +309,7 @@ ALGORITHM F(n)
         return F(n - 1) * n
 ```
 
-### 5.7 Style rules that save points on exams
+### 5.7 Style rules that make written answers clear (practice exams and interviews)
 
 1. Name the input size in the header (`A[0..n-1]`) so the reader knows what `n` means.
 2. Always state what the algorithm returns in an `// Output:` comment.
@@ -327,13 +327,13 @@ ALGORITHM F(n)
 | `repeat … until c` | `while True: …; if c: break` | `do { … } while (!c);` |
 
 ⚠️ In Python and Java, `%` on a negative number behaves differently (Python: `-7 % 3 == 2`; Java: `-7 % 3 == -1`).
-The algorithms in this course use `mod` only on non-negative numbers unless a lesson says otherwise.
+The algorithms in these lessons use `mod` only on non-negative numbers unless a lesson says otherwise.
 
 ---
 
 ## 6. Study plans
 
-### 6.1 A 12-week plan (one semester)
+### 6.1 A 12-week study plan (chapter order)
 
 Plan on about 6–8 hours per week: 2 for lessons + sims, 2–3 for the Arena, 2–3 for written practice.
 
@@ -342,27 +342,27 @@ Plan on about 6–8 hours per week: 2 for lessons + sims, 2–3 for the Arena, 2
 | 1 | 1 | [01 Introduction](../01-introduction/README.md) | Level 0 — gcd, sieve, basic loops | Can write any algorithm as a Build Card |
 | 2 | 2.1–2.3 | [02 Analysis](../02-analysis-framework/README.md) (first half) | Level 0–1 — count operations, set up sums | Can turn a loop nest into a sum and simplify it |
 | 3 | 2.4–2.7 | [02 Analysis](../02-analysis-framework/README.md) (second half) | Recurrence Lab sim; empirical-analysis lab | Can solve recurrences by backward substitution |
-| 4 | 3 | [03 Brute Force](../03-brute-force/README.md) | Level 1 — sorts, string match, exhaustive search, Depth-First Search (DFS) / Breadth-First Search (BFS) | Assignment 1 & 2 style problems |
+| 4 | 3 | [03 Brute Force](../03-brute-force/README.md) | Level 1 — sorts, string match, exhaustive search, Depth-First Search (DFS) / Breadth-First Search (BFS) | Can solve [Problem Sets 1 & 2](../../practice/problem-sets/set-1-foundations.md) |
 | 5 | 4 | [04 Decrease-and-Conquer](../04-decrease-and-conquer/README.md) | Level 2 — insertion sort, topological sort, binary search | Can write recursive **and** iterative versions |
 | 6 | 5 | [05 Divide-and-Conquer](../05-divide-and-conquer/README.md) | Level 2 — mergesort, quicksort, tree traversals | Can set up $T(n)=aT(n/b)+f(n)$ and use the Master Theorem |
-| 7 | review + 6.1–6.3 | [06 Transform-and-Conquer](../06-transform-and-conquer/README.md) (start) | Midterm practice set | **Midterm 1** |
+| 7 | review + 6.1–6.3 | [06 Transform-and-Conquer](../06-transform-and-conquer/README.md) (start) | [Practice Exams 1 & 2](../../practice/exams/practice-exam-1.md), timed | **Checkpoint A (Chapters 1–5):** under time pressure |
 | 8 | 6 | [06 Transform-and-Conquer](../06-transform-and-conquer/README.md) | Level 3 — presorting, heaps, Horner, AVL (Adelson-Velsky–Landis) trees | Can pick a representation that makes a problem easy |
 | 9 | 7 | [07 Space-Time Tradeoffs](../07-space-time-tradeoffs/README.md) | Level 3 — counting sort, Horspool, hashing | Can trade memory for time on purpose |
 | 10 | 8 | [08 Dynamic Programming](../08-dynamic-programming/README.md) | Level 4 — coin-row, knapsack, Warshall/Floyd | Can define a DP table and its recurrence |
 | 11 | 9–10 | [09 Greedy](../09-greedy/README.md), [10 Iterative Improvement](../10-iterative-improvement/README.md) | Level 4 — Prim, Kruskal, Dijkstra, Huffman, max-flow | Can argue why a greedy choice is safe (or find a counterexample) |
-| 12 | 11–12 (+13–17 as bonus) | [11 Limitations](../11-limitations/README.md), [12 Coping](../12-coping-with-limitations/README.md) | Level 5 — backtracking, branch-and-bound, approximation | **Final**; senior-pattern tracks as time allows |
+| 12 | 11–12 (+13–17 as bonus) | [11 Limitations](../11-limitations/README.md), [12 Coping](../12-coping-with-limitations/README.md) | Level 5 — backtracking, branch-and-bound, approximation | **Checkpoint B (Chapters 6–12):** timed mixed quizzes and one Arena problem per strategy; senior-pattern tracks as time allows |
 
-### 6.2 Crash plan — the 5 days before an exam
+### 6.2 Crash plan — the 5 days before a test or technical interview
 
 | Day | Focus | Concrete tasks |
 |---|---|---|
-| −5 | **Map** | Read every "Big idea in 60 seconds" for the exam's chapters. Rebuild the strategy map from memory. |
+| −5 | **Map** | Read every "Big idea in 60 seconds" for the chapters you need. Rebuild the strategy map from memory. |
 | −4 | **Analysis mechanics** | Do 5 sums and 5 recurrences by backward substitution from [02](../02-analysis-framework/README.md) without looking. |
 | −3 | **Design drills** | For each chapter, design one algorithm from scratch in both recursive and nonrecursive form; analyze both. |
-| −2 | **Timed mock** | Do a midterm-style set from `practice/` under time pressure. Mark every place you hesitated. |
+| −2 | **Timed mock** | Do a practice exam from `practice/exams/` under time pressure. Mark every place you hesitated. |
 | −1 | **Patch holes** | Re-watch sims only for the algorithms you hesitated on. Re-do their trace tables. Sleep. |
 
-Exam-day reminders: state input size and basic operation explicitly; write the recurrence **with** its initial
+On-the-day reminders: state input size and basic operation explicitly; write the recurrence **with** its initial
 condition; show at least three steps of backward substitution before you generalize; always finish with the
 efficiency class ($\Theta(\cdot)$ if you can, $O(\cdot)$ if you only proved an upper bound).
 
@@ -415,6 +415,6 @@ You can also filter by chapter, e.g. [`?chapter=3`](https://normansrule.github.i
 - Sedgewick & Wayne, *Algorithms*, 4th ed. — companion site: <https://algs4.cs.princeton.edu/home/>
 - Cormen, Leiserson, Rivest, Stein, *Introduction to Algorithms* (CLRS) — the standard reference when you want more proofs.
 - David Galles' algorithm visualizations (University of San Francisco): <https://www.cs.usfca.edu/~galles/visualization/Algorithms.html>
-- Abdul Bari — *Algorithms* lecture playlist on YouTube (English, whiteboard style; great for the "tiny steps" learner).
+- Abdul Bari — *Algorithms* video playlist on YouTube (English, whiteboard style; great for the "tiny steps" learner).
 
 ➡️ **Next:** [01 · Introduction — What Is an Algorithm?](../01-introduction/README.md)

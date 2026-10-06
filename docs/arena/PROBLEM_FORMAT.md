@@ -17,7 +17,7 @@ See `docs/arena/problems/exemplars.js` for five complete, validated examples —
 | `difficulty` | | 1 (easy) – 3 (hard) *within* the level; used for ordering |
 | `topics` | ✓ | array of short tags |
 | `strategy` | | design strategy in words ("Decrease-by-one", "Two pointers") |
-| `source` | | "Levitin §4.2", "Levitin Exercise 3.1.4 (adapted)", "CSC 501 Midterm 1 Q2", "Interview classic" |
+| `source` | | "Levitin §4.2", "Levitin Exercise 3.1.4 (adapted)", "Classic exam problem", "Interview classic" |
 | `summary` | ✓ | one line shown in the problem list |
 | `statement` | ✓ | HTML. Explain the task, input format, output format, constraints. Paraphrase — never paste textbook text. |
 | `entry` | ✓ | the ALGORITHM / function name the learner must keep (e.g. `"BinarySearch"`) |
@@ -59,6 +59,9 @@ ALGORITHM Name(A[0..n-1], K)        // A[0..n-1] binds n = length(A); A[l..r] bi
 ```
 Values: numbers, `∞`/`infinity`, `true`/`false`, `null`/`NIL`, strings `"abc"` / chars `'A'` (indexable), lists `[1, 2]`,
 2-D `M[i, j]` or `M[i][j]`, records `t ← new Node` then `t.key ← 5`, tuples `(d, v) ← deleteMin(Q)`.
+
+Reserved words (can't be variable names): `for to downto do while repeat until if then else return and or not div mod in
+true false null break continue each` (written all-lowercase or ALL-CAPS; mixed case like `Xor` is an ordinary name).
 
 Built-ins: `length(A)`, `array(n, fill)`, `matrix(r, c, fill)`, `copy(A)`, `append(L, x)`, `min`, `max`, `abs`, `sqrt`,
 `floor`, `ceil`, `round`, `log2`/`lg`, `ln`, `pow`, `sum`, `sorted(A)` (copy), `reversed(A)` (copy), `reverse(A)` (in place), `range(a, b)`, `indexOf(A, x)`,

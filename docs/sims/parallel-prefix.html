@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parallel Prefix Sums · Algorithm Forge</title>
+<meta name="description" content="Parallel prefix sums (scan): the sequential scan, Hillis–Steele and Blelloch's work-efficient up-sweep/down-sweep drawn as circuits with processors per step, work and span counters, a Brent's theorem calculator, and stream compaction / radix-sort split as uses.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 420px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  label.field { max-width: 100%; min-width: 0; }
+  .field input[type="text"] { max-width: 100%; }
+  .calc { font-family: var(--mono); font-size: .82rem; color: var(--ink-2); background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; min-height: 2.4em; overflow-wrap: anywhere; }
+  .calc b { color: var(--ember-2); }
+  .chart { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .chart text { font-family: var(--mono); }
+  .refs li { margin-bottom: 4px; }
+  table.t td.l, table.t th.l { text-align: left; }
+  table.t td.w { color: var(--c-swap); font-weight: 700; }
+  table.t td.k { color: var(--c-done); font-weight: 700; }
+  p code, li code, dd code { overflow-wrap: anywhere; }
+  .inp-err { margin: 10px 0 0; color: var(--bad); font-weight: 600; font-size: .9rem; }
+  .inp-err.note { color: var(--muted); font-weight: 500; }
+  .field input[aria-invalid="true"] { border-color: var(--bad); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Ch 18 · The Frontier</div>
+    <h1>Parallel Prefix Sums (Scan)</h1>
+    <p class="lead muted">Running totals look hopelessly sequential: each one needs the one before. Yet with enough processors, Blelloch's scan computes all n of them in about 2 log₂ n parallel steps: O(log n) span with O(n) work, about twice the loop's additions. Scan is the workhorse behind graphics processing unit (GPU) sorting, stream compaction and much of parallel computing.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Algorithm
+        <select id="algo">
+          <option value="seq">Sequential scan</option>
+          <option value="hs">Hillis–Steele (step-efficient)</option>
+          <option value="bl" selected>Blelloch (work-efficient)</option>
+        </select>
+      </label>
+      <label class="field">Operator ⊕ (any associative one)
+        <select id="op"><option value="+" selected>+ (sum)</option><option value="max">max</option><option value="min">min</option></select>
+      </label>
+      <label class="field">Input array <input id="inp" type="text" value="3, 1, 7, 0, 4, 1, 6, 3" style="min-width:220px" aria-describedby="inpErr"></label>
+      <button class="btn primary" id="load">Run</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field"><span>Random n: <b id="nOut">16</b></span><input type="range" id="n" min="2" max="32" value="16" style="width:150px"></label>
+      <button class="btn" id="rand">Random array</button>
+      <button class="btn" id="example">Example (n = 8)</button>
+    </div>
+    <p class="inp-err" id="inpErr" role="alert" hidden></p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="calc" id="calc" aria-live="polite"></div>
+      <svg class="stage" id="stage" role="img" aria-label="Scan circuit: one row per parallel step, operator nodes connect the values they combine"></svg>
+      <div class="legend">
+        <span><i style="background:var(--c-compare)"></i>inputs read this step</span>
+        <span><i style="background:var(--c-swap)"></i>written this step</span>
+        <span><i style="background:var(--c-active)"></i>⊕ operator (one processor)</span>
+        <span><i style="background:var(--c-pivot)"></i>copy / set to identity</span>
+        <span><i style="background:var(--c-done)"></i>final prefix value</span>
+      </div>
+      <div id="player"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Brent's theorem calculator</h2>
+    <p class="small muted" style="margin-top:0">Work W = total operations; span S = number of parallel steps (the longest chain of dependent operations). Brent's theorem: with p processors a computation finishes in T<sub>p</sub> ≤ W/p + S steps. Pick a problem size and a machine.</p>
+    <div class="row">
+      <label class="field">n (elements) <input id="bn" type="number" value="1048576" min="2" style="width:130px"></label>
+      <label class="field">p (processors) <input id="bp" type="number" value="1024" min="1" style="width:110px"></label>
+      <button class="btn" id="bGpu">A big GPU (p ≈ 20,000)</button>
+      <button class="btn" id="bPn">p = n</button>
+    </div>
+    <p class="small" id="bNote" role="status" style="margin:8px 0 0;color:var(--warn)" hidden></p>
+    <div class="scroll-x"><table class="t" id="bTab" style="margin-top:12px"></table></div>
+    <svg class="chart" id="bChart" role="img" aria-label="Brent bound on running time versus number of processors for the three scan algorithms" style="margin-top:12px"></svg>
+    <div class="legend" style="margin-top:6px">
+      <span><i style="background:var(--muted)"></i>sequential</span>
+      <span><i style="background:var(--c-pivot)"></i>Hillis–Steele</span>
+      <span><i style="background:var(--ember)"></i>Blelloch</span>
+      <span><i style="background:var(--steel)"></i>your p</span>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>What scan is for</h2>
+    <p class="small muted" style="margin-top:0">Both uses below run on the current input array. Each is "compute flags in parallel, exclusive-scan the flags, scatter in parallel": every step is a parallel step, so the whole thing has O(log n) span.</p>
+    <div class="row">
+      <label class="field">Use
+        <select id="use">
+          <option value="compact" selected>Stream compaction: keep x &gt; t</option>
+          <option value="radix">Radix sort split on bit b</option>
+        </select>
+      </label>
+      <label class="field" id="tWrap">threshold t <input id="thr" type="number" value="2" style="width:80px"></label>
+      <label class="field" id="bWrap" hidden>bit b <input id="bit" type="number" value="0" min="0" max="9" style="width:70px"></label>
+    </div>
+    <div class="scroll-x"><table class="t" id="useTab" style="margin-top:12px"></table></div>
+    <p class="small" id="useNote" style="margin-top:8px"></p>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>The circuit</dt>
+      <dd>Each row is the array after one parallel step; time flows downward. A blue ⊕ circle is one processor combining the two values wired into it. Grey vertical wires are values that just carry over. The number of rows is the span; the number of ⊕ circles is the work. Rows not reached yet are drawn as empty outlines so you can see the shape (and the span) in advance.</dd>
+      <dt>Inclusive vs exclusive</dt>
+      <dd>An inclusive scan puts x₀ ⊕ … ⊕ x<sub>i</sub> in position i; an exclusive scan puts x₀ ⊕ … ⊕ x<sub>i−1</sub> (identity in position 0). The sequential loop and Hillis–Steele are inclusive, Blelloch is exclusive. Convert with one parallel step: inclusive[i] = exclusive[i] ⊕ x<sub>i</sub>.</dd>
+      <dt>Why Blelloch is work-efficient</dt>
+      <dd>Hillis–Steele keeps almost every processor busy in every one of its log₂ n steps: n log₂ n − (n − 1) operations, far more than the n − 1 of the loop. Blelloch builds a balanced reduction tree (up-sweep, n − 1 operations) and walks back down it (down-sweep, n − 1 more): 2(n − 1) work in 2 log₂ n steps. With fewer processors than elements, total work is what decides the running time.</dd>
+      <dt>Any associative operator</dt>
+      <dd>Parallel scan only regroups the operations, so it needs (a ⊕ b) ⊕ c = a ⊕ (b ⊕ c), not commutativity. Try max and min: running maximum and running minimum come out of the same circuit. Blelloch pads n up to a power of two with the identity (0 for +, −∞ for max, +∞ for min).</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Example, three ways.</b> Press <b>Example</b> (3, 1, 7, 0, 4, 1, 6, 3) and run each algorithm. Sequential: 7 steps, 7 additions, ending 3 4 11 11 15 16 22 25. Hillis–Steele: 3 steps but 7 + 6 + 4 = 17 additions. Blelloch: 6 steps of additions (+1 to set the root), 14 additions, giving the exclusive scan 0 3 4 11 11 15 16 22.</li>
+      <li><b>Where's the total?</b> In Blelloch's up-sweep, predict what the last cell holds before it is cleared: the total, 25. The down-sweep hands each left child "everything to the left of my block" and each right child that plus its sibling's subtotal.</li>
+      <li><b>Scale n.</b> Set n = 32 and press Random array. Hillis–Steele needs 5 steps but 129 additions; Blelloch 10 steps and 62 additions; the loop 31 steps and 31 additions.</li>
+      <li><b>Brent.</b> In the calculator, n = 1,048,576 and p = 1,024: Blelloch ≈ 2,088 steps, Hillis–Steele ≈ 19,476, the loop 1,048,575. Now press <b>p = n</b>: Hillis–Steele wins (≈ 39 vs ≈ 42) because span dominates. Real GPUs have far fewer cores than elements, so work-efficient scans win in practice.</li>
+      <li><b>Compaction.</b> In "What scan is for", keep x &gt; 2 on the example: flags 1 0 1 0 1 0 1 1, exclusive scan 0 1 1 2 2 3 3 4 gives each kept element its output slot: 3 7 4 6 3.</li>
+      <li><b>Radix split.</b> Switch to the radix split and step b = 0, 1, 2 … Each split is stable, and repeating it for every bit sorts the array: the core of GPU radix sort.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson: Chapter 18 The Frontier</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena: Level 7 Frontier problems</a>
+      <a href="../atlas.html">🗺️ Algorithm Atlas</a>
+      <a href="../arena/problem.html?id=subarray-sum-k">Arena: subarray-sum-k</a>
+      <a href="../arena/problem.html?id=fenwick-range-sum">Arena: fenwick-range-sum</a>
+      <a href="../arena/problem.html?id=radix-sort-lsd">Arena: radix-sort-lsd</a>
+      <a href="patterns.html">🎮 Patterns (prefix sums)</a>
+      <a href="sorting-studio.html">🎮 Sorting Studio (radix sort)</a>
+      <a href="sorting-evolution.html">🎮 Sorting Evolution</a>
+      <a href="segment-tree.html">🎮 Segment Tree</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>W. D. Hillis and G. L. Steele Jr., “Data Parallel Algorithms,” <i>Communications of the ACM</i> (ACM = Association for Computing Machinery) 29(12), 1986. The log₂ n-step scan.</li>
+      <li>G. E. Blelloch, “Prefix Sums and Their Applications,” technical report, Carnegie Mellon University, 1990; also in J. H. Reif (ed.), <i>Synthesis of Parallel Algorithms</i>, 1993. Up-sweep / down-sweep, 2(n − 1) work.</li>
+      <li>R. P. Brent, “The Parallel Evaluation of General Arithmetic Expressions,” <i>Journal of the ACM</i> 21(2), 1974. The W/p + S bound.</li>
+      <li>M. Harris, S. Sengupta and J. D. Owens, “Parallel Prefix Sum (Scan) with CUDA,” <i>GPU Gems 3</i>, chapter 39, 2007 (CUDA = NVIDIA's Compute Unified Device Architecture). <a href="https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda">Online</a>. Work-efficient GPU scan, stream compaction, radix sort.</li>
+      <li>N. Satish, M. Harris and M. Garland, “Designing Efficient Sorting Algorithms for Manycore GPUs,” International Parallel and Distributed Processing Symposium (IPDPS), 2009. Radix sort built from scan-based splits.</li>
+      <li>D. Merrill and M. Garland, “Single-pass Parallel Prefix Scan with Decoupled Look-back,” NVIDIA Technical Report NVR-2016-002, 2016. <a href="https://research.nvidia.com/sites/default/files/pubs/2016-03_Single-pass-Parallel-Prefix/nvr-2016-002.pdf">report</a>. How production GPU libraries scan in one pass over memory.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/parallel-prefix.js"></script>
+</body>
+</html>

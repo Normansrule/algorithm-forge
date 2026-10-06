@@ -576,7 +576,7 @@ def count_paths(adjacency: Sequence[Sequence[int]], k: int) -> list[list[int]]:
 def pairs_sum_multiple_of_60(nums: Sequence[int]) -> int:
     """Count pairs i < j with (nums[i] + nums[j]) divisible by 60, in one pass.
 
-    Course Lecture 6 exercise (transform by remainders): a value with
+    A classic interview exercise (transform by remainders): a value with
     remainder r pairs with every earlier value of remainder (60 - r) mod 60.
     Θ(n) time; O(60) space.
     """

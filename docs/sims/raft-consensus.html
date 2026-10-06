@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raft Consensus · Algorithm Forge</title>
+<meta name="description" content="Five Raft servers elect a leader with randomized timeouts and replicate a log with AppendEntries. Crash servers, cut network links, drop messages and send client commands, and watch Election Safety, Log Matching and log repair at work.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/raft-consensus-core.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  label.field { min-width: 0; max-width: 100%; }
+  .raftgrid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 12px; align-items: start; }
+  @media (max-width: 1180px) { .raftgrid { grid-template-columns: minmax(0, 1fr); } }
+  .raftgrid .stage { touch-action: manipulation; }
+  #ring [data-act] { cursor: pointer; }
+  .stage text { font-family: var(--mono); }
+  .checks { list-style: none; padding: 0; margin: 0; font-size: .86rem; }
+  .checks li { display: grid; grid-template-columns: 22px 1fr; gap: 4px; margin-bottom: 6px; }
+  .checks .mk { font-weight: 800; }
+  .checks .ok { color: var(--ok); }
+  .checks .no { color: var(--bad); }
+  .checks small { color: var(--muted); display: block; }
+  .hint { font-size: .82rem; color: var(--muted); margin: 8px 0 0; }
+  .refs li { margin-bottom: 4px; }
+  .sublabel { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Ch 18 · The Frontier</div>
+    <h1>Raft: agreeing on one log</h1>
+    <p class="lead muted">Five servers must keep identical copies of one ordered log of commands, even while servers crash and messages get lost. Raft elects a leader with randomized timeouts and has it copy its log to the others with a simple consistency check. Break things and watch the safety rules hold.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Scenario
+        <select id="scen">
+          <option value="normal" selected>Normal operation: elect a leader, commit 3 commands</option>
+          <option value="crash">Leader crash: a follower and then the leader fail</option>
+          <option value="split">Split vote: three candidates at once</option>
+          <option value="partition">Network partition, then heal with log repair</option>
+          <option value="free">Free play (random timeouts and latencies)</option>
+        </select>
+      </label>
+      <label class="field" id="seedField" hidden>Seed <input type="number" id="seed" value="1" min="1" style="width:76px"></label>
+      <button class="btn primary" id="load">Restart scenario</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn steel" id="cmd">Send client command</button>
+      <label class="field">to
+        <select id="cmdTo"><option value="auto">the current leader</option><option value="0">S1</option><option value="1">S2</option><option value="2">S3</option><option value="3">S4</option><option value="4">S5</option></select>
+      </label>
+      <label class="field">Server
+        <select id="srv"><option value="0">S1</option><option value="1">S2</option><option value="2">S3</option><option value="3">S4</option><option value="4">S5</option></select>
+      </label>
+      <button class="btn" id="crash">Crash / restart it</button>
+      <button class="btn" id="crashL">Crash the leader</button>
+      <button class="btn" id="heal">Heal the network</button>
+      <label class="field">Random message loss
+        <select id="drop"><option value="0" selected>none</option><option value="0.1">10%</option><option value="0.25">25%</option><option value="0.5">50%</option></select>
+      </label>
+    </div>
+    <p class="hint">On the picture: click a <b>server</b> to crash or restart it, click a <b>link</b> to cut or restore it, click a <b>moving message</b> to drop it. Every change branches the timeline from the current step; ◀ goes back in time.</p>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="raftgrid">
+        <div>
+          <p class="sublabel">Cluster · roles, terms, timers, messages</p>
+          <svg class="stage" id="ring" role="img" aria-label="Five Raft servers on a ring with the messages between them"></svg>
+        </div>
+        <div>
+          <p class="sublabel">Logs · one row per server, cells coloured by term</p>
+          <svg class="stage" id="logs" role="img" aria-label="The log of every server, one row each"></svg>
+        </div>
+      </div>
+      <div class="legend" id="legend">
+        <span><i style="background:var(--ember)"></i>leader</span>
+        <span><i style="background:var(--c-compare)"></i>candidate · RequestVote</span>
+        <span><i style="background:var(--panel-2);border:1px solid var(--line-2)"></i>follower</span>
+        <span><i style="background:var(--c-dim)"></i>crashed</span>
+        <span><i style="background:var(--steel)"></i>AppendEntries (hollow = heartbeat)</span>
+        <span><i style="background:var(--c-done)"></i>vote granted · append succeeded</span>
+        <span><i style="background:var(--c-swap)"></i>refused · cut link · conflicting entry</span>
+        <span>orange arc = election timer · faded dashed cell = not yet committed</span>
+      </div>
+      <div id="player"></div>
+      <div class="panel" id="pred"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode (Raft, Figure 2 of the paper)</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel"><div class="panel-title">Safety properties, checked every step</div><ul class="checks" id="checks"></ul></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>Servers and terms</dt>
+      <dd>Each circle is a server: grey = follower, yellow = candidate, orange = leader, dark with ✕ = crashed. "T3" is its current term, a logical clock that only grows. Time is divided into terms, and each term has at most one leader. The orange arc is the election timer: when it runs out before the server hears from a leader, the server starts an election. Every timeout is drawn at random from 150–300 ms, which is what usually prevents ties.</dd>
+      <dt>Messages</dt>
+      <dd>Dots travel along the links (each link has its own latency, 20–40 ms). Yellow = RequestVote; green or red small dots = its reply (granted or refused). Blue = AppendEntries from a leader: filled when it carries log entries, hollow when it is an empty heartbeat; its reply is small green (success) or red (refused). A red dashed link with ✂ is cut: messages on it are lost halfway.</dd>
+      <dt>Logs</dt>
+      <dd>Row S<i>k</i> is server k's log, index 1 on the left. A cell shows the entry's term (big) and command (small); the colour also encodes the term. Solid cells are committed on that server, faded dashed cells are not yet. A red outline marks an entry that disagrees with the current leader's log at that index (it will be overwritten). Under each follower row, the green bar is the leader's matchIndex (entries known to be stored there) and ▼ marks nextIndex, the next entry the leader will send.</dd>
+      <dt>The rules (paper Figure 2)</dt>
+      <dd>A server votes at most once per term, and only for a candidate whose log is at least as up-to-date as its own (compare the last entries' terms, then lengths). AppendEntries names the entry just before the new ones (prevIndex, prevTerm); a follower accepts only if it has that exact entry, deleting any conflicting suffix. A leader commits an entry of its own term once a majority stores it, and everything before it is committed too.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>One timer wins.</b> In <i>Normal operation</i>, watch S2's arc run out first. It asks for votes, gets 3 (a majority of 5) and becomes leader for term 1 before anyone else times out. Its heartbeats every 50 ms keep resetting the followers' timers.</li>
+      <li><b>Commit needs a majority.</b> Step through a client command: the leader appends it (faded), followers append it, and only when the third copy is acknowledged does the cell turn solid on the leader. Followers learn the new commit index from the next AppendEntries.</li>
+      <li><b>Split vote.</b> In <i>Split vote</i>, S1, S3 and S5 all become candidates for term 1 within 10 ms. S2 votes for S1, S4 for S5, and nobody reaches 3 votes. Their timers run out at different random moments, and the first one to start term 2 usually wins.</li>
+      <li><b>Minority leaders cannot commit.</b> In <i>Network partition</i>, the old leader S1 keeps accepting the command z=3 but can only reach S2: 2 of 5 is not a majority, so it never commits. The majority side elects a new leader with a higher term and commits w and v. When the network heals, S1 sees the higher term, steps down, and its uncommitted z=3 is deleted and replaced (watch the red outline, then the repair).</li>
+      <li><b>The election restriction.</b> In free play, let a leader commit a few commands, then crash one follower, send two more commands, crash the leader and restart the stale follower. When it asks for votes, servers with longer logs refuse it: a server that might be missing committed entries can never become leader.</li>
+      <li><b>Disruptive rejoin.</b> Cut every link of one follower for a second. Alone, it keeps timing out and raising its term. When you restore the links, its high term forces the healthy leader to step down. Ongaro's dissertation adds a Pre-Vote phase to avoid exactly this.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Raft and Paxos</h2>
+    <p>Leslie Lamport's <b>Paxos</b> (written 1989, published 1998) was the first protocol proven to keep replicas consistent despite crashes and arbitrary message delays: any two majorities of 2f + 1 servers overlap, so a value accepted by a majority can never be lost, and a new proposer must first learn and re-propose anything that might already have been chosen. Paxos decides one value at a time; real systems run many instances (Multi-Paxos) plus leader election, log compaction and membership changes, which the original papers leave open. <b>Raft</b> (Ongaro and Ousterhout, 2014) gives the same fault tolerance as Multi-Paxos with a design aimed at understandability: a strong leader that is the only source of log entries, randomized timeouts for elections, and the Log Matching rule you can watch here. Both are safe in any asynchronous network and make progress once timeouts work, which is the best possible: Fischer, Lynch and Paterson (FLP, 1985) proved that no deterministic protocol can guarantee agreement in a fully asynchronous system if even one process may crash.</p>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md#frontier-card-10--consensus-logs-from-paxos-to-raft-and-beyond">📖 Lesson 18 · Frontier Card 10 (consensus)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/17-senior-engineer-playbook/README.md">📖 Lesson 17 · Senior engineer playbook (write-ahead logs)</a>
+      <a href="../atlas.html#consensus">🗺️ Atlas · Consensus and replicated logs</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena Level 7 · Frontier</a>
+      <a href="../arena/problem.html?id=raft-append-entries">Arena: raft-append-entries</a>
+      <a href="../arena/problem.html?id=raft-leader-commit">Arena: raft-leader-commit</a>
+      <a href="../arena/problem.html?id=wal-recovery-undo-redo">Arena: wal-recovery-undo-redo</a>
+      <a href="streaming-sketches.html">🎮 Counting in a stream</a>
+      <a href="union-find.html">🎮 Union–find</a>
+      <a href="amortized.html">🎮 Amortized analysis</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>D. Ongaro and J. Ousterhout, “<a href="https://www.usenix.org/conference/atc14/technical-sessions/presentation/ongaro">In Search of an Understandable Consensus Algorithm</a>,” USENIX Annual Technical Conference (ATC) 2014. This page implements its Figure 2: RequestVote with the election restriction (§5.4.1), AppendEntries with the (prevLogIndex, prevLogTerm) check and conflict truncation, commitIndex = min(leaderCommit, index of last new entry), the leader's current-term commit rule (§5.4.2), nextIndex back-off, and election timeouts drawn from 150–300 ms (§5.2). Simplifications: one cluster configuration, no log compaction, commands applied as soon as they are committed, and each AppendEntries reply carries the index it acknowledges.</li>
+      <li>D. Ongaro, “Consensus: Bridging Theory and Practice,” PhD dissertation, Stanford University, 2014: membership changes, log compaction, and the Pre-Vote extension.</li>
+      <li><a href="https://raft.github.io/">The Raft Consensus Algorithm</a> (official site with the paper, talks, a visualization and a list of implementations).</li>
+      <li>L. Lamport, “<a href="https://lamport.azurewebsites.net/pubs/lamport-paxos.pdf">The Part-Time Parliament</a>,” <i>ACM Transactions on Computer Systems</i> 16(2), 1998 (ACM = Association for Computing Machinery), and “Paxos Made Simple,” <i>ACM SIGACT News</i> 32(4), 2001 (SIGACT = Special Interest Group on Algorithms and Computation Theory).</li>
+      <li>M. J. Fischer, N. A. Lynch and M. S. Paterson, “Impossibility of distributed consensus with one faulty process,” <i>Journal of the ACM</i> 32(2), 1985.</li>
+      <li>H. Howard, D. Malkhi and A. Spiegelman, “<a href="https://arxiv.org/pdf/1608.06696">Flexible Paxos: Quorum intersection revisited</a>,” Principles of Distributed Systems (OPODIS) 2016.</li>
+      <li><a href="https://github.com/etcd-io/etcd">etcd</a>, the key-value store behind Kubernetes clusters, which uses Raft to manage its replicated log.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/raft-consensus.js"></script>
+</body>
+</html>

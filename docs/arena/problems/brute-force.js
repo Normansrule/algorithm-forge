@@ -1,7 +1,7 @@
 /* Pack B — Brute Force & Exhaustive Search (Level 1, Levitin Chapter 3).
    Selection/bubble sort, sequential search, string matching, closest pair, convex hull,
    exhaustive search (TSP, knapsack, assignment, partition, magic squares), DFS/BFS.
-   Several problems mirror CSC 501 Assignment 2 and Midterm 1.
+   Several problems are worked in Problem Set 2 and Practice Exam 1 (practice/).
    Wrapped in an IIFE so helper functions never collide with other packs. */
 (function () {
   "use strict";
@@ -605,7 +605,7 @@ keeps going after a match.</p>
   });
 
   /* =========================================================================
-     6. Count substrings that start with A and end with B  (CSC 501 A2 Q2)
+     6. Count substrings that start with A and end with B  (Problem Set 2, Problem 2)
      ========================================================================= */
   const countAB = (T) => { let a = 0, c = 0; for (const ch of T) { if (ch === "A") a++; else if (ch === "B") c += a; } return c; };
   ForgeProblems.add({
@@ -614,7 +614,7 @@ keeps going after a match.</p>
     level: 1, chapter: 3, difficulty: 2,
     topics: ["strings", "counting", "brute force", "optimization"],
     strategy: "Brute force → one pass with a running count",
-    source: "CSC 501 A2 Q2 · Levitin Exercise 3.2.8 (adapted)",
+    source: "Levitin Exercise 3.2.8 (adapted) · Problem Set 2, Problem 2",
     summary: "Count substrings that start with 'A' and end with 'B' — the grader demands Θ(n).",
     statement: `
 <p>Count, in a text <code>T[0..n-1]</code>, the number of substrings (contiguous pieces) that <b>start with the character
@@ -697,7 +697,7 @@ keeps going after a match.</p>
   });
 
   /* =========================================================================
-     7. a^n mod m by brute force  (CSC 501 A2 Q1)
+     7. a^n mod m by brute force  (Problem Set 2, Problem 1)
      ========================================================================= */
   const powMod = (a, n, m) => { let r = 1 % m; const b = a % m; for (let i = 0; i < n; i++) r = (r * b) % m; return r; };
   ForgeProblems.add({
@@ -706,7 +706,7 @@ keeps going after a match.</p>
     level: 1, chapter: 3, difficulty: 1,
     topics: ["number theory", "brute force", "modular arithmetic", "input size"],
     strategy: "Brute force",
-    source: "CSC 501 A2 Q1 · Levitin Exercise 3.1.2 (adapted)",
+    source: "Levitin Exercise 3.1.2 (adapted) · Problem Set 2, Problem 1",
     summary: "Compute aⁿ mod m by repeated multiplication, keeping every intermediate value small.",
     statement: `
 <p>Computing <code>aⁿ</code> by multiplying <code>a</code> by itself n times is the textbook brute-force example (Levitin §3.1). But
@@ -773,7 +773,7 @@ Cryptography such as Rivest–Shamir–Adleman (RSA) and Diffie–Hellman only e
     for _ in range(n):
         result = (result * base) % m
     return result`,
-      explain: "Invariant: after i steps, result = aⁱ mod m < m, so no product exceeds (m − 1)². It makes M(n) = n multiplications: linear in n, but n has only b ≈ log₂ n bits, so as a function of the INPUT SIZE b it is Θ(2ᵇ) — exponential. That's the A2 Q1(a) answer.",
+      explain: "Invariant: after i steps, result = aⁱ mod m < m, so no product exceeds (m − 1)². It makes M(n) = n multiplications: linear in n, but n has only b ≈ log₂ n bits, so as a function of the INPUT SIZE b it is Θ(2ᵇ) — exponential. That's the answer to Problem Set 2, Problem 1(a).",
     },
     complexity: "Θ(n) multiplications = Θ(2ᵇ) in the bit length b of n",
     followUp: "Senior twist: exponentiation by squaring (Levitin §6.5) computes aⁿ mod m with Θ(log n) multiplications — that's how RSA handles 2048-bit exponents. Python's built-in pow(a, n, m) does exactly this.",
@@ -792,12 +792,12 @@ Cryptography such as Rivest–Shamir–Adleman (RSA) and Diffie–Hellman only e
     level: 1, chapter: 3, difficulty: 1,
     topics: ["polynomials", "brute force", "counting operations"],
     strategy: "Brute force, without repeated work",
-    source: "Levitin Exercise 3.1.4 (adapted) · Lecture 3",
+    source: "Levitin Exercise 3.1.4 (adapted)",
     summary: "Compute p(x) = P[0] + P[1]x + … + P[n]xⁿ with Θ(n) arithmetic operations.",
     statement: `
 <p>The most literal way to evaluate a polynomial recomputes <code>xⁱ</code> from scratch for every term: 1 + 2 + … + n
 multiplications, which is Θ(n²). The improved brute force notices that <code>xⁱ = xⁱ⁻¹ · x</code>, so each power costs
-just <b>one</b> extra multiplication (Lecture 3; Levitin Exercise 3.1.4).</p>
+just <b>one</b> extra multiplication (Levitin Exercise 3.1.4).</p>
 <p>Given coefficients <code>P[0..n]</code> (where <code>P[i]</code> is the coefficient of <code>xⁱ</code>) and a number
 <code>x</code>, return <code>p(x)</code>.</p>
 <ul>
@@ -964,7 +964,7 @@ smallest distance — so we never need it.</p>`,
   });
 
   /* =========================================================================
-     10. Post office location — minimize the maximum distance  (CSC 501 A2 Q3)
+     10. Post office location — minimize the maximum distance  (Problem Set 2, Problem 3)
      ========================================================================= */
   const postCost = (x, p) => Math.max(p - x[0], x[x.length - 1] - p);
   const postBest = (x) => Math.min(...x.map((p) => postCost(x, p)));
@@ -974,7 +974,7 @@ smallest distance — so we never need it.</p>`,
     level: 1, chapter: 3, difficulty: 2,
     topics: ["optimization", "brute force", "minimax"],
     strategy: "Brute force, simplified by analysis",
-    source: "CSC 501 A2 Q3 · Levitin Exercise 3.3.3b (adapted)",
+    source: "Levitin Exercise 3.3.3b (adapted) · Problem Set 2, Problem 3",
     summary: "Pick the village that minimizes the maximum distance to all other villages — in linear time.",
     statement: `
 <p>Villages sit along a straight road at coordinates <code>x[0] &lt; x[1] &lt; … &lt; x[n-1]</code> (given sorted). A post office must be
@@ -1233,12 +1233,12 @@ it is <code>&lt; 0</code>.</p>
     level: 1, chapter: 3, difficulty: 1,
     topics: ["matrices", "brute force", "verification"],
     strategy: "Check the definition directly",
-    source: "Levitin Exercise 3.4.10 (adapted) · CSC 501 Midterm 1 Q3",
+    source: "Levitin Exercise 3.4.10 (adapted) · Practice Exam 1, Problem B3",
     summary: "Check whether an n×n matrix is a magic square: numbers 1..n² once each, and every row, column and both diagonals sum to n(n² + 1)/2.",
     statement: `
 <p>A <b>magic square</b> of order n holds the numbers <code>1, 2, …, n²</code>, each <b>exactly once</b>, arranged so that every row,
 every column and both main diagonals have the same sum. Adding all n² numbers gives n²(n² + 1)/2, split evenly over n rows, so that
-common sum must be <code>n(n² + 1)/2</code> — 15 for n = 3, 34 for n = 4 (Midterm 1 Q3a; Levitin Exercise 3.4.10).</p>
+common sum must be <code>n(n² + 1)/2</code> — 15 for n = 3, 34 for n = 4 (Practice Exam 1, Problem B3a; Levitin Exercise 3.4.10).</p>
 <p>Before you can <i>search</i> for magic squares you need a checker. Given an n×n matrix <code>M</code> (n ≥ 1, integers, read as
 <code>M[i][j]</code>), return <code>true</code> if it is a magic square and <code>false</code> otherwise.</p>`,
     entry: "IsMagic",
@@ -1341,7 +1341,7 @@ common sum must be <code>n(n² + 1)/2</code> — 15 for n = 3, 34 for n = 4 (Mid
       explain: "Each of the n² cells is read a constant number of times (once as a row entry, once as a column entry, at most twice on a diagonal), so the check is Θ(n²) — linear in the size of the input matrix, which is optimal.",
     },
     complexity: "Θ(n²) = linear in the number of cells",
-    followUp: "This checker is the 'test' half of exhaustive search: the Midterm asks you to generate all (n²)! arrangements and keep the ones that pass. Try magic-squares-3x3-count next. Senior twist: 'write the verifier first' is also how you think about Nondeterministic Polynomial (NP) problems (Levitin Ch 11).",
+    followUp: "This checker is the 'test' half of exhaustive search: the classic exam problem asks you to generate all (n²)! arrangements and keep the ones that pass. Try magic-squares-3x3-count next. Senior twist: 'write the verifier first' is also how you think about Nondeterministic Polynomial (NP) problems (Levitin Ch 11).",
     distractors: ["target ← n * n", "colSum ← colSum + M[i][j]", "d2 ← d2 + M[i][n - i]"],
     visual: "sims/exhaustive-search.html",
     lesson: LESSON,
@@ -1371,7 +1371,7 @@ common sum must be <code>n(n² + 1)/2</code> — 15 for n = 3, 34 for n = 4 (Mid
     level: 1, chapter: 3, difficulty: 2,
     topics: ["exhaustive search", "subsets", "optimization", "knapsack"],
     strategy: "Exhaustive search over all 2ⁿ subsets",
-    source: "Levitin §3.4 · Lecture 3",
+    source: "Levitin §3.4",
     summary: "Find the largest total value of items that fit in a knapsack of capacity W by trying every subset.",
     statement: `
 <p>You have n items with weights <code>w[i]</code> and values <code>v[i]</code>, and a knapsack that holds total weight at most
@@ -1388,7 +1388,7 @@ best value among the rest.</p>
     entry: "Knapsack",
     params: ["w", "v", "W"],
     tests: [
-      { args: [[2, 5, 10, 5], [20, 30, 50, 10], 16], expect: 80, explain: "The lecture instance: items 2 and 3 (weights 5 + 10 = 15) are worth $80." },
+      { args: [[2, 5, 10, 5], [20, 30, 50, 10], 16], expect: 80, explain: "The classic instance: items 2 and 3 (weights 5 + 10 = 15) are worth $80." },
       { args: [[3, 2, 2], [5, 3, 3], 4], expect: 6, explain: "Greedy by value per weight grabs the 3-kg item ($5) and is stuck; the two 2-kg items give $6." },
       { args: [[4, 6], [5, 7], 10], expect: 12, explain: "Both items fit exactly: total weight 10 ≤ W is allowed." },
       { args: [[5, 6], [10, 20], 4], expect: 0, name: "Nothing fits" },
@@ -1492,7 +1492,7 @@ best value among the rest.</p>
     level: 1, chapter: 3, difficulty: 3,
     topics: ["exhaustive search", "permutations", "graphs", "TSP"],
     strategy: "Exhaustive search over all tours",
-    source: "Levitin §3.4 · Lecture 3",
+    source: "Levitin §3.4",
     summary: "Find the length of the shortest tour that starts at city 0, visits every city once and returns.",
     statement: `
 <p>The <b>Traveling Salesman Problem (TSP)</b>: given n cities and the distance between every pair, find the shortest round trip
@@ -1510,7 +1510,7 @@ Helpers can take the arrays as extra parameters.</li>
     entry: "TSP",
     params: ["D"],
     tests: [
-      { args: [[[0, 2, 8, 5], [2, 0, 3, 4], [8, 3, 0, 7], [5, 4, 7, 0]]], expect: 17, explain: "The lecture's 4-city example: a→b→c→d→a = 2 + 3 + 7 + 5 = 17." },
+      { args: [[[0, 2, 8, 5], [2, 0, 3, 4], [8, 3, 0, 7], [5, 4, 7, 0]]], expect: 17, explain: "A small 4-city example: a→b→c→d→a = 2 + 3 + 7 + 5 = 17." },
       { args: [[[0, 6], [6, 0]]], expect: 12, explain: "Two cities: go there and come back." },
       { args: [[[0]]], expect: 0, explain: "One city: the empty tour." },
       { args: [[[0, 3, 4], [3, 0, 5], [4, 5, 0]]], expect: 12, name: "Three cities: only one tour" },
@@ -1608,7 +1608,7 @@ ALGORITHM Tour(D, n, used, city, count, cost)
     level: 1, chapter: 3, difficulty: 3,
     topics: ["exhaustive search", "permutations", "optimization"],
     strategy: "Exhaustive search over all n! assignments",
-    source: "Levitin §3.4 · Lecture 3",
+    source: "Levitin §3.4",
     summary: "Assign n people to n jobs (one each) to minimize total cost, by trying every permutation.",
     statement: `
 <p>n people must be assigned to n jobs, one person per job and one job per person. Assigning person <code>i</code> to job
@@ -1623,7 +1623,7 @@ computes each total <code>C[0][p[0]] + … + C[n−1][p[n−1]]</code>, and keep
     entry: "Assignment",
     params: ["C"],
     tests: [
-      { args: [[[9, 2, 7, 8], [6, 4, 3, 7], [5, 8, 1, 8], [7, 6, 9, 4]]], expect: 13, explain: "The lecture matrix: person 0→job 1, 1→job 0, 2→job 2, 3→job 3 gives 2 + 6 + 1 + 4 = 13." },
+      { args: [[[9, 2, 7, 8], [6, 4, 3, 7], [5, 8, 1, 8], [7, 6, 9, 4]]], expect: 13, explain: "The Levitin §3.4 matrix: person 0→job 1, 1→job 0, 2→job 2, 3→job 3 gives 2 + 6 + 1 + 4 = 13." },
       { args: [[[5]]], expect: 5, explain: "One person, one job." },
       { args: [[[1, 2], [3, 9]]], expect: 5, explain: "Person 0 must NOT take their cheapest job 0: 2 + 3 = 5 beats 1 + 9 = 10." },
       { args: [[[4, 1, 3], [2, 0, 5], [3, 2, 2]]], expect: 5, name: "Two people want the same job" },
@@ -1708,7 +1708,7 @@ ALGORITHM Assign(C, n, used, i, cost)
   });
 
   /* =========================================================================
-     16. Partition problem by exhaustive search  (CSC 501 A2 Q4)
+     16. Partition problem by exhaustive search  (Problem Set 2, Problem 4)
      ========================================================================= */
   const canPartition = (A) => { const S = A.reduce((a, b) => a + b, 0); if (S % 2) return false; const t = S / 2; const ok = Array(t + 1).fill(false); ok[0] = true; for (const x of A) for (let s = t; s >= x; s--) if (ok[s - x]) ok[s] = true; return ok[t]; };
   const partitionSearch = (A, pred, target) => { const n = A.length, S = A.reduce((a, b) => a + b, 0); const T = target === undefined ? S / 2 : target(S); if (S % 2) return []; for (let mask = 1; mask < 1 << n; mask++) { const B = []; let tot = 0; for (let i = 0; i < n; i++) if (mask & (1 << i)) { B.push(i); tot += A[i]; } if ((!pred || pred(B, n)) && tot === T) return B; } return []; };
@@ -1718,7 +1718,7 @@ ALGORITHM Assign(C, n, used, i, cost)
     level: 1, chapter: 3, difficulty: 3,
     topics: ["exhaustive search", "subsets", "NP-complete"],
     strategy: "Exhaustive search over subsets",
-    source: "CSC 501 A2 Q4 · Levitin Exercise 3.4.6 (adapted)",
+    source: "Levitin Exercise 3.4.6 (adapted) · Problem Set 2, Problem 4",
     summary: "Split n positive integers into two groups with equal sums — return the indices of one group, or [] if impossible.",
     statement: `
 <p>The <b>partition problem</b>: given n positive integers, divide them into two disjoint groups with the <b>same sum</b>. Think of
@@ -1814,7 +1814,7 @@ exists.</li>
         if sum(A[i] for i in B) == S // 2:
             return B
     return []`,
-      explain: "Any split corresponds to a subset with sum S/2, so trying all subsets is complete. Worst case (no split) examines 2ⁿ − 1 subsets at Θ(n) each: Θ(n·2ⁿ). The A2 answer's refinements — stop at once when S is odd, and only generate subsets of at most ⌊n/2⌋ elements (a group or its complement is that small) — cut the constant, not the exponential class.",
+      explain: "Any split corresponds to a subset with sum S/2, so trying all subsets is complete. Worst case (no split) examines 2ⁿ − 1 subsets at Θ(n) each: Θ(n·2ⁿ). Problem Set 2's refinements — stop at once when S is odd, and only generate subsets of at most ⌊n/2⌋ elements (a group or its complement is that small) — cut the constant, not the exponential class.",
     },
     complexity: "Θ(n·2ⁿ) worst case",
     followUp: "Partition is Nondeterministic Polynomial (NP)-complete, yet dynamic programming over reachable sums (subset-sum-dp) solves it in Θ(n·S) — pseudo-polynomial again. Senior twist: 'meet in the middle' (split the list in half, enumerate 2^(n/2) sums on each side, sort and match) turns 2ⁿ into about 2^(n/2)·n.",
@@ -1824,7 +1824,7 @@ exists.</li>
   });
 
   /* =========================================================================
-     17. Count the 3×3 magic squares that complete a grid  (CSC 501 Midterm 1 Q3)
+     17. Count the 3×3 magic squares that complete a grid  (Practice Exam 1, Problem B3)
      ========================================================================= */
   let SEMI = null; // all 72 "semi-magic" 3×3 squares (rows & columns = 15), with diagonal flags
   const semiMagic = () => {
@@ -1853,17 +1853,17 @@ exists.</li>
     level: 1, chapter: 3, difficulty: 3,
     topics: ["exhaustive search", "permutations", "pruning", "magic squares"],
     strategy: "Exhaustive search with an early rejection test",
-    source: "CSC 501 Midterm 1 Q3 · Levitin Exercise 3.4.10 (adapted)",
+    source: "Levitin Exercise 3.4.10 (adapted) · Practice Exam 1, Problem B3",
     summary: "Count the ways to fill the empty cells of a 3×3 grid with the unused numbers 1..9 to get a magic square.",
     statement: `
-<p>Midterm 1 Q3 asks for an exhaustive-search algorithm that generates all magic squares of order n. Here you do it for order 3 —
+<p>A classic exam problem (Practice Exam 1, Problem B3) asks for an exhaustive-search algorithm that generates all magic squares of order n. Here you do it for order 3 —
 with a twist that makes it a real search: some cells may already be filled in.</p>
 <p><b>Input:</b> a 3×3 grid <code>G</code> of integers, where <code>0</code> means "empty" and any other value (1..9) is fixed. The fixed
 values are distinct. <b>Output:</b> the number of ways to fill the empty cells with the <b>unused</b> numbers from 1..9 (each used once)
 so that the result is a magic square: every row, column and both diagonals sum to <code>3(3² + 1)/2 = 15</code>.</p>
 <ul>
 <li>With all nine cells empty the answer is 8 (the Lo Shu square and its rotations and reflections).</li>
-<li>Pure "generate all 9! = 362,880 fillings, then test" is too slow for the grader. Use part (a) of the midterm: every row must sum to
+<li>Pure "generate all 9! = 362,880 fillings, then test" is too slow for the grader. Use part (a) of that exam problem: every row must sum to
 15, so <b>reject a partial filling as soon as a completed row misses 15</b> — that's still exhaustive search, it just stops
 generating hopeless fillings early.</li>
 <li>Helpers may modify <code>G</code> (put values in, then set them back to 0).</li>
@@ -1903,7 +1903,7 @@ generating hopeless fillings early.</li>
       { fn: (G) => countMagic(G, "ignore"), hint: "You always get 8 — the pre-filled cells seem to be overwritten. Skip cells whose value isn't 0, and mark their numbers as used before the search starts." },
     ],
     hints: [
-      "Midterm part (a): what must every line sum to for n = 3? When is the earliest moment you can tell that a partial filling is hopeless?",
+      "Part (a) of the exam problem: what must every line sum to for n = 3? When is the earliest moment you can tell that a partial filling is hopeless?",
       "Fill the cells in reading order k = 0 … 8 (row k div 3, column k mod 3). A fixed cell is skipped; an empty cell tries every unused number, recurses, then undoes the choice. When k reaches 9, test the columns and both diagonals.",
       "Right after cell k with k mod 3 = 2 is decided, the row k div 3 is complete: if its sum ≠ 15, return 0 for this branch instead of recursing.",
     ],
@@ -2018,10 +2018,10 @@ ALGORITHM LinesOK(G)
                 G[r][c] = 0; used[x] = False
         return total
     return fill(0)`,
-      explain: "Without pruning this generates all (n²)! = 9! fillings and tests each in Θ(n²): Θ((n²)!·n²) for order n — the Midterm's analysis. Rejecting a row that misses 15 as soon as it is complete cuts the 3×3 search from 362,880 leaves to a few thousand nodes without ever skipping a valid square, because a square with a bad row can't be magic.",
+      explain: "Without pruning this generates all (n²)! = 9! fillings and tests each in Θ(n²): Θ((n²)!·n²) for order n — the classic exam analysis. Rejecting a row that misses 15 as soon as it is complete cuts the 3×3 search from 362,880 leaves to a few thousand nodes without ever skipping a valid square, because a square with a bad row can't be magic.",
     },
     complexity: "Θ((n²)!·n²) for plain exhaustive search; pruning shrinks the constant dramatically",
-    followUp: "Prove the midterm's part (a) yourself: sum all rows. Senior twist: 'reject partial solutions early' is exactly backtracking (Levitin §12.1); satisfiability (SAT) and constraint programming (CP) solvers push the same idea much further with propagation.",
+    followUp: "Prove part (a) of the exam problem yourself: sum all rows. Senior twist: 'reject partial solutions early' is exactly backtracking (Levitin §12.1); satisfiability (SAT) and constraint programming (CP) solvers push the same idea much further with propagation.",
     distractors: ["if k = 8 then", "if k mod 3 = 0 and G[r][0] + G[r][1] + G[r][2] ≠ 15 then", "G[r][c] ← x"],
     visual: "sims/exhaustive-search.html",
     lesson: LESSON,
@@ -2044,7 +2044,7 @@ ALGORITHM LinesOK(G)
     level: 1, chapter: 3, difficulty: 2,
     topics: ["graphs", "DFS", "traversal", "recursion"],
     strategy: "Exhaustive graph traversal",
-    source: "Levitin §3.5 · Lecture 3",
+    source: "Levitin §3.5",
     summary: "Run Depth-First Search (DFS) over the whole graph; return the order vertices are reached and the order they become dead ends.",
     statement: `
 <p><b>Depth-First Search (DFS)</b> goes as deep as it can along unvisited neighbours and backs up only at a <i>dead end</i>
@@ -2154,7 +2154,7 @@ ALGORITHM Dfs(G, v, visited, pre, post)
     level: 1, chapter: 3, difficulty: 2,
     topics: ["graphs", "BFS", "traversal", "queues"],
     strategy: "Exhaustive graph traversal",
-    source: "Levitin §3.5 · Lecture 3",
+    source: "Levitin §3.5",
     summary: "Run Breadth-First Search (BFS) over the whole graph with a queue and return the order vertices are reached.",
     statement: `
 <p><b>Breadth-First Search (BFS)</b> explores a graph in "rings": first the start vertex, then all its neighbours, then all

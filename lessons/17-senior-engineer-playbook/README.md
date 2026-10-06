@@ -1,10 +1,10 @@
-# Lesson 17 · The Senior Engineer's Playbook (Beyond the Textbook)
+# Chapter 17 · The Senior Engineer's Playbook (Beyond the Textbook)
 
 > **Why this matters.** Knowing 200 algorithms is not what makes someone a senior engineer or an algorithm designer. What does is a **process**: clarify what is really being asked, estimate what is affordable before writing code, choose structures from the operation mix, prove the core invariant, test against a slow-but-obvious oracle, measure instead of guessing, respect the memory hierarchy, and explain trade-offs in a design review. Levitin's §1.2 ("Fundamentals of Algorithmic Problem Solving") sketches this loop in miniature; this lesson is the professional, expanded version, and it ties together every earlier lesson.
 
 | 🎮 Simulations | 🏟️ Arena | 🐍 Code |
 |---|---|---|
-| [Empirical Lab](https://normansrule.github.io/algorithm-forge/sims/empirical-lab.html) · [Growth Rates](https://normansrule.github.io/algorithm-forge/sims/growth-rates.html) · [Sorting Studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) · [B-tree](https://normansrule.github.io/algorithm-forge/sims/b-tree.html) · [Trie](https://normansrule.github.io/algorithm-forge/sims/trie.html) · [all simulations](https://normansrule.github.io/algorithm-forge/sims/index.html) | [Chapter 17 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=17) | No module of its own: this lesson uses the whole library in [`src/python/algoforge/`](../../src/python/algoforge/) and the Java SortAnalysis project in [`src/java/`](../../src/java/) |
+| [Empirical Lab](https://normansrule.github.io/algorithm-forge/sims/empirical-lab.html) · [Growth Rates](https://normansrule.github.io/algorithm-forge/sims/growth-rates.html) · [Sorting Studio](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html) · [B-tree](https://normansrule.github.io/algorithm-forge/sims/b-tree.html) · [Trie](https://normansrule.github.io/algorithm-forge/sims/trie.html) · [all simulations](https://normansrule.github.io/algorithm-forge/sims/index.html) · [Raft consensus](https://normansrule.github.io/algorithm-forge/sims/raft-consensus.html) | [Chapter 17 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=17) | [`ch17_systems.py`](../../src/python/algoforge/ch17_systems.py): LRU cache, LSM compaction, write-ahead-log recovery, external-sort planning, consistent and rendezvous hashing, backoff, clocks, Raft rules, Merkle diff, CRDT counters (plus the whole library in [`src/python/algoforge/`](../../src/python/algoforge/)) |
 
 **Prerequisites:** everything, but especially [Lesson 2](../02-analysis-framework/README.md) (analysis framework, empirical analysis), [Lesson 13](../13-advanced-data-structures/README.md) and [Lesson 15](../15-dp-and-interview-patterns/README.md).
 
@@ -367,7 +367,7 @@ if __name__ == "__main__":
 
 🎯 **Goal.** Confirm (or refute) the theoretical complexity on real inputs, and find where time actually goes.
 
-📖 **Story.** Levitin §2.6 lays out the plan for an empirical study: decide the purpose, choose the metric (operation **count** or **time**), choose input sizes and a generator, run, and analyze the data (tables, scatter plots, ratios). The course's **SortAnalysis** project applies this plan to sorting algorithms in Java ([`src/java/`](../../src/java/), [practice labs](../../practice/)). Play with it visually in [empirical-lab.html](https://normansrule.github.io/algorithm-forge/sims/empirical-lab.html).
+📖 **Story.** Levitin §2.6 lays out the plan for an empirical study: decide the purpose, choose the metric (operation **count** or **time**), choose input sizes and a generator, run, and analyze the data (tables, scatter plots, ratios). The **SortAnalysis** [empirical-analysis lab](../../practice/empirical-analysis-lab/README.md) applies this plan to insertion sort in Java and Python (Levitin Exercises 2.6.1–2.6.3). Play with it visually in [empirical-lab.html](https://normansrule.github.io/algorithm-forge/sims/empirical-lab.html).
 
 🧱 **The doubling experiment.** If $T(n) \approx c\,n^b$, then
 
@@ -905,7 +905,7 @@ This is what an interviewer or a design reviewer wants to see: clarified numbers
 
 ---
 
-## How a senior engineer thinks (the whole course in ten lines)
+## How a senior engineer thinks (all of Algorithm Forge in ten lines)
 
 1. Write the problem down with numbers before designing.
 2. Multiply it out: operations × constant against the budget, and memory in bytes.

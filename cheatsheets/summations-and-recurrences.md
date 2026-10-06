@@ -86,7 +86,7 @@ $$A(2^k) = A(2^{k-1}) + 1 = A(2^{k-2}) + 2 = \dots = A(2^{k-i}) + i$$
 Set $i = k$: $A(2^k) = A(1) + k = k$, so $A(n) = \log_2 n \in \Theta(\log n)$.
 (The exact answer for every n is $\lfloor \log_2 n \rfloor$ additions; the bit count is that plus one.)
 
-#### Worked example C — the midterm favorite: $T(n) = T(n/2) + \log_2 n$, $T(1) = 0$
+#### Worked example C — the exam favorite: $T(n) = T(n/2) + \log_2 n$, $T(1) = 0$
 
 This is **not** covered by the basic Master Theorem, because $f(n) = \log n$ is not of the form $n^d$. Backward
 substitution handles it. Let $n = 2^k$, so $\log_2 n = k$:

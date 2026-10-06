@@ -77,7 +77,7 @@
     level: 4, chapter: 9, difficulty: 1,
     topics: ["greedy", "change-making"],
     strategy: "Greedy (largest coin first)",
-    source: "Levitin Exercise 9.1.1 (adapted) · Lecture 9",
+    source: "Levitin Exercise 9.1.1 (adapted)",
     summary: "Give change for n using the largest coin first; return how many of each coin you used.",
     statement: `
 <p>A cashier's instinct — "hand over the biggest coin that still fits, repeat" — is the textbook example of the
@@ -163,7 +163,7 @@
     level: 4, chapter: 9, difficulty: 2,
     topics: ["greedy", "change-making", "dynamic programming", "counterexamples"],
     strategy: "Compare greedy with an exact Dynamic Programming (DP) answer",
-    source: "Levitin §9 intro & §8.1 (change-making) · Lecture 9",
+    source: "Levitin §9 intro & §8.1 (change-making)",
     summary: "Find the smallest amount for which greedy change-making uses more coins than necessary (0 if none).",
     statement: `
 <p>Greedy change-making is optimal for "normal" coin systems but <b>not</b> for every system (Levitin §9 intro). A good
@@ -273,7 +273,7 @@ and every smaller amount is fine → answer <code>6</code>.</p>
   });
 
   /* =====================================================================
-     3. Activity selection (lecture interview question)
+     3. Activity selection (classic interview question)
      ===================================================================== */
   const actRef = (S, F) => {
     const idx = S.map((_, i) => i).sort((a, b) => F[a] - F[b] || S[a] - S[b]);
@@ -293,11 +293,11 @@ and every smaller amount is fine → answer <code>6</code>.</p>
     level: 4, chapter: 9, difficulty: 1,
     topics: ["greedy", "scheduling", "intervals", "sorting"],
     strategy: "Greedy (earliest finish first)",
-    source: "Lecture 9 interview question · Levitin Exercise 9.1.4 (adapted)",
+    source: "Interview classic · Levitin Exercise 9.1.4 (adapted)",
     summary: "Pick the largest number of non-overlapping activities.",
     statement: `
-<p>One room, many meeting requests: which ones do you accept to host as many meetings as possible? This is the classic
-interview question from the Greedy lecture, and the cleanest example of a greedy rule you can <i>prove</i> optimal.</p>
+<p>One room, many meeting requests: which ones do you accept to host as many meetings as possible? This is a classic
+interview question about greedy algorithms, and the cleanest example of a greedy rule you can <i>prove</i> optimal.</p>
 <p>Activity <code>i</code> runs from <code>S[i]</code> to <code>F[i]</code> (<code>S[i] &lt; F[i]</code>). Two activities
 are <b>compatible</b> if one finishes no later than the other starts — touching is fine: <code>[1, 3)</code> and
 <code>[3, 5)</code> can both be chosen. Return the <b>maximum number</b> of pairwise compatible activities.</p>
@@ -306,7 +306,7 @@ lexicographically (by first element, then second).</p>`,
     entry: "MaxActivities",
     params: ["S", "F"],
     tests: [
-      { args: [[1, 3, 0, 5, 8, 5], [2, 4, 6, 7, 9, 9]], expect: 4, explain: "The lecture's example: activities 0, 1, 3, 4." },
+      { args: [[1, 3, 0, 5, 8, 5], [2, 4, 6, 7, 9, 9]], expect: 4, explain: "The classic interview example: activities 0, 1, 3, 4." },
       { args: [[0, 1, 3, 5], [10, 2, 4, 6]], expect: 3, explain: "Starting first is a trap: [0, 10) blocks everything else." },
       { args: [[1, 2, 3], [2, 3, 4]], expect: 3, explain: "Touching activities are compatible." },
       { args: [[], []], expect: 0 },
@@ -408,7 +408,7 @@ lexicographically (by first element, then second).</p>`,
     level: 4, chapter: 9, difficulty: 1,
     topics: ["greedy", "knapsack", "sorting"],
     strategy: "Greedy (best value per unit weight first)",
-    source: "Levitin §12.3 (continuous knapsack) · Lecture 9",
+    source: "Levitin §12.3 (continuous knapsack)",
     summary: "Fill a knapsack with divisible items to maximize value.",
     statement: `
 <p>If items can be cut (gold dust, bandwidth, fuel), the knapsack problem stops being hard: a greedy rule is provably optimal.
@@ -1344,7 +1344,7 @@ If there is only one symbol, give it length 1 (its codeword is <code>0</code>).<
     entry: "HuffmanLengths",
     params: ["F"],
     tests: [
-      { args: [[35, 10, 20, 20, 15]], expect: [2, 3, 2, 2, 3], explain: "The lecture's A, B, C, D, _ example: codewords 11, 100, 00, 01, 101." },
+      { args: [[35, 10, 20, 20, 15]], expect: [2, 3, 2, 2, 3], explain: "The Levitin §9.4 A, B, C, D, _ example: codewords 11, 100, 00, 01, 101." },
       { args: [[1, 1, 2, 4, 8]], expect: [4, 4, 3, 2, 1], explain: "Doubling frequencies give a completely lopsided tree." },
       { args: [[5, 5]], expect: [1, 1], explain: "Two symbols: one bit each." },
       { args: [[9]], expect: [1], explain: "Only one symbol: length 1 by convention." },
@@ -1438,7 +1438,7 @@ def huffman_lengths(F):
       explain: "Exchange argument: the two least frequent symbols can always be deepest siblings in some optimal tree, and merging them leaves a smaller instance of the same problem. n − 1 merges with a heap cost O(n log n); copying member lists adds O(n · height) — fine here, and avoidable with parent pointers.",
     },
     complexity: "O(n log n) heap operations",
-    followUp: "Real encoders (DEFLATE) store only these lengths and rebuild a 'canonical Huffman code' from them — try generating the actual codewords from L. For minimum variance among optimal codes, break ties by merging the oldest trees first (Lecture 9 practice).",
+    followUp: "Real encoders (DEFLATE) store only these lengths and rebuild a 'canonical Huffman code' from them — try generating the actual codewords from L. For minimum variance among optimal codes, break ties by merging the oldest trees first (see the Huffman simulation's tie-breaking demo).",
     distractors: ["a ← deleteMax(Q)", "L[i] ← L[i] - 1", "for k ← 1 to n do"],
     visual: "sims/huffman.html",
     lesson: "lessons/09-greedy/README.md",
@@ -1450,7 +1450,7 @@ def huffman_lengths(F):
     level: 4, chapter: 9, difficulty: 1,
     topics: ["greedy", "Huffman", "compression", "priority queue"],
     strategy: "Greedy (merge the two lightest weights)",
-    source: "Levitin §9.4 · Lecture 9 example",
+    source: "Levitin §9.4 (worked example)",
     summary: "Compute the expected number of bits per symbol of a Huffman code.",
     statement: `
 <p>How well will Huffman coding compress a file? The key number is the <b>average codeword length</b>:
@@ -1459,14 +1459,14 @@ def huffman_lengths(F):
 <p><b>Input:</b> positive integer frequencies (counts) <code>F[0..n-1]</code>, n ≥ 2.
 <b>Output:</b> the average number of bits per symbol of a Huffman code (a number; checked to within 10<sup>−6</sup>).
 This value is the same for every way of breaking ties.</p>
-<p>Example (Lecture 9): counts <code>[35, 10, 20, 20, 15]</code> → lengths 2, 3, 2, 2, 3 → (70 + 30 + 40 + 40 + 45) / 100 = <code>2.25</code> bits,
+<p>Example (Levitin §9.4): counts <code>[35, 10, 20, 20, 15]</code> → lengths 2, 3, 2, 2, 3 → (70 + 30 + 40 + 40 + 45) / 100 = <code>2.25</code> bits,
 versus 3 bits for a fixed-length code — a 25% saving.</p>
 <p>There is a neat shortcut that doesn't need the lengths at all. Can you find it?</p>`,
     entry: "HuffmanAverageBits",
     params: ["F"],
     compare: "float",
     tests: [
-      { args: [[35, 10, 20, 20, 15]], expect: 2.25, explain: "The lecture example." },
+      { args: [[35, 10, 20, 20, 15]], expect: 2.25, explain: "The Levitin §9.4 example." },
       { args: [[1, 1]], expect: 1, explain: "Two symbols: exactly one bit each." },
       { args: [[1, 1, 2, 4, 8]], expect: 1.875, explain: "Lengths 4, 4, 3, 2, 1: (4 + 4 + 6 + 8 + 8) / 16." },
       { args: [[1, 1, 1, 1]], expect: 2 },
@@ -1578,7 +1578,7 @@ def huffman_average_bits(F):
     level: 4, chapter: 10, difficulty: 3,
     topics: ["iterative improvement", "maximum flow", "graphs", "BFS", "Ford–Fulkerson"],
     strategy: "Iterative improvement (augment along shortest paths in the residual network)",
-    source: "Levitin §10.2 · Lecture 10",
+    source: "Levitin §10.2",
     summary: "Compute the maximum flow from source 0 to sink n − 1 with the shortest-augmenting-path algorithm.",
     statement: `
 <p>How much oil, data or traffic can a network carry from a source to a sink? The <b>augmenting-path</b> (Ford–Fulkerson)
@@ -1600,7 +1600,7 @@ In a residual-capacity matrix <code>R</code> this happens automatically if, afte
       { args: [3, [[0, 1, 5], [1, 2, 3]]], expect: 3, explain: "A chain carries only as much as its narrowest pipe." },
       { args: [3, [[0, 1, 4]]], expect: 0, explain: "The sink can't be reached: flow 0." },
       { args: [2, [[0, 1, 3], [0, 1, 4]]], expect: 7, explain: "Parallel edges add up." },
-      { args: [4, [[0, 1, 100], [0, 2, 100], [1, 2, 1], [1, 3, 100], [2, 3, 100]]], expect: 200, explain: "Lecture 10's bad case for arbitrary paths — shortest paths finish in 2 augmentations." },
+      { args: [4, [[0, 1, 100], [0, 2, 100], [1, 2, 1], [1, 3, 100], [2, 3, 100]]], expect: 200, explain: "The classic bad case for arbitrary paths — shortest paths finish in 2 augmentations." },
       { args: [6, [[0, 3, 2], [0, 4, 5], [1, 2, 2], [1, 4, 4], [2, 5, 6], [3, 1, 4], [3, 2, 1], [4, 1, 2], [4, 2, 2]]], expect: 5 },
     ],
     random: {
@@ -1700,7 +1700,7 @@ def max_flow(n, E):
             R[j][parent[j]] += r
             j = parent[j]
         flow += r`,
-      explain: "When no augmenting path exists, the labeled vertices form a cut whose capacity equals the flow, so by the Max-Flow Min-Cut Theorem the flow is maximum. Shortest augmenting paths need O(nm) augmentations, each an O(n²) matrix BFS here — polynomial, unlike arbitrary path choices (Lecture 10's 2U example).",
+      explain: "When no augmenting path exists, the labeled vertices form a cut whose capacity equals the flow, so by the Max-Flow Min-Cut Theorem the flow is maximum. Shortest augmenting paths need O(nm) augmentations, each an O(n²) matrix BFS here — polynomial, unlike arbitrary path choices (the classic 2U example).",
     },
     complexity: "O(nm) augmentations × O(n²) BFS with a matrix (O(nm²) with adjacency lists)",
     followUp: "Rewrite the BFS over adjacency lists to reach Edmonds–Karp's O(nm²), then look up Dinic's algorithm (blocking flows). Max flow powers bipartite matching, image segmentation and airline crew scheduling.",
@@ -2124,7 +2124,7 @@ list) so "prefers" becomes a single comparison.</p>`,
     level: 4, chapter: 10, difficulty: 2,
     topics: ["iterative improvement", "stable marriage", "matching", "queues"],
     strategy: "Iterative improvement (proposals and trade-ups)",
-    source: "Levitin §10.4 · Lecture 10",
+    source: "Levitin §10.4",
     summary: "Run the men-proposing Gale–Shapley algorithm and return each man's wife.",
     statement: `
 <p>The Gale–Shapley algorithm always finds a stable matching (Levitin §10.4) and underlies the American medical residency match
@@ -2275,7 +2275,7 @@ def stable_marriage(men_pref, women_pref):
     level: 4, chapter: 10, difficulty: 3,
     topics: ["iterative improvement", "linear programming", "simplex method"],
     strategy: "Iterative improvement (pivot from vertex to better adjacent vertex)",
-    source: "Levitin §10.1 · Lecture 10",
+    source: "Levitin §10.1",
     summary: "Maximize c·(x, y) subject to A·(x, y) ≤ b, x, y ≥ 0 with the simplex tableau; return the optimal value or ∞.",
     statement: `
 <p><b>Linear Programming (LP)</b> schedules airlines, blends fuels and routes freight. The <b>simplex method</b> (Dantzig, 1947)
@@ -2288,14 +2288,14 @@ subject to aᵢ₀·x + aᵢ₁·y ≤ b[i]   for every i
            x ≥ 0, y ≥ 0</pre>
 <p>Because every <code>b[i] ≥ 0</code>, the origin with all slack variables basic is a feasible starting tableau.</p>
 <p><b>Output:</b> the maximum value of the objective (checked to within 10<sup>−6</sup>), or <code>∞</code> if it is unbounded.</p>
-<p>Tableau recipe (Lecture 10): objective row = <code>−c</code>; entering column = most negative objective-row entry (stop when none
+<p>Tableau recipe (Levitin §10.1): objective row = <code>−c</code>; entering column = most negative objective-row entry (stop when none
 is negative); departing row = smallest θ-ratio <code>b / entry</code> over <b>positive</b> entries of that column (none → unbounded);
 then pivot. Code written for any number of variables is welcome.</p>`,
     entry: "Simplex",
     params: ["c", "A", "b"],
     compare: "float",
     tests: [
-      { args: [[3, 5], [[1, 1], [1, 3]], [4, 6]], expect: 14, explain: "Lecture 10's example: optimum at (3, 1), z = 3·3 + 5·1." },
+      { args: [[3, 5], [[1, 1], [1, 3]], [4, 6]], expect: 14, explain: "The Levitin §10.1 example: optimum at (3, 1), z = 3·3 + 5·1." },
       { args: [[1, 1], [[1, -1]], [1]], expect: INF, explain: "Move along x = y + 1 forever: the objective is unbounded." },
       { args: [[2, 3], [[1, 1]], [5]], expect: 15, explain: "One constraint: put everything into y." },
       { args: [[5, 4], [[6, 4], [1, 2], [-1, 1], [0, 1]], [24, 6, 1, 2]], expect: 21, explain: "Optimum at the corner (3, 1.5) where two constraints meet — not on an axis." },

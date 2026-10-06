@@ -103,17 +103,17 @@
       ],
       master: { a: 1, b: 2, d: 0 },
     },
-    midterm: {
+    halflog: {
       name: "T(n) = T(n/2) + log₂ n, T(1) = 1", kind: "div", a: 1, b: 2, sizeMin: 0, sizeMax: 7, sizeDef: 4,
       f: (s) => log2(s), fText: "log₂ n", baseSize: 1, baseVal: 1, T: "T",
       closed: (n) => 1 + (log2(n) * (log2(n) + 1)) / 2, closedText: "1 + log₂n (log₂n + 1)/2", cls: "Θ(log² n)",
       code: [
-        "ALGORITHM ProfessorH(P, n)",
+        "ALGORITHM HalveAndLog(P, n)",
         "    // decrease-and-conquer: size n → size n/2",
         "    if n = 1 then",
         "        return SolveDirectly(P)  // T(1) = 1",
         "    Q ← Shrink(P)  // step 1  ┐ together",
-        "    S ← ProfessorH(Q, n / 2)  // step 2: T(n/2)",
+        "    S ← HalveAndLog(Q, n / 2)  // step 2: T(n/2)",
         "    return Extend(S, P)  // step 3  ┘ log₂ n",
       ], lines: { base: [2, 3], work: [4, 6], call: [5] },
       deriv: () => [
@@ -320,7 +320,7 @@
       for (let k = 0; k <= kmax; k++) { const n = Math.pow(R.b, k); pts.push([n, Tdirect(n)]); }
       for (let k = 0; k <= kmax; k++) line.push([Math.pow(R.b, k), R.closed(Math.pow(R.b, k))]);
       // smooth closed form between the powers where it makes sense
-      if (R !== P.midterm && R.kind === "div") line.sort((a, b) => a[0] - b[0]);
+      if (R !== P.halflog && R.kind === "div") line.sort((a, b) => a[0] - b[0]);
     }
     const ymax = Math.max(1, ...pts.map((p) => p[1]), ...line.map((p) => p[1]));
     F12.plot($("valPlot"), {

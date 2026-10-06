@@ -1,4 +1,4 @@
-# ⏱️ Complexity Table — Every Algorithm in the Course (and Beyond)
+# ⏱️ Complexity Table — Every Algorithm in Algorithm Forge (and Beyond)
 
 > **Use it when** you need the running time of an algorithm at a glance, or want to compare two algorithms for the
 > same job. Chapters 1–12 follow Levitin; Chapters 13–17 are the Beyond-the-textbook lessons.

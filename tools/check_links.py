@@ -14,7 +14,7 @@ It verifies
   * https://normansrule.github.io/algorithm-forge/<path>  -> docs/<path>;
   * https://github.com/Normansrule/algorithm-forge/(blob|tree)/main/<path> -> repo file/folder;
   * arena/problem.html?id=<id>   -> the id must exist in the problem bank;
-  * arena/(index.html)?chapter=N -> N in 1..17, ?level=N -> N in 0..6;
+  * arena/(index.html)?chapter=N -> N in 1..18, ?level=N -> N in 0..7;
   * #anchors into Markdown files (GitHub heading-slug rules, plus explicit <a id/name>);
   * #anchors into docs/ HTML pages (loosely: the id must appear in the page or its scripts).
 
@@ -122,15 +122,15 @@ def check_query(docs_path, query):
                 n = int(q["chapter"][0])
             except ValueError:
                 return f"bad chapter '{q['chapter'][0]}'"
-            if not 1 <= n <= 17:
-                return f"chapter {n} out of range 1..17"
+            if not 1 <= n <= 18:
+                return f"chapter {n} out of range 1..18"
         if "level" in q:
             try:
                 n = int(q["level"][0])
             except ValueError:
                 return f"bad level '{q['level'][0]}'"
-            if not 0 <= n <= 6:
-                return f"level {n} out of range 0..6"
+            if not 0 <= n <= 7:
+                return f"level {n} out of range 0..7"
     return None
 
 def check_docs_target(rel, query, frag):

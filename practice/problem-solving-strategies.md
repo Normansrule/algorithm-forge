@@ -1,14 +1,14 @@
-# 🎯 Exam Strategies — How to Attack Each Midterm Question Type
+# 🎯 Problem-Solving Strategies — Four Common Kinds of Algorithm-Design Questions
 
-The CSC 501 midterms keep returning to **four question types**. This page gives, for each one:
-a step-by-step plan, a **fill-in template** to copy onto your exam paper, and a **worked mini-example**.
+Practice-exam, problem-set and interview questions on the material of Checkpoint A (Levitin Chapters 1–5) tend to
+fall into **four common kinds**. This page gives, for each kind: a step-by-step plan, a **fill-in template** to copy onto your paper, and a **worked mini-example**.
 It ends with a one-page **recurrence-solving cheat sheet**.
 
-See it applied in full on the [Midterm 1 solutions](midterm-1/README.md), then test yourself with
-[Practice Exam 2](midterm-1/practice-exam-2.md).
+See it applied in full on the [Practice Exam 1 solutions](exams/practice-exam-1.md), then test yourself with
+[Practice Exam 2](exams/practice-exam-2.md).
 
 > **The universal answer shape:** Idea (1–2 sentences) → pseudocode with Input/Output comments → why it is correct
-> → count the basic operation → tiny trace. Graders give partial credit for each block, so never skip a block.
+> → count the basic operation → tiny trace. Each block is a separate piece of evidence, so never skip a block.
 
 ---
 
@@ -198,7 +198,7 @@ $$
 **Worked mini-example — $T(n) = 2T(n/2) + 1$, $T(1) = 1$.** With $n = 2^k$:
 $T(2^k) = 2T(2^{k-1}) + 1 = 4T(2^{k-2}) + 2 + 1 = 8T(2^{k-3}) + 4 + 2 + 1 = \dots = 2^iT(2^{k-i}) + (2^i - 1)$.
 At $i = k$: $2^k\cdot1 + 2^k - 1 = 2n - 1 \in \Theta(n)$. Check: $T(2) = 2\cdot1 + 1 = 3 = 2\cdot2 - 1$ ✔.
-(This is Quiz B question 4: `mystery(n)` makes two calls on n/2, so it is O(n), not O(log n).)
+(This is quiz-bank question Q1.10: `mystery(n)` makes two calls on n/2, so it is O(n), not O(log n).)
 
 ---
 
@@ -208,7 +208,7 @@ At $i = k$: $2^k\cdot1 + 2^k - 1 = 2n - 1 \in \Theta(n)$. Check: $T(2) = 2\cdot1
 
 | Method | When | How |
 |--------|------|-----|
-| Backward substitution | any single-term recurrence; exams require it | substitute repeatedly → pattern at step i → hit the initial condition |
+| Backward substitution | any single-term recurrence; the method to show your work | substitute repeatedly → pattern at step i → hit the initial condition |
 | Master Theorem (Levitin §5.1) | $T(n) = aT(n/b) + f(n)$ with $f(n) \in \Theta(n^d)$ | compare $a$ with $b^d$ (below) |
 | Characteristic equation (Appendix B) | linear recurrences with constant coefficients, such as Fibonacci | roots of $r^2 = r + 1$ → $\Theta(\phi^n)$ |
 
@@ -222,8 +222,8 @@ T(n) \in \begin{cases}
 \end{cases}
 $$
 
-In words: the top level dominates, all levels tie, or the leaves dominate. It gives only the Θ class, so on the exam
-use it to **check** a backward-substitution answer, never to replace one when substitution is asked for.
+In words: the top level dominates, all levels tie, or the leaves dominate. It gives only the Θ class, so when a derivation is
+asked for, use it to **check** a backward-substitution answer, never to replace one when substitution is asked for.
 
 **Recurrences you should recognize on sight** (each exact solution was verified in Python)
 
@@ -231,20 +231,20 @@ use it to **check** a backward-substitution answer, never to replace one when su
 |------------|-------------------|----------------|-------|-------------------|
 | $T(n) = T(n-1) + c$ | $T(0) = 0$ | $cn$ | $\Theta(n)$ | recursive factorial, max, sum |
 | $T(n) = T(n-1) + n$ | $T(1) = 1$ | $n(n+1)/2$ | $\Theta(n^2)$ | selection-style recursion |
-| $T(n) = T(n-1) + n$ | $T(1) = 0$ | $n(n+1)/2 - 1$ | $\Theta(n^2)$ | Quiz B question 2 |
+| $T(n) = T(n-1) + n$ | $T(1) = 0$ | $n(n+1)/2 - 1$ | $\Theta(n^2)$ | Quiz bank Q1.9 |
 | $T(n) = T(n-1) + (n-1)$ | $T(1) = 0$ | $n(n-1)/2$ | $\Theta(n^2)$ | quicksort worst case |
 | $T(n) = T(n-1) + \log_2 n$ | $T(1) = 0$ | $\log_2 n!$ | $\Theta(n\log n)$ | building a heap by insertions |
 | $T(n) = 2T(n-1) + 1$ | $T(1) = 1$ | $2^n - 1$ | $\Theta(2^n)$ | Tower of Hanoi |
 | $T(n) = T(n-1) + T(n-2) + 1$ | $T(0) = T(1) = 1$ | $2F(n+1) - 1$ | $\Theta(\phi^n)$, $\phi \approx 1.618$ | naive Fibonacci calls |
 | $T(n) = T(n/2) + 1$ | $T(1) = 1$ | $\log_2 n + 1$ | $\Theta(\log n)$ | binary search |
-| $T(n) = T(n/2) + \log_2 n$ | $T(1) = 1$ | $1 + \frac{k(k+1)}{2}$, $k = \log_2 n$ | $\Theta(\log^2 n)$ | Midterm 1 question 4 |
+| $T(n) = T(n/2) + \log_2 n$ | $T(1) = 1$ | $1 + \frac{k(k+1)}{2}$, $k = \log_2 n$ | $\Theta(\log^2 n)$ | Practice Exam 1, Problem B4 |
 | $T(n) = T(n/2) + n$ | $T(1) = 1$ | $2n - 1$ | $\Theta(n)$ | halving with a linear scan |
-| $T(n) = T(n/3) + n$ | $T(1) = 1$ | $(3n - 1)/2$ | $\Theta(n)$ | Practice Exam 2 question 4a |
+| $T(n) = T(n/3) + n$ | $T(1) = 1$ | $(3n - 1)/2$ | $\Theta(n)$ | Practice Exam 2, Question 4a |
 | $T(n) = T(\lceil n/3\rceil) + 1$ | $T(1) = 0$ | $\lceil\log_3 n\rceil$ | $\Theta(\log n)$ | fake coin, three piles |
-| $T(n) = 2T(n/2) + 1$ | $T(1) = 1$ | $2n - 1$ | $\Theta(n)$ | tree traversal, Quiz B question 4 |
+| $T(n) = 2T(n/2) + 1$ | $T(1) = 1$ | $2n - 1$ | $\Theta(n)$ | tree traversal, quiz bank Q1.10 |
 | $T(n) = 2T(n/2) + n$ | $T(1) = 1$ | $n\log_2 n + n$ | $\Theta(n\log n)$ | mergesort |
 | $T(n) = 2T(n/2) + n - 1$ | $T(1) = 0$ | $n\log_2 n - n + 1$ | $\Theta(n\log n)$ | quicksort best case, mergesort worst case |
-| $T(n) = 3T(n/3) + n$ | $T(1) = 1$ | $n\log_3 n + n$ | $\Theta(n\log n)$ | Practice Exam 2 question 4b |
+| $T(n) = 3T(n/3) + n$ | $T(1) = 1$ | $n\log_3 n + n$ | $\Theta(n\log n)$ | Practice Exam 2, Question 4b |
 | $T(n) = 4T(n/2) + n$ | $T(1) = 1$ | $2n^2 - n$ | $\Theta(n^2)$ | naive divide-and-conquer multiplication |
 | $T(n) = 3T(n/2)$ | $T(1) = 1$ | $n^{\log_2 3}$ | $\Theta(n^{1.585})$ | Karatsuba (multiplications) |
 | $T(n) = 7T(n/2)$ | $T(1) = 1$ | $n^{\log_2 7}$ | $\Theta(n^{2.807})$ | Strassen (multiplications) |
@@ -257,13 +257,13 @@ $$\sum_{i=0}^{k} a^i = \frac{a^{k+1} - 1}{a - 1} \qquad \sum_{i=0}^{k} 2^i = 2^{
 
 **Pitfalls that cost points**
 - Forgetting the **initial condition**. The class often survives, but the exact answer does not.
-- Mixing up **values** and **operation counts**. Q(n) computes $n^2$ but makes only $n - 1$ multiplications (Assignment 1, Problem 8).
+- Mixing up **values** and **operation counts**. Q(n) computes $n^2$ but makes only $n - 1$ multiplications (Problem Set 1, Problem 8).
 - Writing $T(n/2)$ when the algorithm makes **two** calls on n/2 ($2T(n/2)$).
 - Stopping at "$= \dots$" without the **general i-th line**.
 - Claiming $\Theta(\log n)$ for $T(n) = T(n/2) + \log n$. Each level costs a different amount; the sum is $\Theta(\log^2 n)$.
-- Measuring number-theoretic input size by **value** instead of **bits** (Assignment 2, Problem 1).
+- Measuring number-theoretic input size by **value** instead of **bits** (Problem Set 2, Problem 1).
 
 ---
 
-⬅️ [Practice home](README.md) · [Midterm 1 solutions](midterm-1/README.md) ·
+⬅️ [Practice home](README.md) · [Practice Exam 1 solutions](exams/practice-exam-1.md) ·
 [Recurrence Lab simulation](https://normansrule.github.io/algorithm-forge/sims/recurrence-lab.html)

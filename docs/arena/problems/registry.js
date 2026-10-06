@@ -12,12 +12,13 @@
     { n: 4, name: "Dynamic Programming, Greedy & Iterative Improvement", blurb: "Tables, greedy choices, flows and matchings (Ch 8–10)." },
     { n: 5, name: "Hard Problems & Senior Patterns", blurb: "Backtracking, approximation, Nondeterministic Polynomial (NP)-hard problems, and the patterns senior engineers reach for (Ch 11–17)." },
     { n: 6, name: "Expert: Algorithm Designer", blurb: "The hardest set: bitmask Dynamic Programming, linear-time string algorithms, graph cut structure, branch-and-bound, cache design (Ch 12–17)." },
+    { n: 7, name: "Modern Systems & Research Frontier", blurb: "The algorithms inside today's standard libraries, databases, vector search engines and distributed systems, and implementable cores of recent research results (Ch 18)." },
   ];
   const CHAPTERS = {
     1: "Introduction", 2: "Analysis Framework", 3: "Brute Force & Exhaustive Search", 4: "Decrease-and-Conquer",
     5: "Divide-and-Conquer", 6: "Transform-and-Conquer", 7: "Space-Time Tradeoffs", 8: "Dynamic Programming",
     9: "Greedy Technique", 10: "Iterative Improvement", 11: "Limitations of Algorithm Power", 12: "Coping with Limitations",
-    13: "Advanced Data Structures", 14: "Advanced Graphs", 15: "DP & Interview Patterns", 16: "Randomized, Amortized & Streaming", 17: "Senior Engineer Playbook",
+    13: "Advanced Data Structures", 14: "Advanced Graphs", 15: "DP & Interview Patterns", 16: "Randomized, Amortized & Streaming", 17: "Senior Engineer Playbook", 18: "The Frontier",
   };
   root.ForgeProblems = {
     LEVELS, CHAPTERS, list,

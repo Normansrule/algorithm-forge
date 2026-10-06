@@ -2,6 +2,8 @@
    Messages in:
      {type:"check", req, id, lang:"pseudo"|"js"|"python", code, mode:"run"|"submit"}  → {type:"report", req, report}
      {type:"trace", req, id, code, args}                                            → {type:"trace", req, result}
+     {type:"compare", req, id, code, args}  (learner's pseudocode vs solution.pseudo on one input)
+                                                                                    → {type:"compare", req, result:{mine, ref}}
    Progress messages out (Python only): {type:"status", req, phase:"loading-python"|"running", text}
    The main thread kills and recreates this worker if a request takes too long (infinite loops). */
 /* global ForgeCheck, ForgeProblems, loadPyodide */
@@ -182,6 +184,17 @@ function checkJs(problem, code, mode) {
   finally { self.console.log = orig; }
 }
 
+/* ---------- operation counts of one run (compare view) ---------- */
+function countOps(problem, code, args) {
+  let prog;
+  try { prog = ForgePseudo.parse(code); } catch (e) { return { ok: false, error: plainError(e) }; }
+  const run = () => ForgePseudo.run(prog, { entry: problem.entry, args: ForgeCheck.clone(args || []), maxSteps: problem.maxSteps || 2000000, maxDepth: problem.maxDepth || 3000 });
+  let r = run();
+  if (!r.ok && r.error && DEEP.test(r.error.message || "")) r = run();
+  const value = problem.output && problem.output.arg !== undefined ? r.args && r.args[problem.output.arg] : r.value;
+  return r.ok ? { ok: true, ops: r.ops, value } : { ok: false, ops: r.ops, error: plainError(r.error) };
+}
+
 /* ---------- message loop ---------- */
 self.onmessage = async (ev) => {
   const m = ev.data || {};
@@ -189,7 +202,8 @@ self.onmessage = async (ev) => {
   try {
     if (m.type === "ping") { postMessage({ type: "pong", req, packs: packStatus, count: ForgeProblems.list.length }); return; }
     const problem = ForgeProblems.get(m.id);
-    if (!problem) { postMessage({ type: m.type === "trace" ? "trace" : "report", req, fatal: `Unknown problem "${m.id}".` }); return; }
+    if (!problem) { postMessage({ type: m.type === "trace" || m.type === "compare" ? m.type : "report", req, fatal: `Unknown problem "${m.id}".` }); return; }
+    if (m.type === "compare") { postMessage({ type: "compare", req, result: safeClone({ mine: countOps(problem, m.code, m.args), ref: countOps(problem, (problem.solution || {}).pseudo || "", m.args) }) }); return; }
     if (m.type === "check") {
       const t0 = Date.now();
       let report;
@@ -206,6 +220,6 @@ self.onmessage = async (ev) => {
       postMessage({ type: "trace", req, result: safeClone(result) });
     }
   } catch (e) {
-    postMessage({ type: m.type === "trace" ? "trace" : "report", req, fatal: "The grader hit an internal error: " + (e && e.message || e) });
+    postMessage({ type: m.type === "trace" || m.type === "compare" ? m.type : "report", req, fatal: "The grader hit an internal error: " + (e && e.message || e) });
   }
 };

@@ -6,22 +6,22 @@
 <rect x=".5" y=".5" width="899" height="379" rx="18" fill="url(#bgG)" stroke="#2a3448"/>
 <rect x=".5" y=".5" width="899" height="379" rx="18" fill="url(#glow)"/>
 <g transform="translate(34,78) scale(1.55)"><rect x="3" y="18" width="6" height="11" rx="1.5" fill="#5ab0ff"/><rect x="11" y="12" width="6" height="17" rx="1.5" fill="#5ab0ff" opacity=".8"/><rect x="19" y="6" width="6" height="23" rx="1.5" fill="#ff8a3d"/><path d="M22 2l2 3-2 1-2-1z" fill="#ffd24d"/></g>
-<text x="34" y="70" font-size="11" fill="#ff8a3d" font-weight="700" letter-spacing="1.4">LEVITIN CH 1–12 + BEYOND 13–17</text>
+<text x="34" y="70" font-size="11" fill="#ff8a3d" font-weight="700" letter-spacing="1.1">LEVITIN CH 1–12 · BEYOND 13–17 · FRONTIER 18</text>
 <text x="88" y="120" font-size="40" fill="#e8edf5" font-weight="800" letter-spacing="-0.8">Algorithm <tspan fill="#ff8a3d">Forge</tspan></text>
 <text x="34" y="166" font-size="19" fill="#e8edf5" font-weight="600">Build algorithms from scratch —</text>
 <text x="34" y="192" font-size="19" fill="#e8edf5" font-weight="600">see them, write them, <tspan fill="#ff8a3d">prove them</tspan></text>
-<text x="34" y="226" font-size="13.5" fill="#b4bfd1">Lessons, interactive simulations and a graded</text>
-<text x="34" y="245" font-size="13.5" fill="#b4bfd1">pseudocode Arena — from first loop to senior patterns.</text>
-<rect x="34" y="270" width="123.6" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
+<text x="34" y="226" font-size="13.5" fill="#b4bfd1">Lessons, interactive simulations and a graded pseudocode</text>
+<text x="34" y="245" font-size="13.5" fill="#b4bfd1">Arena — from first loop to the research frontier.</text>
+<rect x="34" y="270" width="116" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
 <text x="45" y="289" font-size="13" fill="#e8edf5" class="e">📖</text>
-<text x="64" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">17 chapters</text>
-<rect x="165.6" y="270" width="93.2" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
-<text x="176.6" y="289" font-size="13" fill="#e8edf5" class="e">👀</text>
-<text x="195.6" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">48 sims</text>
-<rect x="266.8" y="270" width="131.2" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
-<text x="277.8" y="289" font-size="13" fill="#e8edf5" class="e">✅</text>
-<text x="296.8" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">213 problems</text>
-<text x="34" y="330" font-size="12" fill="#7f8ba3">Levels 0 → 5 · runs in the browser · no installs</text>
+<text x="64" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">19 lessons</text>
+<rect x="158" y="270" width="93.2" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
+<text x="169" y="289" font-size="13" fill="#e8edf5" class="e">👀</text>
+<text x="188" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">59 sims</text>
+<rect x="259.2" y="270" width="131.2" height="28" rx="14" fill="#1c2536" stroke="#36425b"/>
+<text x="270.2" y="289" font-size="13" fill="#e8edf5" class="e">✅</text>
+<text x="289.2" y="289" font-size="12.5" fill="#e8edf5" font-weight="600">252 problems</text>
+<text x="34" y="330" font-size="12" fill="#7f8ba3">Levels 0 → 7 · runs in the browser · no installs</text>
 <rect x="438" y="20" width="440" height="340" rx="14" fill="#161d2a" stroke="#2a3448"/>
 <text x="454" y="44" font-size="10.5" fill="#ff8a3d" font-weight="700" letter-spacing="1.3">INSERTION SORT</text>
 <rect x="580" y="35" width="11" height="11" rx="3" fill="#ffd24d"/>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counting in a Stream · Algorithm Forge</title>
+<meta name="description" content="A stream of items flows into five summaries side by side: an exact set, HyperLogLog registers, the CVM sampling buffer, a Count–Min sketch and Misra–Gries heavy-hitter counters, with memory, error bounds, an estimate-versus-truth chart and an error-versus-memory experiment.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/streaming-sketches-core.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 400px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  label.field { min-width: 0; max-width: 100%; }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel-2); }
+  .seg button + button { border-left: 1px solid var(--line-2); }
+  .seg button.on { background: var(--ember); color: #1b0f05; }
+  #custom { width: 100%; min-height: 70px; resize: vertical; }
+  .ticker { display: flex; gap: 6px; align-items: center; overflow: hidden; white-space: nowrap; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; min-height: 44px; }
+  .ticker .lbl { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); flex: none; }
+  .ticker .it { font-family: var(--mono); font-size: .82rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel-2); flex: none; }
+  .ticker .it.now { background: var(--c-active); border-color: var(--c-active); color: #0d1117; font-weight: 700; }
+  .ticker .it.next { background: var(--c-compare); border-color: var(--c-compare); color: #0d1117; font-weight: 700; }
+  .ticker .it.old { opacity: .55; }
+  .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 720px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+  .sk { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-width: 0; }
+  .sk.focus { border-color: var(--ember); box-shadow: inset 0 0 0 1px var(--ember); }
+  .sk > header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .sk > header button { background: none; border: 0; padding: 0; color: var(--ink); font: 700 .95rem var(--font); cursor: pointer; text-align: left; }
+  .sk > header button:hover { color: var(--ember); }
+  .sk .mem { font-family: var(--mono); font-size: .74rem; color: var(--muted); }
+  .sk svg { width: 100%; display: block; }
+  .sk svg text { font-family: var(--mono); }
+  .sk .stat { font-family: var(--mono); font-size: .8rem; color: var(--ink-2); overflow-wrap: anywhere; margin-top: 6px; }
+  .sk .stat b { color: var(--ink); }
+  .sk .note { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+  .sk .chips { display: flex; flex-wrap: wrap; gap: 4px; max-height: 132px; overflow: hidden; }
+  .sk .chips span { font-family: var(--mono); font-size: .72rem; padding: 0 6px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--line); }
+  .sk .chips span.new { background: var(--c-done); border-color: var(--c-done); color: #0d1117; }
+  .sk .chips span.dup { background: var(--c-compare); border-color: var(--c-compare); color: #0d1117; }
+  .qrow { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .qrow input { width: 140px; max-width: 100%; }
+  table.t.hh { width: 100%; font-size: .76rem; }
+  table.t.hh td, table.t.hh th { padding: 3px 5px; min-width: 0; }
+  table.t.hh td:first-child { text-align: left; overflow-wrap: anywhere; }
+  table.t.hh tr { cursor: pointer; }
+  table.t.hh tr:hover td { background: var(--steel-soft); }
+  .chart { width: 100%; display: block; background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .chart text { font-family: var(--mono); }
+  .ok-t { color: var(--ok); font-weight: 700; }
+  .bad-t { color: var(--bad); font-weight: 700; }
+  .refs li { margin-bottom: 4px; }
+  @keyframes skpulse { 0%, 100% { box-shadow: inset 0 0 0 1px var(--c-compare); } 50% { box-shadow: inset 0 0 0 3px var(--c-compare); } }
+  .sk.ask { border-color: var(--c-compare); animation: skpulse 1.4s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .sk.ask { animation: none; box-shadow: inset 0 0 0 2px var(--c-compare); } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Ch 18 · The Frontier</div>
+    <h1>Counting in a stream</h1>
+    <p class="lead muted">Billions of items fly past and you may keep only a few kilobytes. How many different items were there, and which ones were frequent? Watch an exact set, HyperLogLog (HLL), the 2022 Chakraborty–Vinodchandran–Meel (CVM) sampling algorithm, a Count–Min sketch and Misra–Gries counters read the same stream side by side, each trading a small, measured error for a tiny, fixed memory.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="row">
+      <label class="field">Stream
+        <select id="preset">
+          <option value="zipf" selected>Zipf-like word stream (a few words are very common)</option>
+          <option value="uniform">Uniform identifiers (IDs), all equally likely</option>
+          <option value="heavy">Network traffic with 3 heavy hitters</option>
+          <option value="custom">Custom text (your own words)</option>
+        </select>
+      </label>
+      <label class="field" id="nField">Length N = <b id="nOut">1,500</b><input type="range" id="n" min="100" max="20000" step="100" value="1500" style="width:150px"></label>
+      <label class="field">Seed <input type="number" id="seed" value="7" min="1" style="width:76px"></label>
+      <button class="btn" id="reseed" title="Pick a new seed: new stream, new hash functions, new coin flips">🎲 New seed</button>
+      <label class="field">Items per step
+        <select id="step"><option>1</option><option selected>5</option><option>25</option><option>100</option><option>500</option></select>
+      </label>
+      <button class="btn primary" id="build">Build stream</button>
+    </div>
+    <div id="customBox" style="margin-top:10px" hidden>
+      <label class="field">Your text (split into lowercase words; each word is one stream item)
+        <textarea id="custom">a stream is a sequence that you may read only once, in order, and much too long to store. the trick is to keep a small summary that answers one question well. to count the distinct items, hash each one and remember only how rare the rarest-looking hash was. to find the frequent items, keep a few counters and let the rare items cancel each other out. the summary is small, the answer is close, and the error is known in advance.</textarea>
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="field">HLL registers m
+        <select id="hb"><option value="4">16</option><option value="5">32</option><option value="6" selected>64</option><option value="7">128</option><option value="8">256</option><option value="9">512</option><option value="10">1,024</option></select>
+      </label>
+      <label class="field">CVM buffer thresh <input type="number" id="thresh" value="40" min="4" max="400" style="width:76px"></label>
+      <label class="field">Count–Min rows d
+        <select id="cd"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select>
+      </label>
+      <label class="field">Count–Min columns w
+        <select id="cw"><option>4</option><option>8</option><option selected>16</option><option>32</option><option>64</option></select>
+      </label>
+      <label class="field">Misra–Gries k (k − 1 counters)
+        <select id="mk"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>8</option><option>11</option><option>16</option><option>21</option></select>
+      </label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <span class="small muted">Pseudocode, counters and narration follow:</span>
+      <div class="seg" role="group" aria-label="Which summary to explain" id="focusSeg">
+        <button class="btn sm" data-f="exact">Exact set</button>
+        <button class="btn sm" data-f="hll">HyperLogLog</button>
+        <button class="btn sm" data-f="cvm">CVM</button>
+        <button class="btn sm" data-f="cms">Count–Min</button>
+        <button class="btn sm" data-f="mg">Misra–Gries</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="ticker" id="ticker" aria-label="The most recent stream items"></div>
+      <div id="player"></div>
+      <div class="cards" id="cards">
+        <article class="sk" data-f="exact"><header><button type="button" data-f="exact">Exact set (the answer key)</button><span class="mem" id="mem-exact"></span></header><div id="b-exact"></div></article>
+        <article class="sk" data-f="hll"><header><button type="button" data-f="hll">HyperLogLog · distinct count</button><span class="mem" id="mem-hll"></span></header><div id="b-hll"></div></article>
+        <article class="sk" data-f="cvm"><header><button type="button" data-f="cvm">CVM · distinct count by sampling</button><span class="mem" id="mem-cvm"></span></header><div id="b-cvm"></div></article>
+        <article class="sk" data-f="cms"><header><button type="button" data-f="cms">Count–Min · how often?</button><span class="mem" id="mem-cms"></span></header><div id="b-cms"></div>
+          <div class="qrow"><label class="small muted" for="q">Point query</label><input type="text" id="q" placeholder="an item, e.g. the"><button class="btn sm steel" id="qGo">Query</button><button class="btn sm" id="qClear">Follow the stream</button></div>
+        </article>
+        <article class="sk" data-f="mg"><header><button type="button" data-f="mg">Misra–Gries · heavy hitters</button><span class="mem" id="mem-mg"></span></header><div id="b-mg"></div></article>
+        <article class="sk" data-f="hh"><header><button type="button" data-f="cms">Most frequent items: truth vs sketches</button><span class="mem">click a row to query it</span></header><div id="b-hh"></div></article>
+      </div>
+      <div class="legend" id="legend">
+        <span><i style="background:var(--c-active)"></i>item just processed</span>
+        <span><i style="background:var(--c-compare)"></i>item about to arrive · compared / probed</span>
+        <span><i style="background:var(--c-swap)"></i>written / evicted / decremented</span>
+        <span><i style="background:var(--c-done)"></i>newly stored · the minimum (the estimate)</span>
+        <span><i style="background:var(--c-pivot)"></i>register-index bits of a hash</span>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Estimate vs truth over time</div>
+        <svg class="chart" id="tchart" role="img" aria-label="Distinct-count estimates of HyperLogLog and CVM against the true count as the stream is read"></svg>
+        <div class="legend" style="margin-top:6px">
+          <span><i style="background:var(--c-done)"></i>true distinct count (exact set)</span>
+          <span><i style="background:var(--steel)"></i>HyperLogLog estimate</span>
+          <span><i style="background:var(--c-pivot)"></i>CVM estimate |X| / p</span>
+        </div>
+      </div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+      <div class="panel" id="pred"></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Error vs memory</h2>
+    <p class="small muted" style="margin-top:0">Run HyperLogLog with m = 16 … 4,096 registers and CVM with thresh = 8 … 2,048 on the same stream, 16 times each with different hash seeds and coin flips, and measure the root-mean-square relative error. Memory: 5 bits per HLL register; 32 bits per CVM buffer slot (an item stored as a 32-bit identifier).</p>
+    <div class="row">
+      <label class="field">Data
+        <select id="expData">
+          <option value="big">50,000 uniform IDs (44,211 distinct)</option>
+          <option value="cur">The current stream</option>
+        </select>
+      </label>
+      <button class="btn steel" id="expRun">Run experiment</button>
+      <span class="small muted" id="expNote"></span>
+    </div>
+    <svg class="chart" id="echart" role="img" aria-label="Relative error versus memory in bits for HyperLogLog and CVM, log-log axes" style="margin-top:12px" hidden></svg>
+    <div class="legend" id="eLegend" style="margin-top:6px" hidden>
+      <span><i style="background:var(--steel)"></i>HyperLogLog, measured (dots) and theory 1.04/√m (line)</span>
+      <span><i style="background:var(--c-pivot)"></i>CVM, measured</span>
+    </div>
+    <div class="scroll-x"><table class="t" id="etab" style="margin-top:12px"></table></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <dl class="fx-howto">
+      <dt>The stream</dt>
+      <dd>The strip at the top shows the newest items (blue = just processed). On a 🤔 frame the next item is shown in yellow before it is processed. Every summary sees each item exactly once, in order, and may never look back.</dd>
+      <dt>Exact set</dt>
+      <dd>Remembers every distinct item: green = new, yellow = seen before. It is always right, and its memory grows with the answer (here counted as 32 bits per distinct item; real words need more).</dd>
+      <dt>HyperLogLog</dt>
+      <dd>The 32 boxes are the item's hash. The purple low bits choose a register j; in the other 32 − b bits, the yellow leading zeros and the first 1-bit (green) give ρ = zeros + 1. Register M[j] keeps the largest ρ ever seen. A ρ of 10 happens about once per 2<sup>10</sup> hashes, so large registers mean many distinct items. Darker cells hold larger values; the cell just written is red. Duplicates hash identically, so they never change anything.</dd>
+      <dt>CVM</dt>
+      <dd>The grid is the buffer X (thresh slots). Each arriving item first forgets its old coin flip (it is removed if present), then is kept with probability p (green = kept now). When X fills up, a halving round flips a coin for every stored item: red cells are evicted and p halves. Every distinct item seen so far sits in X with probability p, so |X| / p estimates the count.</dd>
+      <dt>Count–Min</dt>
+      <dd>d rows of w counters, one hash function per row. An item adds 1 to one counter in each row (red). A point query reads those d counters (yellow outline) and answers the smallest (green): other items only ever add to a counter, so the answer is never too low, and it is at most εN too high with probability at least 1 − δ, where ε = e/w and δ = e<sup>−d</sup>.</dd>
+      <dt>Misra–Gries</dt>
+      <dd>k − 1 counters. A tracked item adds 1; a new item takes a free counter; with no free counter, every counter drops by 1 (red), which cancels k distinct items at once. The faint band after each bar is the guarantee: the true count lies between the counter c and c + N/k, and the tick marks the truth.</dd>
+    </dl>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Duplicates are free.</b> Set items per step to 1 and step through the Zipf stream. Each time a common word such as “the” comes back, HyperLogLog, CVM's estimate and the exact set do not change, but Count–Min and Misra–Gries do. Answer the 🤔 question about the repeated word.</li>
+      <li><b>Small counts.</b> At the start almost every HLL register is 0, so the page switches to linear counting m · ln(m / V) (V = registers still 0) and is nearly exact. Watch the counter "mode" flip to the harmonic-mean estimate once the raw estimate passes 2.5 m.</li>
+      <li><b>Halving rounds.</b> Set thresh = 10 and watch CVM: every time the buffer fills, about half the cells turn red and p halves. Press 🎲 New seed a few times at the same N: the estimate moves around the truth. Raise thresh to 100 and the swings shrink.</li>
+      <li><b>Space vs error.</b> Run the error-vs-memory experiment. HLL's dots follow 1.04/√m, so 4 times the memory halves the error. CVM also improves as thresh grows, but at the same number of bits it is less accurate, because it stores whole items (32 bits) where HLL stores 5-bit registers.</li>
+      <li><b>Heavy hitters.</b> Choose the network-traffic stream and k = 6 (5 counters, N/k ≈ 16.7% of the stream). Only 10.0.0.7 (18% of the traffic) is guaranteed a counter; the 11% and 7% addresses keep being cancelled by the crowd of rare addresses. Switch to k = 16 (15 counters, N/k = 6.25%): now all three Internet Protocol (IP) addresses are above N/k, so all three hold counters at the end, each at most N/k below its true count. Count–Min overestimates rare items the most; try w = 4 and then w = 64 and query a rare address.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md#frontier-card-5--counting-distinct-items-hyperloglog-and-the-cvm-algorithm">📖 Lesson 18 · Frontier Card 5 (distinct counting)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/16-randomized-amortized-streaming/README.md">📖 Lesson 16 · Randomized, amortized and streaming</a>
+      <a href="../atlas.html#distinct-counting">🗺️ Atlas · Counting distinct items</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena Level 7 · Frontier</a>
+      <a href="../arena/problem.html?id=hyperloglog-estimate">Arena: hyperloglog-estimate</a>
+      <a href="../arena/problem.html?id=cvm-distinct-elements">Arena: cvm-distinct-elements</a>
+      <a href="../arena/problem.html?id=count-min-conservative">Arena: count-min-conservative</a>
+      <a href="../arena/problem.html?id=misra-gries-heavy-hitters">Arena: misra-gries-heavy-hitters</a>
+      <a href="../arena/problem.html?id=reservoir-sample-draws">Arena: reservoir-sample-draws</a>
+      <a href="bloom-filter.html">🎮 Bloom filter</a>
+      <a href="cuckoo-filters.html">🎮 Cuckoo hashing and modern filters</a>
+      <a href="amortized.html">🎮 Amortized analysis</a>
+      <a href="hashing.html">🎮 Hashing</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>P. Flajolet, É. Fusy, O. Gandouet and F. Meunier, “HyperLogLog: the analysis of a near-optimal cardinality estimation algorithm,” Analysis of Algorithms (AofA) 2007, <a href="https://dmtcs.episciences.org/3545">Discrete Mathematics &amp; Theoretical Computer Science (DMTCS) Proceedings</a>. The register update, α<sub>16</sub> = 0.673, α<sub>32</sub> = 0.697, α<sub>64</sub> = 0.709, α<sub>m</sub> = 0.7213 / (1 + 1.079/m) for m ≥ 128, linear counting when E ≤ 2.5 m, and standard error ≈ 1.04/√m. (The paper takes the register index from the first b bits; this page, like the Arena problem, uses the low b bits. Either works for a well-mixed hash.)</li>
+      <li>S. Heule, M. Nunkesser and A. Hall, “<a href="https://research.google/pubs/hyperloglog-in-practice-algorithmic-engineering-of-a-state-of-the-art-cardinality-estimation-algorithm/">HyperLogLog in Practice</a>,” Extending Database Technology (EDBT) 2013: HyperLogLog++ with 64-bit hashes (6-bit registers), empirical bias correction and a sparse mode.</li>
+      <li>S. Chakraborty, N. V. Vinodchandran and K. S. Meel, “<a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ESA.2022.34">Distinct Elements in Streams: An Algorithm for the (Text) Book</a>,” European Symposium on Algorithms (ESA) 2022, Leibniz International Proceedings in Informatics (LIPIcs) 244. Algorithm 1 as animated here, including the failure output ⊥; thresh = ⌈12 ε⁻² log(8m/δ)⌉ gives a (1 ± ε)-approximation with probability at least 1 − δ. D. E. Knuth's note “The CVM Algorithm for Estimating Distinct Elements in Streams” (2023) analyzes a variant.</li>
+      <li>G. Cormode and S. Muthukrishnan, “An improved data stream summary: the count-min sketch and its applications,” <i>Journal of Algorithms</i> 55(1), 2005: w = ⌈e/ε⌉, d = ⌈ln(1/δ)⌉, estimate ≤ f + εN with probability at least 1 − δ.</li>
+      <li>J. Misra and D. Gries, “Finding repeated elements,” <i>Science of Computer Programming</i> 2(2), 1982: k − 1 counters keep every item that occurs more than N/k times, each counter at most N/k below the truth.</li>
+      <li>A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed., §6.1 (element uniqueness by presorting) and §7.3 (hashing) for the exact baseline.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/streaming-sketches.js"></script>
+</body>
+</html>

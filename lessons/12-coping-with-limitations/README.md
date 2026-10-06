@@ -1,4 +1,4 @@
-# 12 · Coping with the Limitations of Algorithm Power — Backtracking, Branch-and-Bound, Approximation, Numerical Methods
+# Chapter 12 · Coping with the Limitations of Algorithm Power — Backtracking, Branch-and-Bound, Approximation, Numerical Methods
 
 > [Chapter 11](../11-limitations/README.md) delivered the bad news: for NP-hard problems (NP = Nondeterministic Polynomial time) like the Traveling Salesman
 > Problem (TSP), knapsack, bin packing and the assignment of jobs to machines, no polynomial-time exact algorithm is
@@ -281,7 +281,7 @@ Each node records $s$ = sum of included elements. A node is **nonpromising** (wh
 
 $$s + a_{i+1} > d \quad (\text{even the smallest next element overshoots}) \qquad\text{or}\qquad s + \sum_{j=i+1}^{n} a_j < d \quad (\text{even taking everything left falls short}).$$
 
-#### ✋ Trace it by hand — $A = \{3, 5, 6, 7\}$, $d = 15$ (course example)
+#### ✋ Trace it by hand — $A = \{3, 5, 6, 7\}$, $d = 15$ (the Levitin §12.1 example)
 
 Node numbers are generation order (depth-first, "with" before "w/o").
 
@@ -424,7 +424,7 @@ For a **minimization** problem the bound is a **lower bound** (lb): "every compl
 ### Example 1 — the assignment problem
 
 Assign $n$ people to $n$ jobs, one each, minimizing total cost — equivalently, select one entry in each row of the
-cost matrix, no two in the same column, with minimum sum. Course instance:
+cost matrix, no two in the same column, with minimum sum. The Levitin §12.2 instance:
 
 | | Job 1 | Job 2 | Job 3 | Job 4 |
 |---|---|---|---|---|
@@ -603,7 +603,7 @@ $$ub = v + (W - w)\cdot \frac{v_{i+1}}{w_{i+1}},$$
 "what we have + fill the remaining room with the best remaining ratio" — optimistic, so no completion can exceed it.
 For knapsack every node is itself a feasible subset, so the best-so-far can be updated at every node.
 
-#### ✋ Trace it by hand — course instance, $W = 16$
+#### ✋ Trace it by hand — an example instance, $W = 16$
 
 | Item | Weight | Value | $v/w$ |
 |---|---|---|---|
@@ -709,7 +709,7 @@ Our 5-city delivery instance (distances in minutes; symmetric, obeys the triangl
 
 Root: $lb = \lceil [(2+3) + (3+4) + (6+7) + (7+10) + (2+4)]/2 \rceil = \lceil 48/2 \rceil = 24$.
 
-Two tricks from the course cut the tree: all tours start at $a$, and since a tour and its reverse have the same
+Two standard tricks cut the tree: all tours start at $a$, and since a tour and its reverse have the same
 length, consider only tours where **$b$ is visited before $c$**. Once 4 cities are fixed, the tour is determined.
 
 | Node | Partial tour | Forced edges used in $s$ | lb | Result |
@@ -802,7 +802,7 @@ On our 5-city instance from $a$: $a \xrightarrow{2} e \xrightarrow{4} b \xrighta
 length **34**; optimum 29; accuracy ratio $34/29 \approx 1.17$. The starting city matters: starting from $b$ gives 30,
 from $c$ or $d$ gives 29, from $e$ gives 32.
 
-**It can be arbitrarily bad.** Course example: 4 cities with $ab = 1$, $bc = 2$, $cd = 1$, $ac = 3$, $bd = 3$, and
+**It can be arbitrarily bad.** Example (after Levitin §12.3): 4 cities with $ab = 1$, $bc = 2$, $cd = 1$, $ac = 3$, $bd = 3$, and
 $ad = w$. From $a$: $a\,b\,c\,d\,a$ of length $4 + w$. For $w = 6$ that's 10 vs. the optimal $a\,b\,d\,c\,a$ of length
 8 ($r = 1.25$), but as $w \to \infty$ the optimal tour (which avoids $ad$) stays 8 while nearest neighbor is forced to
 take $ad$ at the end: $R_A = \infty$.
@@ -1011,7 +1011,7 @@ public class TspHeuristics {
 
 ### Knapsack 1 — the greedy algorithm, and why it needs a fix
 
-**Greedy:** sort by $v_i/w_i$ decreasing; take each item that still fits. Course instance ($W = 16$): take item 1
+**Greedy:** sort by $v_i/w_i$ decreasing; take each item that still fits. The example instance ($W = 16$): take item 1
 (w 2), item 2 (w 7), skip item 3 (would be 17), take item 4 (w 12) → value **\$80**; optimum \$90 (items 1, 3), ratio
 $90/80 = 1.125$.
 
@@ -1031,7 +1031,7 @@ For an integer parameter $k$ ($0 \le k \le n$): for **every subset of at most $k
 remaining items greedily by ratio; return the best result. Performance: $\dfrac{f(s^*)}{f(s_a)} \le 1 + \dfrac1k$ for
 every instance; time $O(k\,n^{k+1})$ — polynomial for fixed $k$, so you can buy any accuracy you want with time.
 
-Course practice, $k = 2$ (all 11 subsets of size $\le 2$; items listed in ratio order):
+Practice, $k = 2$ (all 11 subsets of size $\le 2$; items listed in ratio order):
 
 | Start subset | Greedy completion | Weight | Value |
 |---|---|---|---|
@@ -1116,11 +1116,11 @@ public class GreedyKnapsack {
 
 - **First-Fit (FF):** take items in the given order; put each into the **first** bin with room; open a new bin if none.
   Guarantee: never more than about 70% above optimal ($R_A \le 1.7$).
-- **First-Fit Decreasing (FFD):** sort sizes decreasing first, then run FF. Guarantee from the course: never more than
+- **First-Fit Decreasing (FFD):** sort sizes decreasing first, then run FF. A simple guarantee: never more than
   50% above optimal ($R_A \le 1.5$); asymptotically it is even better — at most $\tfrac{11}{9}\text{OPT} + \tfrac69$
   bins. Empirically both are far better than their worst cases.
 
-✋ **Trace — sizes 0.4, 0.2, 0.6, 0.7** (course example):
+✋ **Trace — sizes 0.4, 0.2, 0.6, 0.7**:
 
 | FF step | Item | Bin 1 | Bin 2 | Bin 3 |
 |---|---|---|---|---|
@@ -1534,7 +1534,7 @@ column 3 is Q2's column; column 4 is diagonal to Q2 (columns 3→4). So the node
 Only 6 and 7 remain; $0 + 6 + 7 = 13 < 15$, so even taking everything left falls short.
 </details>
 
-<details><summary>4. Compute the lower bound for the assignment node "a→3" in the course matrix.</summary>
+<details><summary>4. Compute the lower bound for the assignment node "a→3" in the example matrix.</summary>
 
 $7$ (a→3) $+ \min(6,4,7) = 4$ for b $+ \min(5,8,8) = 5$ for c $+ \min(7,6,4) = 4$ for d $= 20$.
 </details>
@@ -1594,7 +1594,7 @@ global guarantee.
 - **Levitin**, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.: §12.1 (backtracking), §12.2
   (branch-and-bound), §12.3 (approximation algorithms for NP-hard problems), §12.4 (algorithms for solving nonlinear
   equations). Recommended: Levitin Exercises 12.1.1, 12.1.8, 12.2.2, 12.2.5, 12.3.2, 12.3.8, 12.4.2.
-- **Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J** (Spring 2015) — lecture on approximation algorithms (vertex cover, set cover,
+- **Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J** (Spring 2015) — video session on approximation algorithms (vertex cover, set cover,
   partition): <https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/>
 - **Abdul Bari** (YouTube, English) — *Backtracking* (N-Queens, sum of subsets, Hamiltonian cycle) and *Branch and
   Bound* (job sequencing, 0/1 knapsack, TSP) videos: clear board-work traces of exactly these trees.

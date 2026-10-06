@@ -1,4 +1,4 @@
-# 10 · Iterative Improvement — Start Feasible, Get Better, Prove You're Done
+# Chapter 10 · Iterative Improvement — Start Feasible, Get Better, Prove You're Done
 
 > Greedy algorithms (Chapter 9) build a solution one piece at a time and never look back. **Iterative improvement**
 > does the opposite: it starts with a *complete* solution that already obeys every rule, then keeps swapping in a
@@ -8,7 +8,7 @@
 > these from recipes into tools you can reuse. They also run a surprising amount of the real world: airline schedules,
 > network capacity planning, ad auctions, and the U.S. medical residency match.
 
-**Badges:** 🎮 [Simplex](https://normansrule.github.io/algorithm-forge/sims/simplex.html) · [Max-flow](https://normansrule.github.io/algorithm-forge/sims/max-flow.html) · [Bipartite matching](https://normansrule.github.io/algorithm-forge/sims/bipartite-matching.html) · [Stable marriage](https://normansrule.github.io/algorithm-forge/sims/stable-marriage.html) · 🏟️ [Arena problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=10) · 🐍 [Code](../../src/python/algoforge/ch10_iterative_improvement.py) · 📝 [Practice](../../practice/) · ⬅️ [09 Greedy](../09-greedy/README.md) · ➡️ [11 Limitations](../11-limitations/README.md)
+**Badges:** 🎮 [Simplex](https://normansrule.github.io/algorithm-forge/sims/simplex.html) · [Max-flow](https://normansrule.github.io/algorithm-forge/sims/max-flow.html) · [Bipartite matching](https://normansrule.github.io/algorithm-forge/sims/bipartite-matching.html) · [Stable marriage](https://normansrule.github.io/algorithm-forge/sims/stable-marriage.html) · [Max flow: Dinic & push–relabel](https://normansrule.github.io/algorithm-forge/sims/flow-modern.html) · 🏟️ [Arena problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=10) · 🐍 [Code](../../src/python/algoforge/ch10_iterative_improvement.py) · 📝 [Practice](../../practice/) · ⬅️ [09 Greedy](../09-greedy/README.md) · ➡️ [11 Limitations](../11-limitations/README.md)
 
 ---
 
@@ -66,7 +66,7 @@ $$
 \end{aligned}
 $$
 
-This is the course's running example (Levitin §10.1). Vocabulary:
+This is the running example of Levitin §10.1. Vocabulary:
 
 - **Objective function** — the thing to maximize: $3x + 5y$.
 - **Constraints** — the inequalities; the **nonnegativity constraints** $x, y \ge 0$ are listed separately.
@@ -472,7 +472,7 @@ network structure lets us do much better.
 then watch the Breadth-First Search (BFS) labels spread, the augmenting path light up, and the minimum cut appear when the sink can't be
 reached.
 
-The course's example network (the classic one from Levitin §10.2, capacities on edges):
+The example network (the classic one from Levitin §10.2, capacities on edges):
 
 ```mermaid
 flowchart LR
@@ -558,7 +558,7 @@ repeat
 **Block 4 — augment.** $r = l_{\text{sink}}$. Walk the second labels back from the sink: on a $+$ label add $r$ to
 that edge's flow, on a $-$ label subtract $r$. Erase all labels and search again.
 
-### ✋ Trace it by hand — the course network
+### ✋ Trace it by hand — the example network
 
 Neighbors are examined in increasing vertex order. (Every row below was produced by the Python code in this card.)
 
@@ -600,7 +600,7 @@ $5\to6$: 1/4. **Maximum flow value = 3.**
 
 Split the vertices into $X$ (containing the source) and $\bar X$ (containing the sink). The **cut** $C(X, \bar X)$ is
 the set of edges going from $X$ to $\bar X$; its **capacity** is the sum of their capacities. Every source-to-sink
-path must use at least one edge of every cut — so a cut is a "bottleneck wall". For the course network:
+path must use at least one edge of every cut — so a cut is a "bottleneck wall". For the example network:
 
 | $X$ | Cut edges | Capacity |
 |---|---|---|
@@ -625,7 +625,7 @@ path must use at least one edge of every cut — so a cut is a "bottleneck wall"
 By half 1, no flow can beat $v^*$ and no cut can be smaller than $c(X^*,\bar X^*)$ — so both are optimal.
 
 **How to read the minimum cut from the final labeling:** the min cut is formed by **all edges from labeled to
-unlabeled vertices on the last iteration**. In the course network, the last iteration labeled $\{1, 4\}$, so the min
+unlabeled vertices on the last iteration**. In the example network, the last iteration labeled $\{1, 4\}$, so the min
 cut is $\{(1,2), (4,3)\}$ with capacity 3 — both edges full, exactly as the theorem says.
 
 ### ✋ A second trace (our own network) — backward edge + a min cut in the middle
@@ -759,9 +759,9 @@ def max_flow(n, edges, s, t):
         value += r
 
 if __name__ == "__main__":
-    # course network, renumbered 0..5 (vertex k here = vertex k+1 on the slides)
-    course = [(0, 1, 2), (0, 3, 3), (1, 2, 5), (1, 4, 3), (3, 2, 1), (2, 5, 2), (4, 5, 4)]
-    v, flow, cut = max_flow(6, course, 0, 5)
+    # the example network, renumbered 0..5 (vertex k here = vertex k+1 in the figure)
+    net = [(0, 1, 2), (0, 3, 3), (1, 2, 5), (1, 4, 3), (3, 2, 1), (2, 5, 2), (4, 5, 4)]
+    v, flow, cut = max_flow(6, net, 0, 5)
     print(v, cut)                                    # 3 [(0, 1), (3, 2)]
 ```
 </details>
@@ -830,7 +830,7 @@ public class MaxFlow {
 
 ### ⚠️ Common mistakes
 
-- **Forgetting backward edges** — you'll get stuck below the maximum (value 2 instead of 3 on the course network).
+- **Forgetting backward edges** — you'll get stuck below the maximum (value 2 instead of 3 on the example network).
 - Using $u_{ij}$ instead of the **remaining** capacity $u_{ij} - x_{ij}$ when labeling.
 - On a backward step, **adding** to the flow instead of subtracting.
 - Reading the min cut from the *first* BFS instead of the **last** (failed) one.
@@ -1228,7 +1228,7 @@ means *nobody has an incentive to defect*.
   to her mate in $M$.
 - $M$ is **stable** if it has no blocking pair.
 
-The course instance, as preference lists and as a **ranking matrix** (entry "$i, j$" in row $m$, column $w$ means
+The Levitin §10.4 instance, as preference lists and as a **ranking matrix** (entry "$i, j$" in row $m$, column $w$ means
 $w$ is $m$'s $i$-th choice and $m$ is $w$'s $j$-th choice):
 
 | Men's preferences | 1st | 2nd | 3rd | | Women's preferences | 1st | 2nd | 3rd |
@@ -1289,7 +1289,7 @@ crosses off one more woman. That monotone progress is what guarantees terminatio
 | 6 | Bob → Ann | Ann was free → **accepts** | — |
 
 Result: **{(Bob, Ann), (Jim, Sue), (Tom, Lea)}** — the stable matching from the table above. ✔ (Simulated in Python;
-it matches the course slides step for step.)
+it matches Levitin's §10.4 trace step for step.)
 
 ### Why it works
 
@@ -1505,7 +1505,7 @@ $z$ keeps growing.
 
 <details><summary>5. Why must augmenting paths be allowed to use backward edges? Give a concrete example.</summary>
 
-Without them the method can get stuck at a non-maximal flow. In the course network, after pushing 2 along
+Without them the method can get stuck at a non-maximal flow. In the example network, after pushing 2 along
 $1\to2\to3\to6$, no forward-only path exists (value 2), but the path $1\to4\to3\leftarrow2\to5\to6$ uses $(2,3)$
 backwards to re-route flow and reaches the true maximum 3.
 </details>
@@ -1535,7 +1535,7 @@ A triangle is a cycle of length 3 (odd). In a 2-coloring, colors alternate along
 length. So no 2-coloring exists, i.e., the graph is not bipartite.
 </details>
 
-<details><summary>10. In the course stable-marriage instance, is {(Bob, Lea), (Jim, Sue), (Tom, Ann)} stable?</summary>
+<details><summary>10. In the Levitin §10.4 stable-marriage instance, is {(Bob, Lea), (Jim, Sue), (Tom, Ann)} stable?</summary>
 
 No. (Tom, Lea) is a blocking pair: Tom prefers Lea (2nd) to Ann (3rd), and Lea prefers Tom (1st) to Bob (2nd).
 </details>
@@ -1559,7 +1559,7 @@ Also k-means clustering and gradient descent on non-convex functions.
 - **Levitin**, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.: §10.1 (simplex), §10.2 (maximum
   flow), §10.3 (bipartite matching), §10.4 (stable marriage). Good practice: Levitin Exercises 10.1.2, 10.2.2,
   10.3.2, 10.4.1 — work them first, then check with the sims.
-- **Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J** *Design and Analysis of Algorithms* (Spring 2015) — lectures on network flow and on
+- **Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J** *Design and Analysis of Algorithms* (Spring 2015) — video sessions on network flow and on
   linear programming: <https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/>
 - **cp-algorithms.com** — Edmonds–Karp: <https://cp-algorithms.com/graph/edmonds_karp.html> · Kuhn's matching
   algorithm: <https://cp-algorithms.com/graph/kuhn_maximum_bipartite_matching.html> · bipartite check:

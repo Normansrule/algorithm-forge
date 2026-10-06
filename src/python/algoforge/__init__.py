@@ -1,8 +1,10 @@
 """Algorithm Forge - a tested, beginner-readable algorithms library.
 
 One module per chapter of Levitin's *Introduction to the Design and Analysis
-of Algorithms* (3rd ed.), plus four "beyond" chapters (13-16). Import a
-chapter module and call its functions, e.g.::
+of Algorithms* (3rd ed.), plus six "beyond" chapters (13-18): advanced data
+structures, advanced graphs, patterns, randomized and streaming algorithms,
+algorithms inside production systems (17) and the research frontier (18).
+Import a chapter module and call its functions, e.g.::
 
     from algoforge import ch04_decrease_conquer as dc
     dc.binary_search([1, 3, 5, 7], 5)   # -> 2
@@ -32,6 +34,8 @@ from . import (
     ch14_advanced_graphs,
     ch15_patterns,
     ch16_randomized,
+    ch17_systems,
+    ch18_frontier,
     counters,
 )
 from .counters import OpCounter
@@ -57,4 +61,6 @@ __all__ = [
     "ch14_advanced_graphs",
     "ch15_patterns",
     "ch16_randomized",
+    "ch17_systems",
+    "ch18_frontier",
 ]

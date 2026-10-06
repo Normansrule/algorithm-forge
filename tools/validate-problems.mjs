@@ -50,8 +50,8 @@ for (const p of problems) {
   const errs = [], warns = [];
   const t1 = Date.now();
   for (const k of REQUIRED) if (p[k] === undefined) errs.push(`missing field "${k}"`);
-  if (!(p.level >= 0 && p.level <= 6)) errs.push("level must be 0..6");
-  if (!(p.chapter >= 1 && p.chapter <= 17)) errs.push("chapter must be 1..17");
+  if (!(p.level >= 0 && p.level <= 7)) errs.push("level must be 0..7");
+  if (!(p.chapter >= 1 && p.chapter <= 18)) errs.push("chapter must be 1..18");
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.id || "")) errs.push("id must be kebab-case");
   if (!p.reference && !p.verify) errs.push("needs reference(...) or verify(...)");
   if (!p.random) warns.push("no random tests");

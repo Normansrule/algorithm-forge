@@ -59,7 +59,7 @@
       const a = f && f.ask;
       if (!a) { idle(); return; }
       q.innerHTML = a.q;
-      opts.innerHTML = "";
+      opts.innerHTML = ""; res.innerHTML = ""; // a new question never shows the previous answer
       const btns = a.opts.map((o, k) => E("button", { class: "btn sm", onclick: () => { answered.set(i, k); reveal(k); } }, String(o)));
       btns.forEach((b) => opts.appendChild(b));
       function reveal(k) {

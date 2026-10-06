@@ -1,10 +1,10 @@
-# Lesson 15 · Dynamic Programming and Interview Patterns (Beyond the Textbook)
+# Chapter 15 · Dynamic Programming and Interview Patterns (Beyond the Textbook)
 
 > **Why this matters.** Strong engineers don't invent every solution from scratch. They recognize a **pattern** in the problem statement within seconds ("contiguous subarray" + "at most k" → sliding window), recall a **template**, and adapt it. This lesson is a catalog of the patterns that show up again and again in coding interviews, programming contests and real code reviews. Each one is a named, reusable version of a design technique from Levitin: decrease-and-conquer, transform-and-conquer, space-for-time, greedy, backtracking and, above all, Dynamic Programming (DP) (Levitin Ch. 4–8, 12).
 
 | 🎮 Simulations | 🏟️ Arena | 🐍 Code |
 |---|---|---|
-| [Patterns (two pointers, sliding window, monotonic stack, prefix sums, binary search on answer)](https://normansrule.github.io/algorithm-forge/sims/patterns.html) · [DP Studio](https://normansrule.github.io/algorithm-forge/sims/dp-studio.html) · [Backtracking](https://normansrule.github.io/algorithm-forge/sims/backtracking.html) | [Chapter 15 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=15) | [`ch15_patterns.py`](../../src/python/algoforge/ch15_patterns.py) |
+| [Patterns (two pointers, sliding window, monotonic stack, prefix sums, binary search on answer)](https://normansrule.github.io/algorithm-forge/sims/patterns.html) · [DP Studio](https://normansrule.github.io/algorithm-forge/sims/dp-studio.html) · [Backtracking](https://normansrule.github.io/algorithm-forge/sims/backtracking.html) · [Suffix arrays, BWT & FM-index](https://normansrule.github.io/algorithm-forge/sims/suffix-structures.html) | [Chapter 15 problems](https://normansrule.github.io/algorithm-forge/arena/?chapter=15) | [`ch15_patterns.py`](../../src/python/algoforge/ch15_patterns.py) |
 
 **Prerequisites:** [Lesson 4](../04-decrease-and-conquer/README.md) (binary search), [Lesson 8](../08-dynamic-programming/README.md) (coin-row, knapsack, memory functions), [Lesson 12](../12-coping-with-limitations/README.md) (backtracking), [Lesson 13](../13-advanced-data-structures/README.md) (heaps).
 
@@ -1807,7 +1807,7 @@ class Patterns {
 - **CLRS**: Cormen, Leiserson, Rivest and Stein (CLRS), *Introduction to Algorithms*, 3rd ed.: Ch. 15 (Dynamic Programming: rod cutting, matrix-chain, LCS, optimal binary search trees), Ch. 16 (Greedy: activity selection), Section 2.3 (merge), Problem 15-1 (longest simple path in a directed acyclic graph) and Problem 15-4 (printing neatly).
 - **Kleinberg & Tardos, *Algorithm Design***, Ch. 6 (Dynamic Programming): weighted interval scheduling, segmented least squares, sequence alignment (with Hirschberg's linear-space version), knapsack.
 - **cp-algorithms.com** pages: [Longest increasing subsequence](https://cp-algorithms.com/sequences/longest_increasing_subsequence.html), [Minimum stack / Minimum queue](https://cp-algorithms.com/data_structures/stack_queue_modification.html), [Binary search](https://cp-algorithms.com/num_methods/binary_search.html), "Introduction to Dynamic Programming", "Knapsack Problem".
-- **Massachusetts Institute of Technology (MIT) OpenCourseWare** [6.006 (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/): the four dynamic-programming lectures use the Subproblems, Relations, Topological order, Base cases, Original problem, Time (SRTBOT) framework, an excellent recipe for defining DP states.
+- **Massachusetts Institute of Technology (MIT) OpenCourseWare** [6.006 (Spring 2020)](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/): the four dynamic-programming sessions use the Subproblems, Relations, Topological order, Base cases, Original problem, Time (SRTBOT) framework, an excellent recipe for defining DP states.
 - **Back To Back SWE** (YouTube): clear walkthroughs of classic interview problems (edit distance, knapsack, LIS, sliding window).
 - **Abdul Bari** (YouTube): dynamic programming series (matrix-chain, 0/1 knapsack, TSP, optimal binary search tree).
 - **Steven Halim & Felix Halim, *Competitive Programming*** (book, 3rd/4th ed.): catalog of problem patterns with thousands of practice links to the University of Valladolid (UVa) and Kattis online judges.

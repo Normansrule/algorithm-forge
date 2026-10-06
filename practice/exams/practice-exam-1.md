@@ -1,18 +1,18 @@
-# 📝 Midterm 1 — Review Guide and Fully Worked Solutions
+# 📝 Practice Exam 1 — Checkpoint A (Chapters 1–5): Review Guide and Fully Worked Solutions
 
-CSC 501 · Algorithm Analysis and Design · Chapters 1–5 of Levitin (plus heaps from §6.4).
+Levitin, *Introduction to the Design and Analysis of Algorithms*, 3rd ed. · Chapters 1–5 (plus heaps from §6.4).
 
 This page has four parts:
 
 1. [Exam format and time tips](#1-exam-format-and-time-tips)
-2. [The 4-question review guide](#2-the-4-question-review-guide)
-3. [Sample exam: 5 problems, fully worked](#3-sample-exam--fully-worked-solutions)
-4. [Midterm 1: 4 problems, fully worked](#4-midterm-1--fully-worked-solutions)
+2. [The four kinds of questions](#2-the-four-kinds-of-questions)
+3. [Part A: 5 warm-up problems, fully worked](#3-part-a--fully-worked-solutions)
+4. [Part B: a four-problem practice exam, fully worked](#4-part-b--fully-worked-solutions)
 
 Then try the brand-new [Practice Exam 2](practice-exam-2.md) under exam conditions. For the question-by-question
-game plan and a recurrence cheat sheet, see [Exam strategies](../exam-strategies.md).
+game plan and a recurrence cheat sheet, see [Problem-solving strategies](../problem-solving-strategies.md).
 
-Every solution below follows the same five steps. Your exam answers should follow them too:
+Every solution below follows the same five steps. Your own answers should follow them too:
 
 > **Idea in plain words → Forge Pseudocode → correctness argument (invariant) → time analysis → a small trace.**
 
@@ -20,41 +20,41 @@ Every solution below follows the same five steps. Your exam answers should follo
 
 ## 1. Exam format and time tips
 
-- **Budget your time.** The exam has 4 questions. In a 75-minute sitting that is about **17 minutes per question**,
-  plus 5–7 minutes at the end to re-read your answers. Any time you have left over goes into the justification:
-  that is where points are won.
-- **Read all four questions first (2 minutes).** Start with the one you are surest of. Momentum matters.
-- **Write the idea in one or two sentences before any pseudocode.** Partial credit usually follows the idea.
+- **Budget your time.** Part B has 4 problems. If you give yourself about 75 minutes, that is roughly **17 minutes
+  per problem**, plus 5–7 minutes at the end to re-read your answers. Any time you have left over goes into the
+  justification: that is where an answer becomes convincing.
+- **Read all four problems first (2 minutes).** Start with the one you are surest of. Momentum matters.
+- **Write the idea in one or two sentences before any pseudocode.** A correct idea is most of the solution.
 - **Every algorithm needs three things:** pseudocode with header comments (Input and Output), a reason it is
-  correct, and a count of its basic operation. "It's obviously O(n)" earns nothing. "Each iteration moves `i` or `j`
-  one step toward the other, so there are at most n iterations of O(1) work each" earns full marks.
+  correct, and a count of its basic operation. "It's obviously O(n)" proves nothing. "Each iteration moves `i` or `j`
+  one step toward the other, so there are at most n iterations of O(1) work each" is a complete argument.
 - **Name the basic operation and the input size** at the start of every analysis (Levitin §2.1).
 - **Recurrences: show every backward-substitution line** and the general *i*-th line. Then choose *i* to reach
   the initial condition and simplify. Finally, **check one value** (for example T(2) or T(4)) against the recurrence.
-- **Trace on a tiny example.** Six elements are enough. It catches off-by-one errors, and graders like to see it.
+- **Trace on a tiny example.** Six elements are enough. It catches off-by-one errors and shows the reader the idea works.
 - **When stuck**, write the brute-force solution and its complexity. Then say how you would improve it.
 
 ---
 
-## 2. The 4-question review guide
+## 2. The four kinds of questions
 
-Midterm 1 (and the sample) follows four recurring question types. Master these and nothing on the exam should surprise you.
+Both parts of this practice exam use four common kinds of algorithm-design questions. Master these and few questions on Chapters 1–5 will surprise you.
 
 | Type | What they ask | What you must show | Study |
 |------|---------------|--------------------|-------|
-| **① Design a linear algorithm** | Merge-style scans of sorted sequences (union, intersection, difference, remove duplicates) | Two-pointer pseudocode, a loop invariant, and "each step advances a pointer, so ≤ 2n steps" | Midterm Q1, Sample Q2, Levitin Exercise 1.1.5 |
-| **② Recursive + non-recursive pair** | Two versions of the same task (sum of cubes, rearranging negatives, quicksort) | A recurrence with backward substitution for the recursive version, a summation for the iterative one, and a comparison of the two | Sample Q1, Q5, Midterm Q2, Levitin §2.3–2.4 |
-| **③ Exhaustive search + analysis** | Generate all candidates (permutations or subsets), test each one, count | A formula for the number of candidates × the cost per candidate, plus any mathematical property they ask you to prove first | Midterm Q3, Levitin §3.4 |
-| **④ Recurrence by backward substitution** | A decrease- or divide-and-conquer description turned into T(n), then solved | The recurrence and initial condition, substitution for n = 2^k, the i-th line, the closed form, and the Θ class | Midterm Q4, Sample Q5(c), Levitin §2.4, Appendix B |
+| **① Design a linear algorithm** | Merge-style scans of sorted sequences (union, intersection, difference, remove duplicates) | Two-pointer pseudocode, a loop invariant, and "each step advances a pointer, so ≤ 2n steps" | Problems B1 and A2, Levitin Exercise 1.1.5 |
+| **② Recursive + non-recursive pair** | Two versions of the same task (sum of cubes, rearranging negatives, quicksort) | A recurrence with backward substitution for the recursive version, a summation for the iterative one, and a comparison of the two | Problems A1, A5 and B2, Levitin §2.3–2.4 |
+| **③ Exhaustive search + analysis** | Generate all candidates (permutations or subsets), test each one, count | A formula for the number of candidates × the cost per candidate, plus any mathematical property they ask you to prove first | Problem B3, Levitin §3.4 |
+| **④ Recurrence by backward substitution** | A decrease- or divide-and-conquer description turned into T(n), then solved | The recurrence and initial condition, substitution for n = 2^k, the i-th line, the closed form, and the Θ class | Problems B4 and A5(c), Levitin §2.4, Appendix B |
 
-Also know how to prove **lower bounds** with an adversary argument (Sample Q4, Levitin §11.1–11.2) and the
-**⌈3n/2⌉ − 2 min-and-max trick** (Sample Q3).
+Also know how to prove **lower bounds** with an adversary argument (Problem A4, Levitin §11.1–11.2) and the
+**⌈3n/2⌉ − 2 min-and-max trick** (Problem A3).
 
 ---
 
-## 3. Sample exam — fully worked solutions
+## 3. Part A — fully worked solutions
 
-### Sample Q1 — Sum of the first n cubes: recursive vs. non-recursive
+### Problem A1 — Sum of the first n cubes: recursive vs. non-recursive
 
 > Compute $S(n) = 1^3 + 2^3 + \dots + n^3$ with (a) a recursive algorithm and (b) a non-recursive algorithm.
 > Analyze both and say which is better. (Compare with Levitin Exercise 2.4.3.)
@@ -119,13 +119,13 @@ closed form $S(n) = \left(\frac{n(n+1)}{2}\right)^2$, which takes $\Theta(1)$ ar
 
 ---
 
-### Sample Q2 — Union of two sorted sequences in O(n)
+### Problem A2 — Union of two sorted sequences in O(n)
 
-This is the same problem as Midterm Q1. The full solution is [below](#midterm-q1--union-of-two-sorted-sequences-as-a-set-in-on).
+This is the same problem as Problem B1. The full solution is [below](#problem-b1--union-of-two-sorted-sequences-as-a-set-in-on).
 
 ---
 
-### Sample Q3 — Minimum and maximum with at most 3n/2 comparisons (transform-and-conquer)
+### Problem A3 — Minimum and maximum with at most 3n/2 comparisons (transform-and-conquer)
 
 **Idea (representation change).** The naive method (scan for the min, then scan for the max) uses $2(n-1)$ comparisons.
 Instead, **transform** the list into $\lfloor n/2 \rfloor$ ordered pairs. Compare the two elements of each pair
@@ -195,7 +195,7 @@ That is 7 comparisons, and $3\cdot 6/2 - 2 = 7$. ✔
 
 ---
 
-### Sample Q4 — Finding the kth smallest element in a heap needs Ω(k) time
+### Problem A4 — Finding the kth smallest element in a heap needs Ω(k) time
 
 > Show that finding the kth smallest element in a (min-)heap takes at least Ω(k) time in the worst case.
 
@@ -231,7 +231,7 @@ Frederickson (1993) gave an $O(k)$ algorithm. Either way, the answer does **not*
 
 ---
 
-### Sample Q5 — Quicksort: recursive and non-recursive, with analysis
+### Problem A5 — Quicksort: recursive and non-recursive, with analysis
 
 **Idea.** Pick a pivot (here the first element), **partition** the subarray so smaller elements come before the
 pivot and the rest after it, then sort the two sides. We use the Lomuto partition: one left-to-right scan that
@@ -359,9 +359,9 @@ Total: 8 comparisons (the recursive version makes the same 8).
 
 ---
 
-## 4. Midterm 1 — fully worked solutions
+## 4. Part B — fully worked solutions
 
-### Midterm Q1 — Union of two sorted sequences as a set, in O(n)
+### Problem B1 — Union of two sorted sequences as a set, in O(n)
 
 > A and B are sorted sequences of n elements each and may contain duplicates. Output the set $A \cup B$ as a
 > sorted sequence with no duplicates, in $O(n)$ time, and justify the bound.
@@ -427,7 +427,7 @@ leftover tail of one sequence when the other runs out (the `j = m` test above ha
 
 ---
 
-### Midterm Q2 — Negatives before non-negatives, in linear time (two ways)
+### Problem B2 — Negatives before non-negatives, in linear time (two ways)
 
 > Rearrange an array of n real numbers so that all negative elements precede all positive ones. Give (a) a
 > recursive decrease-and-conquer algorithm and (b) a non-recursive algorithm, and justify that both are linear.
@@ -509,7 +509,7 @@ and at most $\lfloor n/2 \rfloor$ swaps. Extra space: $\Theta(1)$.
 
 ---
 
-### Midterm Q3 — Magic squares of order n
+### Problem B3 — Magic squares of order n
 
 > A magic square of order n places the numbers $1, \dots, n^2$ in an n × n grid, each exactly once, so that every
 > row, every column and both main diagonals have the same sum. (a) Prove that this common sum must be
@@ -605,7 +605,7 @@ Pruning speeds up the search a great deal, but the worst-case bound stays super-
 
 ---
 
-### Midterm Q4 — Recurrence $T(n) = T(n/2) + \log_2 n$ by backward substitution
+### Problem B4 — Recurrence $T(n) = T(n/2) + \log_2 n$ by backward substitution
 
 > A decrease-and-conquer algorithm reduces a problem of size n to one of size n/2, solves that recursively, and
 > converts the answer back. Decreasing plus converting together take $\log n$ time, and size 1 takes constant time.
@@ -644,5 +644,5 @@ arithmetic series whose sum is about $k^2/2$.
 
 ---
 
-➡️ Next: [Practice Exam 2](practice-exam-2.md) · [Exam strategies + recurrence cheat sheet](../exam-strategies.md) ·
+➡️ Next: [Practice Exam 2](practice-exam-2.md) · [Problem-solving strategies + recurrence cheat sheet](../problem-solving-strategies.md) ·
 [Quiz bank](../quizzes/README.md) · [Arena problems for Chapters 2–5](https://normansrule.github.io/algorithm-forge/arena/?chapter=4)

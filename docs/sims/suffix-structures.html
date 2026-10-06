@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suffix Structures · Algorithm Forge</title>
+<meta name="description" content="Indexing a text: the suffix array built by prefix doubling, the LCP array by Kasai's algorithm, the Burrows–Wheeler Transform and its inversion by LF-mapping, and FM-index backward search, step by step on a text you type.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/suffix-structures-core.js"></script>
+<style>
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes .btn.on { background: var(--ember); border-color: var(--ember); color: #1b0f05; }
+  label.field { min-width: 0; max-width: 100%; }
+  .field input[type="text"] { max-width: 100%; font-family: var(--mono); }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 560px; }
+  table.t.idx { font-family: var(--mono); font-size: .85rem; }
+  table.t.idx td, table.t.idx th { text-align: center; padding: 3px 8px; }
+  table.t.idx td.suf { text-align: left; white-space: nowrap; }
+  table.t.idx td.hot { color: var(--c-done); font-weight: 700; }
+  .refs li { margin-bottom: 4px; }
+  .kv { font-family: var(--mono); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 18 · The Frontier (with Chapters 7 and 15)</div>
+    <h1>Indexing a text: suffix arrays, the BWT and the FM-index</h1>
+    <p class="lead muted">String matchers such as Knuth–Morris–Pratt (KMP) scan the whole text for every query. If the text is fixed and huge (a genome, a code base) we can sort its suffixes once and then answer each query in time that depends on the <i>pattern</i>. Build a suffix array by prefix doubling, its Longest Common Prefix (LCP) array by Kasai's algorithm, the Burrows–Wheeler Transform (BWT), and search it backward with the FM-index.</p>
+  </header>
+
+  <section class="panel stack" style="margin-top:16px">
+    <div class="modes" role="tablist" aria-label="Stage">
+      <button class="btn on" data-mode="sa" role="tab" aria-selected="true">(a) Suffix array</button>
+      <button class="btn" data-mode="lcp" role="tab" aria-selected="false">(b) LCP array</button>
+      <button class="btn" data-mode="bwt" role="tab" aria-selected="false">(c) BWT</button>
+      <button class="btn" data-mode="fm" role="tab" aria-selected="false">(d) FM-index search</button>
+    </div>
+    <div class="row">
+      <label class="field" style="flex:3 1 220px">Text T (letters, digits, _; $ is added at the end; up to 23)<input id="txt" type="text" spellcheck="false" autocomplete="off"></label>
+      <label class="field" style="flex:1 1 120px">Pattern P (for the FM-index)<input id="pat" type="text" spellcheck="false" autocomplete="off"></label>
+      <button class="btn primary" id="load">Load</button>
+    </div>
+    <div class="row">
+      <button class="btn sm" data-preset="banana">banana$</button>
+      <button class="btn sm" data-preset="miss">mississippi$</button>
+      <button class="btn sm" data-preset="dna">DNA-like (GATTACA×3)</button>
+      <button class="btn sm" data-preset="abra">abracadabra$</button>
+      <button class="btn sm" id="rand">🎲 Random</button>
+    </div>
+    <div class="small" id="msg" style="color:var(--warn);min-height:1.2em"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage-wrap"><svg class="stage" id="stage" role="img" aria-label="The text, and its suffixes or rotations as rows of a table"></svg></div>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel" id="predictHost"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>The whole index for this text</h2>
+    <p class="small muted" style="margin-top:0" id="idxNote"></p>
+    <div class="scroll-x"><table class="t idx" id="idx"></table></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>From this page to a genome aligner</h2>
+    <div class="grid cols-2">
+      <div>
+        <p><b>FM-index.</b> Ferragina and Manzini (2000) observed that backward search needs only L, the small table C and a structure answering Occ(c, i), the <i>rank</i> of c in L[0..i−1]. With rank structures over a compressed L, the index takes space close to the compressed size of the text, and counting the occurrences of a pattern of length m costs O(m) rank queries, independent of n. To report positions you also keep a <i>sample</i> of the suffix array (say every 32nd entry) and walk with LF from any row until you reach a sampled one.</p>
+        <p><b>In production.</b> Short-read aligners in genomics, such as Bowtie (Langmead et al., 2009) and BWA (Li and Durbin, 2009), index a reference genome of about three billion bases with an FM-index and use backward search to place each read. The bzip2 compressor uses the BWT itself.</p>
+      </div>
+      <div>
+        <p><b>Building it at scale.</b> Prefix doubling (Manber and Myers) is easy to see but needs about log₂ n rounds. Production libraries use linear-time induced sorting (SA-IS, Nong, Zhang and Chan, 2009), and the LCP array then follows in linear time by Kasai's method shown in stage (b).</p>
+        <p><b>The r-index.</b> A collection of thousands of nearly identical genomes has a BWT made of few, long runs; stage (c) counts them as r. Gagie, Navarro and Prezza (SODA 2018; journal version 2020) showed how to count <i>and locate</i> all occurrences using only O(r) words of space, where r can be far smaller than n. This makes pangenome indexes practical, and is an active research area.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li>The top strip is the text T with its positions. Each row below is a <b>suffix</b> (stages a–b) or a <b>rotation</b> (stages c–d); the column <b>i</b> or <b>SA</b> says where it starts in T, and <b>r</b> is its rank in sorted order.</li>
+        <li><b>(a)</b> The blue tint covers the prefix that the current ranks already account for (1, 2, 4, 8, … characters). A purple bar to the left of the rows joins suffixes that still share a rank. The pair column is (rank[i], rank[i + k]); "−1" means the suffix ended.</li>
+        <li><b>(b)</b> The blue row is suffix i, the yellow row is the one just above it in sorted order. Purple cells are already known to match (carried over in h); green matched, red is the mismatch that stops the scan.</li>
+        <li><b>(c)</b> F is the first column, L the last (the BWT). In the inversion, an arrow goes from L[r] to the same character in F; ringed L cells are the earlier copies of that character, which fix its rank.</li>
+        <li><b>(d)</b> The blue band is the interval [sp, ep] of rows that start with the suffix of P read so far. Yellow L cells are the ones equal to the next pattern character; LF-mapping turns them into the next, narrower band.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Rounds.</b> In stage (a) with banana$ the order is final after 2 doubling rounds; mississippi$ needs 3. Type <span class="kv">aaaaaaaaaaaaaaa</span>: every round only halves the ties, and you need ⌈log₂ 16⌉ = 4 rounds.</li>
+        <li><b>The h pointer.</b> In stage (b) with mississippi$, watch the purple cells: when suffix 1 "ississippi$" has LCP 4 with the row above, suffix 2 starts with h = 3 for free. Total character comparisons stay at most 2n = 24.</li>
+        <li><b>Runs.</b> In stage (c), compare the run count r for the DNA-like preset (three copies of a word) with a random text of the same length. Repetition makes long runs.</li>
+        <li><b>Backward search.</b> In stage (d), search mississippi$ for <span class="kv">ssi</span>: the band goes from all 12 rows to 4 rows ('i'), then 2 ('si'), then 2 ('ssi') at positions 2 and 5. Then try <span class="kv">ssm</span>: the interval empties after two characters.</li>
+        <li><b>Longest repeated substring.</b> The maximum of the LCP array is the longest substring that occurs twice. For banana$ it is "ana" (LCP 3). That is the idea behind the Arena problem below.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson 18 · The Frontier</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/07-space-time-tradeoffs/README.md">📖 Lesson 7 · Space-time tradeoffs (string matching)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/15-dp-and-interview-patterns/README.md">📖 Lesson 15 · Interview patterns</a>
+      <a href="../atlas.html#string-indexing">🗺️ Atlas · String matching and text indexing</a>
+      <a href="../arena/problem.html?id=suffix-array-lrs">🏟️ Arena · Longest repeated substring (suffix array + LCP)</a>
+      <a href="../arena/problem.html?id=z-function">🏟️ Arena · Z-function</a>
+      <a href="../arena/problem.html?id=kmp-search">🏟️ Arena · KMP search</a>
+      <a href="../arena/index.html?chapter=15">🏟️ Arena · Chapter 15</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena · Level 7 Frontier</a>
+      <a href="string-match.html">🎮 String matching (brute force, Horspool, Boyer–Moore, KMP)</a>
+      <a href="trie.html">🎮 Trie</a>
+      <a href="huffman.html">🎮 Huffman coding</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>U. Manber and G. Myers, "Suffix arrays: a new method for on-line string searches", <i>SIAM Journal on Computing</i> 22(5), 1993 (first presented at SODA 1990) — suffix arrays and construction by prefix doubling.</li>
+      <li>T. Kasai, G. Lee, H. Arimura, S. Arikawa and K. Park, "Linear-time longest-common-prefix computation in suffix arrays and its applications", Combinatorial Pattern Matching (CPM) 2001 — the algorithm in stage (b).</li>
+      <li>M. Burrows and D. J. Wheeler, "A block-sorting lossless data compression algorithm", Digital Equipment Corporation Systems Research Center, Research Report 124, 1994 — the BWT.</li>
+      <li>P. Ferragina and G. Manzini, "Opportunistic data structures with applications", 41st IEEE Symposium on Foundations of Computer Science (FOCS) 2000 — the FM-index and backward search.</li>
+      <li>T. Gagie, G. Navarro and N. Prezza, "Optimal-time text indexing in BWT-runs bounded space", ACM-SIAM Symposium on Discrete Algorithms (SODA) 2018, <a href="https://arxiv.org/abs/1705.10382">arXiv:1705.10382</a>; journal version "Fully functional suffix trees and optimal text searching in BWT-runs bounded space", <i>Journal of the ACM</i> 67(1), 2020 — the r-index.</li>
+      <li>B. Langmead, C. Trapnell, M. Pop and S. L. Salzberg, "Ultrafast and memory-efficient alignment of short DNA sequences to the human genome", <i>Genome Biology</i> 10(3), 2009 — Bowtie. H. Li and R. Durbin, "Fast and accurate short read alignment with Burrows–Wheeler transform", <i>Bioinformatics</i> 25(14), 2009 — BWA.</li>
+      <li>G. Nong, S. Zhang and W. H. Chan, "Linear suffix array construction by almost pure induced-sorting", Data Compression Conference (DCC) 2009 — SA-IS.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/suffix-structures.js"></script>
+</body>
+</html>

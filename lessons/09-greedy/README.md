@@ -2,7 +2,7 @@
 
 A greedy algorithm builds a solution one piece at a time, and at every step it grabs the piece that looks best **right now** — and never takes it back. That sounds naive, and often it is: greedy can be badly wrong. But for a surprising family of problems it is provably optimal *and* blazing fast: making change with ordinary coins, scheduling the most meetings in one room, wiring a network as cheaply as possible with a Minimum Spanning Tree (MST), finding shortest routes (Dijkstra), and compressing files (Huffman codes). This chapter teaches you the algorithms **and** the two proof tools — the *exchange argument* and the *cut property* — that tell you when greedy is safe to trust.
 
-🎮 **Simulations:** [Greedy Graphs (Prim, Kruskal + union-find, Dijkstra)](https://normansrule.github.io/algorithm-forge/sims/greedy-graphs.html) · [Huffman Coding](https://normansrule.github.io/algorithm-forge/sims/huffman.html) · [Greedy Choices (change-making, activity selection, fractional knapsack)](https://normansrule.github.io/algorithm-forge/sims/greedy-choices.html)<br>
+🎮 **Simulations:** [Greedy Graphs (Prim, Kruskal + union-find, Dijkstra)](https://normansrule.github.io/algorithm-forge/sims/greedy-graphs.html) · [Huffman Coding](https://normansrule.github.io/algorithm-forge/sims/huffman.html) · [Greedy Choices (change-making, activity selection, fractional knapsack)](https://normansrule.github.io/algorithm-forge/sims/greedy-choices.html) · [MST: Borůvka & Filter-Kruskal](https://normansrule.github.io/algorithm-forge/sims/mst-modern.html)<br>
 🏟️ **Arena problems:** [Chapter 9 set](https://normansrule.github.io/algorithm-forge/arena/?chapter=9)<br>
 🐍 **Code:** [`ch09_greedy.py`](../../src/python/algoforge/ch09_greedy.py)<br>
 📝 **Practice:** [practice folder](../../practice/)
@@ -144,7 +144,7 @@ One meeting room, many requests. The trick is to ask: "which meeting frees the r
 **Block 4 — return** the chosen list.
 
 ### ✋ Trace it by hand
-The course's interview question: `Start = [1, 3, 0, 5, 8, 5]`, `End = [2, 4, 6, 7, 9, 9]`.
+A classic interview question: `Start = [1, 3, 0, 5, 8, 5]`, `End = [2, 4, 6, 7, 9, 9]`.
 
 Sorted by end time (then start): 0:[1,2], 1:[3,4], 2:[0,6], 3:[5,7], 5:[5,9], 4:[8,9].
 
@@ -647,7 +647,7 @@ Pour water in at the source and let it flow along pipes whose lengths are the ed
 ### 👀 See it
 [Greedy Graphs](https://normansrule.github.io/algorithm-forge/sims/greedy-graphs.html) → *Dijkstra*: each vertex shows its two labels `(parent, d)`; relaxations update the labels, and the shortest-path tree grows. Then add a negative edge and compare with the counterexample below.
 
-The course example (undirected):
+The standard example graph (undirected, as in Levitin §9.3):
 
 ```mermaid
 graph LR
@@ -672,7 +672,7 @@ if `d(u) + w(u, v) < d(v)` then `d(v) ← d(u) + w(u, v)` and `parent(v) ← u`.
 **Block 4 — return** `d` and `parent`; the path to `v` is `v, parent(v), parent(parent(v)), …, s` read backwards.
 
 ### ✋ Trace it by hand
-Source `a` (the course's table format: final "tree vertices" on the left, labels of the others on the right):
+Source `a` (Levitin's table format: final "tree vertices" on the left, labels of the others on the right):
 
 | tree vertex added | remaining vertices `vertex(parent, d)` after relaxing its edges |
 |---|---|
@@ -684,7 +684,7 @@ Source `a` (the course's table format: final "tree vertices" on the left, labels
 
 **Distances: a 0, b 3, d 5, c 7, e 9.** Shortest paths: a–b (3); a–b–d (5); a–b–c (7); a–b–d–e (9).
 
-Two relaxations that *didn't* happen are worth noticing: when `d` became final (5), the edge d–c offered `5 + 5 = 10 > 7`, so c kept its label; when `c` became final (7), c–e offered `7 + 6 = 13 > 9`. (The c–d edge of weight 5 appears in the slide's figure; removing it changes nothing — we checked both versions.)
+Two relaxations that *didn't* happen are worth noticing: when `d` became final (5), the edge d–c offered `5 + 5 = 10 > 7`, so c kept its label; when `c` became final (7), c–e offered `7 + 6 = 13 > 9`. (Removing the c–d edge of weight 5 changes nothing — we checked both versions.)
 
 **Why negative edges break it — a concrete counterexample.** Directed graph: s→a (2), s→b (3), b→a (−2), a→t (1).
 
@@ -833,7 +833,7 @@ Morse code already had the right idea: frequent letters (E is a single dot) get 
 
 **Block 4 — return** the last tree; assign codewords by walking it (left edge = 0, right edge = 1).
 
-### ✋ Trace it by hand — the course example
+### ✋ Trace it by hand — the Levitin §9.4 example
 | symbol | A | B | C | D | _ |
 |---|---|---|---|---|---|
 | frequency | 0.35 | 0.10 | 0.20 | 0.20 | 0.15 |
@@ -863,7 +863,7 @@ flowchart TD
 
 Average length $= 2(0.35) + 3(0.10) + 2(0.20) + 2(0.20) + 3(0.15) = 0.70 + 0.30 + 0.40 + 0.40 + 0.45 =$ **2.25 bits per symbol**. A fixed-length code for 5 symbols needs 3 bits, so the compression ratio is $(3 - 2.25)/3 =$ **25%**. Decoding `1001101101` is unambiguous because the code is prefix-free: `100 | 11 | 01 | 101` → **BAD_**.
 
-### ✋ Trace it by hand — the course practice (ties!)
+### ✋ Trace it by hand — a practice instance (ties!)
 | symbol | A | B | C | D | E |
 |---|---|---|---|---|---|
 | probability | 0.1 | 0.1 | 0.2 | 0.2 | 0.4 |
@@ -998,7 +998,7 @@ static void assign(HNode t, String prefix, Map<Character, String> codes) {
 ### 🧮 Analyze it
 - **Time** $O(n \log n)$ with a binary heap ($n - 1$ merges, each $O(\log n)$); $O(n)$ if the frequencies are already sorted (two-queue method).
 - **Correctness sketch (exchange + optimal substructure).** (1) In some optimal tree, the two least-frequent symbols are siblings at the deepest level: if a deeper leaf had a higher frequency, swapping it with a rarer symbol can only reduce the average length. (2) Merging those two siblings into one symbol of combined weight gives a smaller instance whose optimal tree, expanded again, is optimal for the original — the average length changes by exactly the merged weight either way. Induction on `n` finishes the proof.
-- Huffman is optimal among **symbol-by-symbol** prefix codes. Its average length $\bar l$ satisfies $H \le \bar l < H + 1$, where $H = -\sum p_i \log_2 p_i$ is the entropy (for the course example $H \approx 2.20$ bits vs 2.25).
+- Huffman is optimal among **symbol-by-symbol** prefix codes. Its average length $\bar l$ satisfies $H \le \bar l < H + 1$, where $H = -\sum p_i \log_2 p_i$ is the entropy (for the Levitin §9.4 example $H \approx 2.20$ bits vs 2.25).
 
 ### ⚠️ Common mistakes
 - Merging the two *largest* trees, or re-sorting only once at the start (the merged node must go back into the queue).
@@ -1042,7 +1042,7 @@ Coins {1, 3, 4}, amount 6: greedy gives 4 + 1 + 1 (3 coins), optimal is 3 + 3 (2
 
 <details><summary>Answer</summary>
 
-Finishing earliest leaves the most time for the remaining activities, and the exchange argument shows it can replace the first activity of any optimal schedule. Earliest start can pick a long activity that blocks many short ones: on the course example it picks [0, 6] first and ends with 2 activities instead of 4.
+Finishing earliest leaves the most time for the remaining activities, and the exchange argument shows it can replace the first activity of any optimal schedule. Earliest start can pick a long activity that blocks many short ones: on the interview instance (`Start = [1, 3, 0, 5, 8, 5]`) it picks [0, 6] first and ends with 2 activities instead of 4.
 </details>
 
 **4.** Capacity 10; items (weight, value): (5, 30), (4, 28), (6, 30). What do fractional knapsack and greedy-by-ratio 0/1 knapsack give?
@@ -1073,7 +1073,7 @@ Union by size keeps every tree's depth ≤ log₂ n, so `find` is O(log n). Addi
 Array version, O(n²) = 10⁸ simple steps. With m ≈ n²/2 = 5·10⁷ edges, the heap version is O(m log n) ≈ 5·10⁷ · 13, which is worse.
 </details>
 
-**8.** Run Dijkstra from `b` on the course graph (ab 3, ad 7, bc 4, bd 2, cd 5, ce 6, de 4).
+**8.** Run Dijkstra from `b` on the example graph (ab 3, ad 7, bc 4, bd 2, cd 5, ce 6, de 4).
 
 <details><summary>Answer</summary>
 
@@ -1098,7 +1098,7 @@ Merge D+C → 0.3; then B (0.3) + DC (0.3) → 0.6; then A (0.4) + 0.6 → 1.0. 
 
 <details><summary>Answer</summary>
 
-Lower variance of codeword lengths gives a steadier bit rate and smaller buffers in transmission. In the course practice, Tree 1 (lengths 3, 3, 2, 2, 2) has variance 0.16 versus 1.36 for Tree 2 (4, 4, 2, 3, 1).
+Lower variance of codeword lengths gives a steadier bit rate and smaller buffers in transmission. In the practice instance, Tree 1 (lengths 3, 3, 2, 2, 2) has variance 0.16 versus 1.36 for Tree 2 (4, 4, 2, 3, 1).
 </details>
 
 **12.** Four villages at the corners of a unit square: what is the MST length and the Steiner-tree length?
@@ -1126,6 +1126,6 @@ MST: 3 (three sides). Steiner tree: $1 + \sqrt{3} \approx 2.732$, using two extr
 - [cp-algorithms: Dijkstra](https://cp-algorithms.com/graph/dijkstra.html), [Prim](https://cp-algorithms.com/graph/mst_prim.html), [Kruskal](https://cp-algorithms.com/graph/mst_kruskal.html), and [Disjoint Set Union](https://cp-algorithms.com/data_structures/disjoint_set_union.html).
 - [Massachusetts Institute of Technology (MIT) OpenCourseWare 6.046J Design and Analysis of Algorithms (Spring 2015)](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/) — greedy algorithms and minimum spanning trees.
 - Cormen, Leiserson, Rivest, Stein (CLRS), *Introduction to Algorithms*: "Greedy Algorithms" (activity selection, Huffman codes), "Minimum Spanning Trees", "Single-Source Shortest Paths", "Data Structures for Disjoint Sets".
-- William Fiset's YouTube graph-theory playlist (Dijkstra, Prim, Kruskal, union-find) and Abdul Bari's greedy-method lectures (Huffman coding, Prim and Kruskal).
+- William Fiset's YouTube graph-theory playlist (Dijkstra, Prim, Kruskal, union-find) and Abdul Bari's greedy-method videos (Huffman coding, Prim and Kruskal).
 
 ⬅️ Previous: [Chapter 8 · Dynamic Programming](../08-dynamic-programming/README.md) · ➡️ Next: [Chapter 10 · Iterative Improvement](../10-iterative-improvement/README.md)

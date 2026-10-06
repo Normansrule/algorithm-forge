@@ -445,7 +445,7 @@
   /* ---------- Knapsack (shared input) ---------- */
   const KNAP_PRESETS = {
     book: { items: "2:12, 1:10, 3:20, 2:15", W: 5 },
-    lecture: { items: "3:13, 2:10, 1:6, 2:9", W: 5 },
+    practice: { items: "3:13, 2:10, 1:6, 2:9", W: 5 },
     ex821: { items: "3:25, 2:20, 1:15, 4:40, 5:50", W: 6 },
   };
   function knapUI(h, prefix) {
@@ -454,7 +454,7 @@
       field("Capacity W (≤ 15)", num(prefix + "-W", 5, 1, 15)),
       field("Preset", E("select", { id: prefix + "-pre", onchange: (e) => { const p = KNAP_PRESETS[e.target.value]; if (p) { $(prefix + "-items").value = p.items; $(prefix + "-W").value = p.W; } } },
         E("option", { value: "book" }, "Levitin example, W = 5"),
-        E("option", { value: "lecture" }, "Lecture practice, W = 5"),
+        E("option", { value: "practice" }, "Practice instance, W = 5"),
         E("option", { value: "ex821" }, "Levitin Ex 8.2.1, W = 6"))));
   }
   function knapRead(prefix) {

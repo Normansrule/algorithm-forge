@@ -2,7 +2,7 @@
 """Build docs/quiz/quiz-bank.js from the Markdown quiz banks.
 
 Sources (same question format in both files):
-  practice/quizzes/README.md          — course quizzes A–D (Part 1) + practice questions N1–N58 (Part 2)
+  practice/quizzes/README.md          — core questions Q1.1–Q1.19 by topic (Part 1) + practice questions N1–N58 (Part 2)
   practice/quizzes/extra-questions.md — original questions X1–X40
 
     python3 tools/build_quiz_bank.py
@@ -36,12 +36,13 @@ OPTION = re.compile(r"^- ([a-h])\)\s+(.*)$")
 
 def parse(path):
     lines = open(os.path.join(ROOT, path), encoding="utf-8").read().split("\n")
-    out, chapter, i = [], None, 0
+    out, chapter, topic, i = [], None, None, 0
     while i < len(lines):
         ln = lines[i]
-        m = re.match(r"^## (1\.\d)\s", ln)
+        m = re.match(r"^## (1\.\d)\s+(.*)$", ln)
         if m:
             chapter = PART1_CHAPTER.get(m.group(1), chapter)
+            topic = m.group(2).strip()
         m = re.match(r"^## Chapter (\d+)", ln)
         if m:
             chapter = int(m.group(1))
@@ -76,9 +77,9 @@ def parse(path):
         answer = "abcdefgh".index(am.group(1))
         explain_md = (det_md[:am.start()] + det_md[am.end():]).strip()
         verdict = am.group(2).strip().rstrip(".")
-        src = ("Course quiz" + (f" · {tag}" if tag else "")) if qid.startswith("Q") else ("Forge practice" if qid.startswith("N") else "Forge original")
+        src = (f"Core · {topic}" if topic else "Core") if qid.startswith("Q") else ("Forge practice" if qid.startswith("N") else "Forge original")
         out.append({
-            "id": qid, "ch": chapter, "src": src, "course": qid.startswith("Q"),
+            "id": qid, "ch": chapter, "src": src, "core": qid.startswith("Q"),
             # statement lists like "I. …", "II. …", "A. …" become bullet lines
             "q": forge_md.render("\n".join(("- " + l) if re.match(r"^(I{1,3}|IV|[A-D])\.\s", l) else l for l in q_lines).strip()),
             "options": [forge_md.inline(o) for o in options],
@@ -111,7 +112,7 @@ def main():
     for q in qs:
         by[q["ch"]] = by.get(q["ch"], 0) + 1
     print(f"wrote {os.path.relpath(path, ROOT)}: {len(qs)} questions", dict(sorted(by.items())),
-          f"course={sum(q['course'] for q in qs)}")
+          f"core={sum(q['core'] for q in qs)}")
 
 
 if __name__ == "__main__":

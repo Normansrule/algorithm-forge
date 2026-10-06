@@ -431,3 +431,30 @@ test("built-ins are charged their real cost (a list scan is not one step)", () =
   assert.equal(scan.value, 200);
   assert.ok(scan.ops.steps > 200 * 100, "x in L should cost about length(L) steps");
 });
+
+test("× and ÷ are operators", () => {
+  assert.equal(run(`ALGORITHM T()
+    return ⌊(4 × 5) ÷ 3⌋`, []).value, 6);
+});
+
+test("swap x and T[x] writes the element it read", () => {
+  const r = run(`ALGORITHM T()
+    A ← [10, 20, 30]
+    x ← 1
+    swap x and A[x]
+    return [x, A]`, []);
+  assert.deepEqual(r.value, [20, [10, 1, 30]]);
+});
+
+test("min/max of plain numbers are not element comparisons", () => {
+  const r = run(`ALGORITHM T(A[0..n-1])
+    m ← min(3, 4)
+    return max(A) + m`, [[5, 9, 2]]);
+  assert.equal(r.value, 12);
+  assert.equal(r.ops.keyComparisons, 2);
+});
+
+test("result.returned tells 'no return' from 'returned null'", () => {
+  assert.equal(F.run("ALGORITHM F(A)\n    A[0] ← 1", { args: [[0]] }).returned, false);
+  assert.equal(F.run("ALGORITHM F(A)\n    return null", { args: [[0]] }).returned, true);
+});

@@ -230,9 +230,14 @@
     this.render();
     if (n && scroll !== false) {
       const row = this.gutter.children[n - 1];
-      if (row && row.scrollIntoView) {
-        const r = row.getBoundingClientRect();
-        if (r.top < 60 || r.bottom > window.innerHeight - 10) row.scrollIntoView({ block: "center", behavior: "auto" });
+      // Follow the line only inside a scrolling column (the side-by-side desktop layout). When the page itself is the
+      // scroller (phones and tablets: the step controls sit above the editor), scrolling to the line would throw the
+      // controls off screen on every step; the trace card names the current line there anyway.
+      let box = this.root.parentElement;
+      while (box && box !== document.body && !/(auto|scroll)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+      if (row && row.scrollIntoView && box && box !== document.body) {
+        const r = row.getBoundingClientRect(), b = box.getBoundingClientRect();
+        if (r.top < Math.max(60, b.top + 50) || r.bottom > Math.min(window.innerHeight, b.bottom) - 10) row.scrollIntoView({ block: "center", behavior: "auto" });
       }
     }
   };

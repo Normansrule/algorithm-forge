@@ -817,10 +817,10 @@ ForgeProblems.add({
   level: 0, chapter: 2, difficulty: 2,
   topics: ["recursion", "loops", "recurrences", "analysis"],
   strategy: "Recursion or a loop — then compare",
-  source: "CSC 501 Midterm 1 sample, Q1",
+  source: "Classic exam problem (Practice Exam 1, Problem A1) · compare Levitin Exercise 2.4.3",
   summary: "Compute S(n) = 1³ + 2³ + … + n³, recursively or with a loop, and count its multiplications.",
   statement: `
-<p>The exam question asks for this sum <b>twice</b> — once recursively, once with a loop — and then asks which is better.
+<p>The classic exam version asks for this sum <b>twice</b> — once recursively, once with a loop — and then asks which is better.
 Writing both is a great way to see that the same arithmetic can be organized in two shapes.</p>
 <p><b>Task.</b> Return <code>S(n) = 1³ + 2³ + … + n³</code>. (S(0) = 0.)</p>
 <ul>
@@ -896,7 +896,7 @@ ForgeProblems.add({
   level: 0, chapter: 1, difficulty: 2,
   topics: ["number theory", "loops", "problem constraints"],
   strategy: "Try consecutive integers",
-  source: "Levitin Exercise 1.1.4 (adapted) · CSC 501 A1 Q1",
+  source: "Levitin Exercise 1.1.4 (adapted) · Problem Set 1, Problem 1",
   summary: "Return ⌊√n⌋ using only + − × ÷ and comparisons.",
   statement: `
 <p>Real hardware often lacks a square-root instruction (tiny microcontrollers, cryptography libraries working with huge
@@ -1093,7 +1093,7 @@ ForgeProblems.add({
   level: 0, chapter: 1, difficulty: 3,
   topics: ["simulation", "loops", "number theory", "puzzles"],
   strategy: "Simulate, then spot the pattern",
-  source: "Levitin Exercise 1.1.12 (adapted; the course handout numbers it 1.1.11) · CSC 501 A1 Q9",
+  source: "Levitin Exercise 1.1.12 (adapted) · Problem Set 1, Problem 9",
   summary: "n lockers, n passes; pass i toggles every i-th locker. Which lockers are open at the end?",
   statement: `
 <p>A puzzle that rewards simulating first and thinking second. There are <code>n</code> lockers in a row, numbered
@@ -1279,7 +1279,7 @@ ForgeProblems.add({
   level: 1, chapter: 1, difficulty: 1,
   topics: ["arrays", "nested loops", "counting operations", "code improvement"],
   strategy: "Brute force, done carefully",
-  source: "Levitin Exercise 1.2.9 (adapted) · CSC 501 A1 Q2",
+  source: "Levitin Exercise 1.2.9 (adapted) · Problem Set 1, Problem 2",
   summary: "Return the smallest |A[i] − A[j]| over all pairs, using each pair only once.",
   statement: `
 <p>Levitin Exercise 1.2.9 gives a working but wasteful algorithm for the distance between the two closest numbers in an
@@ -1532,7 +1532,7 @@ ForgeProblems.add({
   level: 1, chapter: 1, difficulty: 2,
   topics: ["sorting", "nested loops", "counting operations", "stability"],
   strategy: "Count smaller elements, then place",
-  source: "Levitin §7.1 · Exercise 1.3.1 (adapted) · CSC 501 A1 Q3",
+  source: "Levitin §7.1 · Exercise 1.3.1 (adapted) · Problem Set 1, Problem 3",
   summary: "For each element count how many are smaller; that count is its position in the sorted output.",
   statement: `
 <p>A sort that never moves anything until the very end: for every element, <b>count how many elements are smaller</b> than
@@ -1734,7 +1734,7 @@ ForgeProblems.add({
   level: 1, chapter: 2, difficulty: 2,
   topics: ["recursion", "recurrences", "counting operations", "backward substitution"],
   strategy: "Instrument the algorithm, then solve the recurrences",
-  source: "Levitin Exercise 2.4.4 (adapted) · CSC 501 A1 Q8",
+  source: "Levitin Exercise 2.4.4 (adapted) · Problem Set 1, Problem 8",
   summary: "For the recursive Q(n) = Q(n − 1) + 2n − 1, return its value and exact operation counts.",
   statement: `
 <p>Here is a small recursive algorithm (Levitin Exercise 2.4.4), in our pseudocode:</p>
@@ -2017,7 +2017,7 @@ ForgeProblems.add({
   level: 1, chapter: 2, difficulty: 3,
   topics: ["recursion", "recurrences", "Fibonacci", "counting operations"],
   strategy: "Find the recurrence the counts satisfy",
-  source: "Levitin Exercise 2.5.7 (adapted; the course handout numbers it 2.5.5) · CSC 501 A1 Q10",
+  source: "Levitin Exercise 2.5.7 (adapted) · Problem Set 1, Problem 10",
   summary: "In the naive recursive Fibonacci, count how many times F(1) and F(0) are evaluated — for n up to 60.",
   statement: `
 <p>The definition-based algorithm for Fibonacci numbers,</p>

@@ -357,7 +357,7 @@ ForgeProblems.add({
   level: 3, chapter: 6, difficulty: 2,
   topics: ["counting", "remainders", "space-time tradeoff", "interview"],
   strategy: "Representation change (count remainders)",
-  source: "CSC 501 Lecture 6 interview problem",
+  source: "Interview classic",
   summary: "Count pairs i < j with (A[i] + A[j]) mod 60 = 0 — in linear time.",
   statement: `
 <p>A playlist has songs of lengths <code>A[0..n-1]</code> seconds. How many <b>pairs</b> of songs <code>i &lt; j</code> have a
@@ -1138,7 +1138,7 @@ ForgeProblems.add({
   level: 3, chapter: 6, difficulty: 1,
   topics: ["binary search trees", "recursion", "tree traversal", "records"],
   strategy: "Representation change (search tree)",
-  source: "Levitin §6.3 & Lecture 6 (BST insertion, inorder traversal)",
+  source: "Levitin §6.3 (BST insertion, inorder traversal)",
   summary: "Insert keys one by one into a binary search tree; return its inorder traversal and height.",
   statement: `
 <p>A <b>Binary Search Tree (BST)</b> keeps every key in a node's left subtree smaller than the node's key and every key in
@@ -1921,7 +1921,7 @@ ForgeProblems.add({
   level: 3, chapter: 7, difficulty: 2,
   topics: ["radix sort", "counting sort", "stable sorting", "linear sorting"],
   strategy: "Input enhancement (digit counting)",
-  source: "CSC 501 Lecture 7 (Radix sorting) · Levitin §7.1 & §6.1 footnote",
+  source: "Radix sorting · Levitin §7.1 & §6.1 footnote",
   summary: "Sort d-digit numbers with d stable counting-sort passes, from the last digit to the first.",
   statement: `
 <p><b>Least Significant Digit (LSD)</b> radix sort sorts d-digit numbers with d passes of a <b>stable</b> sort on single
@@ -2226,7 +2226,7 @@ counts every comparison involving a character of P or T). Tip: store shifts in a
 });
 
 /* =====================================================================
-   KMP (Lecture 7) · §7.3 Hashing
+   KMP · §7.3 Hashing
    ===================================================================== */
 
 const lpsVar = (P, opt = {}) => {
@@ -2291,7 +2291,7 @@ ForgeProblems.add({
   level: 3, chapter: 7, difficulty: 2,
   topics: ["string matching", "KMP", "input enhancement", "prefix function"],
   strategy: "Input enhancement (preprocess the pattern)",
-  source: "CSC 501 Lecture 7 (KMP: the LPS array) · Levitin §7.2 (input enhancement)",
+  source: "KMP: the LPS array · Levitin §7.2 (input enhancement)",
   summary: "The Longest proper Prefix-Suffix (LPS) table: LPS[i] = length of the longest proper prefix of P[0..i] that is also its suffix — in Θ(m).",
   statement: `
 <p>The <b>Knuth–Morris–Pratt (KMP)</b> algorithm never re-reads a text character. Its secret is a table computed from the
@@ -2396,7 +2396,7 @@ ForgeProblems.add({
   level: 3, chapter: 7, difficulty: 3,
   topics: ["string matching", "KMP", "input enhancement", "amortized analysis"],
   strategy: "Input enhancement (prefix table)",
-  source: "CSC 501 Lecture 7 (KMP search phase)",
+  source: "KMP search phase · Knuth, Morris & Pratt (1977)",
   summary: "Report all (possibly overlapping) matches of P in T with at most 2(n + m) character comparisons.",
   statement: `
 <p>Write <code>KMPSearch(P, T)</code> that returns the list of <b>all</b> starting indices where <code>P</code> occurs in

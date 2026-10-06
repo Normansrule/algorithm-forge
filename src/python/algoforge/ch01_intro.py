@@ -2,7 +2,7 @@
 common divisor (gcd) and a few classic warm-ups.
 
 Levitin §1.1 presents three different ways to compute gcd(m, n). They solve the
-same problem with very different speed, which is the whole point of the course.
+same problem with very different speed, which is the whole point of studying algorithms.
 """
 
 from __future__ import annotations

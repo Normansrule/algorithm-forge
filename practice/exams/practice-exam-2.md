@@ -1,11 +1,11 @@
-# 📝 Practice Exam 2 (original, Midterm-1 style)
+# 📝 Practice Exam 2 — Checkpoint A (Chapters 1–5), original problems
 
-**Rules for yourself:** closed book, 75 minutes, 4 questions (about 17 minutes each plus review). Write every answer
-the way the [exam strategies](../exam-strategies.md) page shows: idea → pseudocode → correctness → analysis → tiny
-trace. Only open a solution after you have written your own answer, and grade yourself with the checklist inside it.
+**Rules for yourself:** closed book, a 75-minute timer, 4 questions (about 17 minutes each plus review). Write every answer
+the way the [problem-solving strategies](../problem-solving-strategies.md) page shows: idea → pseudocode → correctness → analysis → tiny
+trace. Only open a solution after you have written your own answer, and check yourself against the checklist inside it.
 
-This exam is new material written for Algorithm Forge. It follows the same four question types as Midterm 1 but
-uses different problems.
+This exam is new material written for Algorithm Forge. It uses the same four kinds of questions as [Practice Exam 1](practice-exam-1.md)
+but uses different problems.
 
 ---
 
@@ -236,4 +236,4 @@ level costs n, over $\log_3 n$ levels, giving $n \log n$. Both were verified in 
 
 ---
 
-⬅️ [Midterm 1 review + solutions](README.md) · [Exam strategies](../exam-strategies.md) · [Practice home](../README.md)
+⬅️ [Practice Exam 1 + solutions](practice-exam-1.md) · [Problem-solving strategies](../problem-solving-strategies.md) · [Practice home](../README.md)

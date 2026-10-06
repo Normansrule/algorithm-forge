@@ -334,7 +334,7 @@
   $("mode").onchange = (e) => { const t = e.target.value === "text"; $("tableField").hidden = t; $("textField").hidden = !t; build(); };
   $("tie").onchange = (e) => { tie = e.target.value; build(); };
   $("pBook").onclick = () => { $("mode").value = "table"; $("mode").onchange({ target: $("mode") }); $("freq").value = "A 0.35, B 0.1, C 0.2, D 0.2, _ 0.15"; $("msg").value = "DAD_CAB"; build(); };
-  $("pLec").onclick = () => { $("mode").value = "table"; $("tableField").hidden = false; $("textField").hidden = true; $("freq").value = "A 0.1, B 0.1, C 0.2, D 0.2, E 0.4"; $("msg").value = "BEADCE"; build(); };
+  $("pTies").onclick = () => { $("mode").value = "table"; $("tableField").hidden = false; $("textField").hidden = true; $("freq").value = "A 0.1, B 0.1, C 0.2, D 0.2, E 0.4"; $("msg").value = "BEADCE"; build(); };
   $("rand").onclick = () => {
     if ($("mode").value === "text") {
       const words = ["MISSISSIPPI", "BANANA BANDANA", "GREEDY GREEN GEESE", "ABRACADABRA", "PEPPER PICKER", "TO BE OR NOT TO BE"];

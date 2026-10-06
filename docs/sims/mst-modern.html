@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modern MST · Algorithm Forge</title>
+<meta name="description" content="Minimum spanning trees, parallel and randomized: Kruskal, Prim, Borůvka's parallel rounds with contraction, and Filter-Kruskal's quicksort-style edge filtering on one editable graph, plus how Karger–Klein–Tarjan reach expected linear time and Chazelle reaches O(m α(m, n)).">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/mst-modern-core.js"></script>
+<style>
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes .btn.on { background: var(--ember); border-color: var(--ember); color: #1b0f05; }
+  label.field { min-width: 0; max-width: 100%; }
+  label.field[hidden], .row[hidden] { display: none; }
+  select { max-width: 100%; }
+  .field input[type="text"] { width: 100%; font-family: var(--mono); }
+  #stage.editing { cursor: crosshair; outline: 2px dashed var(--ember); outline-offset: -2px; }
+  #stage { touch-action: manipulation; }
+  .stage-wrap { overflow-x: auto; border-radius: var(--radius); }
+  .stage-wrap > .stage { min-width: 540px; }
+  table.t.sum td, table.t.sum th { text-align: right; }
+  table.t.sum td:first-child, table.t.sum th:first-child { text-align: left; }
+  table.t.sum tr.cur td { background: var(--ember-soft); }
+  table.t.sum td.ok { color: var(--c-done); font-weight: 700; }
+  table.t.sum td.bad { color: var(--bad); font-weight: 700; }
+  .linkish { background: none; border: 0; padding: 0; color: var(--steel); font: 700 .88rem var(--font); cursor: pointer; }
+  .linkish:hover { text-decoration: underline; }
+  .refs li { margin-bottom: 4px; }
+  .steps li { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 18 · The Frontier (with Chapters 9 and 13)</div>
+    <h1>Minimum spanning trees, parallel and randomized</h1>
+    <p class="lead muted">A Minimum Spanning Tree (MST) is the cheapest set of edges that connects every vertex. Kruskal and Prim find it one edge at a time. Borůvka lets every component choose at once, which is why parallel and distributed codes use it, and Filter-Kruskal skips sorting the edges that cannot matter. All four run on the same graph and must agree.</p>
+  </header>
+
+  <section class="panel stack" style="margin-top:16px">
+    <div class="modes" role="tablist" aria-label="Algorithm">
+      <button class="btn" data-alg="kruskal" role="tab" aria-selected="false">Kruskal</button>
+      <button class="btn" data-alg="prim" role="tab" aria-selected="false">Prim</button>
+      <button class="btn on" data-alg="boruvka" role="tab" aria-selected="true">Borůvka (parallel rounds)</button>
+      <button class="btn" data-alg="filter" role="tab" aria-selected="false">Filter-Kruskal</button>
+    </div>
+    <div class="row">
+      <label class="field">Vertices n = <b id="nOut">24</b><input type="range" id="n" min="4" max="60" value="24" style="width:140px"></label>
+      <label class="field">Density
+        <select id="deg"><option value="3">sparse (3 nearest)</option><option value="6">medium (6 nearest)</option><option value="12">dense (12 nearest)</option></select>
+      </label>
+      <label class="field">Weights
+        <select id="wmode"><option value="dist">distance</option><option value="ties">1–9 (many ties)</option></select>
+      </label>
+      <label class="field">Seed <input type="number" id="seed" value="4" style="width:76px"></label>
+      <button class="btn" id="rand">🎲 Random graph</button>
+      <label class="field">Preset
+        <select id="preset"><option value="">—</option><option value="lev">Levitin §9.1 graph (a–f)</option><option value="ties">All weights equal (ties!)</option></select>
+      </label>
+    </div>
+    <div class="row" id="optFilter" hidden>
+      <label class="field">Base-case threshold (edges) = <b id="thOut">8</b><input type="range" id="th" min="1" max="40" value="8" style="width:140px"></label>
+      <span class="small muted">Segments with at most this many edges are sorted and scanned by plain Kruskal.</span>
+    </div>
+    <div class="row">
+      <label class="field" style="flex:1 1 320px">Edges (u-v weight), editable<input type="text" id="edges" spellcheck="false" autocomplete="off"></label>
+      <button class="btn primary" id="load">Load</button>
+    </div>
+    <div class="row">
+      <label class="row small" style="gap:6px"><input type="checkbox" id="edit"> ✏️ Edit by clicking the graph</label>
+      <label class="field">New edge weight <input type="number" id="ew" value="5" min="1" max="999" style="width:76px"></label>
+      <label class="row small" style="gap:6px"><input type="checkbox" id="showW" checked> show weights</label>
+    </div>
+    <p class="small muted" style="margin:0">Edit mode: click empty space to add a vertex (up to 60); click one vertex, then another, to add that edge (or remove it if it is there).</p>
+    <div class="small" id="msg" style="color:var(--warn);min-height:1.2em"></div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <div class="stage-wrap"><svg class="stage" id="stage" role="img" aria-label="Weighted graph with the spanning tree being built"></svg></div>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel" id="predictHost"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>All four on this graph</h2>
+    <p class="small muted" style="margin-top:0">Equal weights are ordered by edge index (the order in the edge list), so the MST is unique and every algorithm must return exactly the same edges. Click a name to watch it.</p>
+    <div class="scroll-x"><table class="t sum" id="sum"></table></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Beyond O(m log n): randomized linear time, and Chazelle's bound</h2>
+    <p class="small muted" style="margin-top:0">An explanation, not an implementation. n = number of vertices, m = number of edges.</p>
+    <div class="grid cols-2">
+      <div>
+        <p><b>Two facts do all the work.</b> The <i>cut property</i>: the lightest edge leaving any set of vertices is in the MST (Borůvka's rule). The <i>cycle property</i>: the heaviest edge on any cycle is not. Given a forest F, call an edge <b>F-heavy</b> if it is heavier than every edge on the path in F between its ends; by the cycle property an F-heavy edge can never be in the MST, whatever F is.</p>
+        <p><b>Karger, Klein and Tarjan (1995)</b> combine both:</p>
+        <ol class="steps">
+          <li><b>Shrink.</b> Run two Borůvka rounds (like the ones animated above). The number of vertices drops by a factor of at least 4; the chosen edges are in the MST.</li>
+          <li><b>Sample.</b> Keep each remaining edge independently with probability ½ and recursively compute the minimum spanning forest F of that random half.</li>
+          <li><b>Filter.</b> Throw away every F-heavy edge of the whole graph. A linear-time MST <i>verification</i> algorithm (Komlós 1985; Dixon, Rauch and Tarjan 1992; King 1997) finds them all in O(m) time.</li>
+          <li><b>Recurse</b> on the edges that are left.</li>
+        </ol>
+        <p>The key is a sampling lemma: if each edge is kept with probability p, the expected number of F-light edges is at most n/p, so here at most 2n edges survive the filter no matter how large m is. Expected time O(m); in the worst case O(min(n², m log n)).</p>
+      </div>
+      <div>
+        <div class="callout steel">
+          <b>Check the sampling lemma on this graph.</b> Sample half the edges at random, build F, and count the F-light edges of the whole graph (F's own edges count as light).
+          <div class="row" style="margin-top:8px"><button class="btn steel sm" id="lemmaGo">Run 200 samples</button><span class="small" id="lemmaOut"></span></div>
+        </div>
+        <p style="margin-top:14px"><b>Deterministic: Chazelle (2000).</b> Without random bits, the best known time is O(m α(m, n)), where α is the inverse Ackermann function, at most 4 for any input that fits in our universe. It rests on the <i>soft heap</i>, a priority queue allowed to raise (corrupt) a controlled fraction of its keys, which makes it faster; the MST algorithm tolerates the errors and repairs them later.</p>
+        <p><b>Still open.</b> Pettie and Ramachandran (2002) gave a deterministic algorithm that is provably optimal, yet nobody knows its running time: it lies between Ω(m) and O(m α(m, n)). Whether MST can be solved deterministically in linear time is an open problem.</p>
+        <p><b>In practice.</b> Kruskal or Prim with a good heap are hard to beat on one core. Filter-Kruskal is a simple, fast choice when edges are many, and Borůvka-style rounds are the usual basis for parallel, distributed and GPU MST codes.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid cols-2" style="margin-top:16px">
+    <section class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Orange</b> edges are in the tree. A <b>blue</b> edge is the one being looked at (in Borůvka: the edges chosen this round, with an arrow from the component that chose it). <b>Red dashed</b> means rejected because it would close a cycle; <b>grey</b> means discarded or filtered.</li>
+        <li><b>Vertex colours</b> show the current components (the union-find sets) in Kruskal, Borůvka and Filter-Kruskal; uncoloured vertices are still alone. In Prim, green vertices are in the tree and yellow edges are in the heap.</li>
+        <li>In Borůvka's <b>contraction</b> frames each component is drawn as one big super-vertex (its size inside), joined by the lightest edge between each pair of components: the smaller graph the next round works on.</li>
+        <li>The <b>strip</b> under the graph is the edge array. Kruskal: sorted order (unvisited, kept, rejected). Filter-Kruskal: the current segment is boxed; blue = E≤ (not heavier than the purple pivot), light purple = E>, yellow = sorted in a base case, grey = filtered out without ever being sorted.</li>
+      </ul>
+    </section>
+    <section class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Rounds halve.</b> Run Borůvka on n = 60. Read the component counts in the narration: each round leaves at most half as many components as it started with, so there are never more than ⌈log₂ 60⌉ = 6 rounds (usually 3 or 4).</li>
+        <li><b>Why ties need a rule.</b> Load "All weights equal" and run Borůvka. Every edge of the triangle a–b–c weighs 1, so without a rule a could pick a–b, b pick b–c and c pick c–a: a cycle. With ties broken by edge index, a and b both pick a–b (#0) and c picks b–c (#1), and no cycle can form. Check that all four algorithms report the same edges in the table.</li>
+        <li><b>Filter-Kruskal pays off on dense graphs.</b> Set n = 60 and compare "sorted edges saved" for sparse and dense. On the dense graph most heavy edges are filtered out unsorted, and its comparisons drop well below Kruskal's.</li>
+        <li><b>Threshold.</b> In Filter-Kruskal, drag the threshold to 1 (pure quicksort-style recursion) and to 40 (almost plain Kruskal). Watch the edges-sorted counter.</li>
+        <li><b>Prim's stale edges.</b> With weights 1–9, run Prim and count the stale pops: edges that became useless while waiting in the heap.</li>
+      </ol>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson 18 · The Frontier</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/09-greedy/README.md">📖 Lesson 9 · Greedy (Prim, Kruskal)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/13-advanced-data-structures/README.md">📖 Lesson 13 · Union-find</a>
+      <a href="../atlas.html#minimum-spanning-tree">🗺️ Atlas · Minimum spanning tree</a>
+      <a href="../arena/problem.html?id=kruskal-mst-edges">🏟️ Arena · Kruskal's algorithm</a>
+      <a href="../arena/problem.html?id=prim-mst-weight">🏟️ Arena · Prim's algorithm</a>
+      <a href="../arena/problem.html?id=quick-union-find">🏟️ Arena · Quick union by size</a>
+      <a href="../arena/problem.html?id=union-find-ops">🏟️ Arena · Union-find with path compression</a>
+      <a href="../arena/index.html?chapter=9">🏟️ Arena · Chapter 9</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena · Level 7 Frontier</a>
+      <a href="greedy-graphs.html">🎮 Prim, Kruskal and Dijkstra</a>
+      <a href="union-find.html">🎮 Union-find</a>
+      <a href="sorting-studio.html">🎮 Sorting studio (quicksort partition)</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>O. Borůvka, "O jistém problému minimálním" (On a certain minimal problem), <i>Práce Moravské Přírodovědecké Společnosti</i> 3, 1926.</li>
+      <li>J. B. Kruskal, "On the shortest spanning subtree of a graph and the traveling salesman problem", <i>Proceedings of the American Mathematical Society</i> 7(1), 1956. R. C. Prim, "Shortest connection networks and some generalizations", <i>Bell System Technical Journal</i> 36(6), 1957. A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed., §9.1–9.2.</li>
+      <li>V. Osipov, P. Sanders and J. Singler, "The Filter-Kruskal minimum spanning tree algorithm", Workshop on Algorithm Engineering and Experiments (ALENEX) 2009 — expected O(m + n log n · log(m/n)) time for random edge weights.</li>
+      <li>D. R. Karger, P. N. Klein and R. E. Tarjan, "A randomized linear-time algorithm to find minimum spanning trees", <i>Journal of the ACM</i> 42(2), 1995, pp. 321–328.</li>
+      <li>J. Komlós, "Linear verification for spanning trees", <i>Combinatorica</i> 5, 1985. B. Dixon, M. Rauch and R. E. Tarjan, "Verification and sensitivity analysis of minimum spanning trees in linear time", <i>SIAM Journal on Computing</i> 21(6), 1992. V. King, "A simpler minimum spanning tree verification algorithm", <i>Algorithmica</i> 18, 1997.</li>
+      <li>B. Chazelle, "A minimum spanning tree algorithm with inverse-Ackermann type complexity", <i>Journal of the ACM</i> 47(6), 2000, <a href="https://doi.org/10.1145/355541.355562">doi:10.1145/355541.355562</a>; B. Chazelle, "The soft heap: an approximate priority queue with optimal error rate", <i>Journal of the ACM</i> 47(6), 2000.</li>
+      <li>S. Pettie and V. Ramachandran, "An optimal minimum spanning tree algorithm", <i>Journal of the ACM</i> 49(1), 2002, <a href="https://doi.org/10.1145/505241.505243">doi:10.1145/505241.505243</a>.</li>
+    </ul>
+  </section>
+</main>
+<script src="js/mst-modern.js"></script>
+</body>
+</html>

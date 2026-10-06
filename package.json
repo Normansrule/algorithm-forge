@@ -3,7 +3,7 @@
   "private": true,
   "description": "Learn to build algorithms from scratch: lessons, simulations and a graded pseudocode Arena.",
   "scripts": {
-    "test": "node tests/engine/forge-pseudo.test.mjs && node tools/validate-problems.mjs --quiet && node tools/check-lesson-pseudocode.mjs && node tools/check-pseudocode-snippets.mjs",
+    "test": "node tests/engine/forge-pseudo.test.mjs && node tools/validate-problems.mjs --quiet && node tools/check-lesson-pseudocode.mjs && node tools/check-pseudocode-snippets.mjs && node tools/check-pseudocode-snippets.mjs lessons/18-the-frontier/README.md && node tools/check-playground-examples.mjs --quiet",
     "serve": "python3 -m http.server 8000 --directory docs",
     "readme": "python3 tools/build_readme_tables.py"
   }

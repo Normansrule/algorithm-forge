@@ -41,7 +41,7 @@
           <option value="hanoi">M(n) = 2M(n−1) + 1, M(1) = 1 (Tower of Hanoi)</option>
           <option value="merge">T(n) = 2T(n/2) + n, T(1) = 0 (mergesort)</option>
           <option value="bs">T(n) = T(n/2) + 1, T(1) = 1 (binary search)</option>
-          <option value="midterm">T(n) = T(n/2) + log₂ n, T(1) = 1 (Midterm 1, Q4)</option>
+          <option value="halflog">T(n) = T(n/2) + log₂ n, T(1) = 1 (classic exam recurrence)</option>
           <option value="custom">Custom: T(n) = a·T(n/b) + nᵈ, T(1) = c</option>
         </select>
       </label>
@@ -113,7 +113,7 @@
     <section class="panel">
       <h2>Try this</h2>
       <ol>
-        <li><b>Midterm 1, Q4.</b> Load T(n) = T(n/2) + log₂ n. Before playing, write the first two substitutions yourself. Then check: T(n) = 1 + log₂n·(log₂n + 1)/2, so Θ(log² n). For n = 16: 1 + 4·5/2 = 11.</li>
+        <li><b>The classic exam recurrence</b> (Practice Exam 1, Problem B4). Load T(n) = T(n/2) + log₂ n. Before playing, write the first two substitutions yourself. Then check: T(n) = 1 + log₂n·(log₂n + 1)/2, so Θ(log² n). For n = 16: 1 + 4·5/2 = 11.</li>
         <li>Load mergesort and watch the level sums: every level costs exactly n. How many levels have work? (log₂ n.) That is n log₂ n in one picture.</li>
         <li>Load Hanoi: each level has twice the cost of the level above, so the bottom level alone is about half the total. Predict the total for n = 6 (63).</li>
         <li>Custom: a = 4, b = 2, d = 1. Predict the Master Theorem case before classifying. Then watch the tree: the level sums grow ×2 per level, so the leaves dominate: Θ(n²).</li>
@@ -128,7 +128,7 @@
       <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/02-analysis-framework/README.md">📖 Lesson: Chapter 2</a>
       <a class="btn" href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/05-divide-and-conquer/README.md">📖 Lesson: Chapter 5 (Master Theorem)</a>
       <a class="btn" href="../arena/index.html?chapter=2">🏟️ Arena: Chapter 2</a>
-      <a class="btn sm" href="../arena/problem.html?id=midterm-recurrence-log">midterm-recurrence-log</a>
+      <a class="btn sm" href="../arena/problem.html?id=recurrence-halve-log">halve-and-log recurrence</a>
       <a class="btn sm" href="../arena/problem.html?id=q-of-n">q-of-n</a>
       <a class="btn sm" href="../arena/problem.html?id=hanoi-moves">hanoi-moves</a>
       <a class="btn sm" href="../arena/problem.html?id=binary-digits-recursive">binary-digits-recursive</a>

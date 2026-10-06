@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * SortAnalysis — empirical analysis of insertion sort (CSC 501 course project, Levitin §2.6 style).
+ * SortAnalysis — empirical analysis of insertion sort (Levitin §2.6, Exercises 2.6.1–2.6.3).
  *
  * For every size n = 1000, 1500, 2000, ..., 9500 (18 sizes) the program sorts TRIALS random
  * arrays (default 20 per size) and records, for every single run:
@@ -55,7 +55,7 @@ public class SortAnalysis {
         return count;
     }
 
-    /** The ORIGINAL counter from the assignment handout, kept only to demonstrate the bug. */
+    /** The ORIGINAL counter from Levitin Exercise 2.6.1, kept only to demonstrate the bug. */
     static long buggySortAnalysis(int[] a) {
         long count = 0;
         int n = a.length;

@@ -1,12 +1,12 @@
-# ✍️ Assignment 1 — Chapters 1–2, Worked Solutions
+# ✍️ Problem Set 1 — Foundations (Levitin Ch 1–2), Worked Solutions
 
-CSC 501 · Levitin, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.
+Based on exercises from Levitin, *Introduction to the Design and Analysis of Algorithms*, 3rd ed.
 
 **How to use this page.** Each problem is restated in our own words (the exact wording is in your textbook). Try it
-yourself first, then open the solution. Every solution shows the reasoning a grader expects to see, gives the
-algorithm in Forge Pseudocode where there is one, and ends with a **"What the grader looks for"** checklist.
+yourself first, then open the solution. Every solution shows the reasoning a complete answer needs, gives the
+algorithm in Forge Pseudocode where there is one, and ends with a **"Self-check"** list.
 
-Problems 1–8 are required for everyone. Problems 9–10 are the extra graduate (CSC 501) problems.
+Problems 1–8 are the core set. Problems 9–10 are challenge problems.
 
 | # | Topic | Levitin exercise |
 |--:|-------|------------------|
@@ -18,8 +18,8 @@ Problems 1–8 are required for everyone. Problems 9–10 are the extra graduate
 | 6 | Ordering seven functions by order of growth | 2.2.5 |
 | 7 | What does `Mystery` compute? (sum of squares) | 2.3.4 |
 | 8 | Recurrences for Q(n) = Q(n−1) + 2n − 1 | 2.4.4 |
-| 9 | Locker doors | 1.1.12 (listed as 1.1 #11 on the course sheet) |
-| 10 | Counting F(1) and F(0) calls in recursive Fibonacci | 2.5.7 (listed as 2.5 #5 on the course sheet) |
+| 9 | Locker doors | 1.1.12 |
+| 10 | Counting F(1) and F(0) calls in recursive Fibonacci | 2.5.7 |
 
 ---
 
@@ -85,7 +85,7 @@ The loop stops with lo = hi = 4, so $\lfloor\sqrt{20}\rfloor = 4$. ✔ (Both ver
 $hi - lo < \varepsilon$. Or use Newton's iteration $x \leftarrow (x + n/x)/2$ (Levitin §12.4), which also uses only
 the four operations and converges very fast.
 
-**What the grader looks for:** ✅ only the allowed operations (no `sqrt`) · ✅ a clear stopping rule · ✅ the correct
+**Self-check:** ✅ only the allowed operations (no `sqrt`) · ✅ a clear stopping rule · ✅ the correct
 off-by-one (answer is the last r that *fits*) · ✅ the efficiency stated (bonus: noticing that $\sqrt n$ iterations
 is exponential in the input's bit-length).
 
@@ -138,7 +138,7 @@ Total: $\Theta(n\log n) + \Theta(n) = \Theta(n\log n)$. (A small extra: you can 
 
 **Trace:** `34 8 50 13 41 20` → sorted `8 13 20 34 41 50` → gaps 5, 7, 14, 7, 9 → **5**.
 
-**What the grader looks for:** ✅ j starts at i + 1 (each pair once) · ✅ no repeated `abs` computation · ✅ the
+**Self-check:** ✅ j starts at i + 1 (each pair once) · ✅ no repeated `abs` computation · ✅ the
 presorting idea with the "closest pair is adjacent" justification · ✅ efficiency classes of the versions.
 
 ---
@@ -195,7 +195,7 @@ Count = [1, 0], so S = $2_b, 2_a$. The order of equal keys is reversed.
 
 *Efficiency:* exactly $n(n-1)/2$ comparisons for every input, so $\Theta(n^2)$.
 
-**What the grader looks for:** ✅ a Count table showing intermediate values, not just the answer · ✅ a
+**Self-check:** ✅ a Count table showing intermediate values, not just the answer · ✅ a
 counterexample for stability (not just "no") · ✅ naming the extra arrays for in-place.
 
 ---
@@ -221,7 +221,7 @@ Equality holds for a complete binary tree. ∎
 
 **Check:** n = 7, full tree: $\lfloor\log_2 7\rfloor = 2 = h$. ✔ n = 7, stick: h = 6 = n − 1. ✔
 
-**What the grader looks for:** ✅ the per-level count $2^\ell$ · ✅ the geometric sum $2^{h+1} - 1$ · ✅ a careful
+**Self-check:** ✅ the per-level count $2^\ell$ · ✅ the geometric sum $2^{h+1} - 1$ · ✅ a careful
 integer/floor step (the most common place to lose a point) · ✅ the path argument for the upper bound.
 
 ---
@@ -245,7 +245,7 @@ need separate best, worst and average cases).
 different amounts of work. The textbook's answer "no" means that the count depends only on the input value, not on
 any other feature of the input.
 
-**What the grader looks for:** ✅ bits as the size for number-theoretic inputs (b, d, e) · ✅ "yes" with a reason
+**Self-check:** ✅ bits as the size for number-theoretic inputs (b, d, e) · ✅ "yes" with a reason
 for Euclid · ✅ digit-by-digit multiplication as the basic operation for (f).
 
 ---
@@ -281,7 +281,7 @@ $$5\lg(n+100)^{10} \;\prec\; \ln^2 n \;\prec\; \sqrt[3]{n} \;\prec\; 0.001n^4 + 
 until n is about $2.4\times10^7$, and $50\lg(n+100)$ exceeds $\ln^2 n$ until n is about $10^{31}$ (both computed in
 Python). A table of small values would put these in the wrong order. Use limits.
 
-**What the grader looks for:** ✅ recognizing $5\lg(n+100)^{10}$ as $\Theta(\log n)$ and $2^{2n}$ as $4^n$ · ✅ a
+**Self-check:** ✅ recognizing $5\lg(n+100)^{10}$ as $\Theta(\log n)$ and $2^{2n}$ as $4^n$ · ✅ a
 reason for each adjacent pair, not just the final list.
 
 ---
@@ -314,7 +314,7 @@ because it is the more expensive operation.
 
 **(e, bonus)** Use the closed form: `return n * (n + 1) * (2 * n + 1) div 6`. That is 3 multiplications and a division regardless of n, so it is $\Theta(1)$.
 
-**What the grader looks for:** ✅ the closed form (not just "adds squares") · ✅ an explicit summation for the count.
+**Self-check:** ✅ the closed form (not just "adds squares") · ✅ an explicit summation for the count.
 
 ---
 
@@ -344,12 +344,12 @@ $M(n) = M(n-1) + 1$, $M(1) = 0$, so $M(n) = M(n-i) + i = M(1) + (n-1) = n - 1$.
 $A(n) = A(n-1) + 3$, $A(1) = 0$, so $A(n) = 3(n-1)$.
 (If you don't count the `n − 1` used to form the argument, $A(n) = 2(n-1)$. State your convention.)
 
-**What the grader looks for:** ✅ recurrence **and** initial condition every time · ✅ a verification of the
+**Self-check:** ✅ recurrence **and** initial condition every time · ✅ a verification of the
 guessed formula · ✅ a stated counting convention in (c).
 
 ---
 
-## Problem 9 (CSC 501) — Locker doors (Levitin Exercise 1.1.12)
+## Problem 9 (challenge) — Locker doors (Levitin Exercise 1.1.12)
 
 **Task in our words.** n lockers start closed. On pass i = 1, …, n you toggle every i-th locker. Which lockers are
 open at the end, and how many are there?
@@ -366,11 +366,11 @@ square.**
 **Trace (n = 10):** open lockers are 1, 4, 9. That is 3 = $\lfloor\sqrt{10}\rfloor$. ✔ (Locker 6 has divisors
 1, 2, 3, 6, four toggles, so it ends closed.)
 
-**What the grader looks for:** ✅ toggles = number of divisors · ✅ the pairing argument · ✅ the count $\lfloor\sqrt n\rfloor$.
+**Self-check:** ✅ toggles = number of divisors · ✅ the pairing argument · ✅ the count $\lfloor\sqrt n\rfloor$.
 
 ---
 
-## Problem 10 (CSC 501) — Calls to F(1) and F(0) in recursive Fibonacci (Levitin Exercise 2.5.7)
+## Problem 10 (challenge) — Calls to F(1) and F(0) in recursive Fibonacci (Levitin Exercise 2.5.7)
 
 **Task in our words.** The definition-based recursive algorithm computes $F(n) = F(n-1) + F(n-2)$ with $F(0) = 0$,
 $F(1) = 1$. Let $C(n)$ and $Z(n)$ be the number of times it evaluates F(1) and F(0) while computing F(n).
@@ -402,10 +402,10 @@ induction, $Z(n) = F(n-1)$ for all $n \ge 0$. ∎
 $\phi^n$ with $\phi \approx 1.618$. The naive recursion is exponential. See the
 [Fibonacci simulation](https://normansrule.github.io/algorithm-forge/sims/fibonacci.html).
 
-**What the grader looks for:** ✅ both initial conditions stated correctly (Z(0) = 1, Z(1) = 0 is the common
+**Self-check:** ✅ both initial conditions stated correctly (Z(0) = 1, Z(1) = 0 is the common
 slip) · ✅ an induction argument, not just a table.
 
 ---
 
-⬅️ [Practice home](../README.md) · ➡️ [Assignment 2](assignment-2.md) ·
+⬅️ [Practice home](../README.md) · ➡️ [Problem Set 2](set-2-brute-force-and-decrease.md) ·
 [Chapter 1 lesson](../../lessons/01-introduction/README.md) · [Chapter 2 lesson](../../lessons/02-analysis-framework/README.md)

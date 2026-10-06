@@ -66,7 +66,8 @@
   }
 
   /**
-   * ctx: {problem, lang, mode, hintsLeft, onHint(), onGotoLine(n), onWatch(args), extraNudges: [{kind,message}]}
+   * ctx: {problem, lang, mode, hintsLeft, onHint(), onGotoLine(n), onWatch(args), extraNudges: [{kind,message}],
+   *       interview: true → pass/fail counts only (plus the raw error if the code didn't run); nudges stay hidden}
    */
   Arena.renderReport = function (report, ctx) {
     const p = ctx.problem;
@@ -81,6 +82,11 @@
     else if (passed && !isRun) { icon = "✅"; head = "Accepted"; sub = `All ${report.total} tests pass` + (report.growth ? ` · efficiency ${Arena.fmtClass(report.growth.fitted)} ✓` : "") + "."; }
     else if (passed) { icon = "✅"; head = `${report.passed} of ${report.total} examples pass`; sub = "Nice! Now Submit to face every test (hidden + random" + (p.growth && ctx.lang === "pseudo" ? " + an efficiency check" : "") + ")."; }
     else { icon = "❌"; head = `${report.passed} of ${report.total} passed`; sub = isRun ? "Some examples fail — read the nudges below." : "Not accepted yet — the nudges below point at what to fix."; }
+    if (ctx.interview && !passed && !report.offline) {
+      if (report.status === "error") sub = "Fix the error below, then try again.";
+      else if (report.passed === report.total && report.total) { head = `${report.passed} of ${report.total} passed — not accepted`; sub = report.forbidden && report.forbidden.length ? "A built-in this problem asks you to write yourself is in your code." : "Every answer is right, but the efficiency check failed."; }
+      else sub = "Interview mode: nudges and details unlock when the interview ends.";
+    }
     const langName = { pseudo: "Pseudocode", js: "JavaScript", python: "Python", blocks: "Blocks" }[ctx.lang] || ctx.lang;
     box.appendChild(el("div", { class: "rep-head" },
       el("span", { class: "rep-icon", "aria-hidden": "true" }, icon),
@@ -89,8 +95,9 @@
         el("div", { class: "rep-sub" }, sub, " ", el("span", { class: "muted" }, `${isRun ? "Run" : "Submit"} · ${langName}${report.ms != null ? " · " + (report.ms < 1000 ? report.ms + " ms" : (report.ms / 1000).toFixed(1) + " s") : ""}`)))));
 
     // ---- nudges
-    const nudges = (report.diagnosis || []).slice();
+    let nudges = (report.diagnosis || []).slice();
     (ctx.extraNudges || []).forEach((n) => nudges.push(n));
+    if (ctx.interview) nudges = nudges.filter((d) => d.kind === "error");
     if (nudges.length) {
       const list = el("div", { class: "nudges" }, el("div", { class: "panel-title" }, "Nudges"));
       nudges.forEach((d) => {
@@ -110,6 +117,15 @@
         list.appendChild(el("div", { class: "nudge callout " + k.cls }, el("span", { class: "nudge-icon", "aria-hidden": "true" }, k.icon), body));
       });
       box.appendChild(list);
+    }
+    if (ctx.interview) { // counts only: one mark per test, no inputs or expected values
+      const tests = report.tests || [];
+      if (tests.length) {
+        const marks = el("div", { class: "iv-marks", role: "img", "aria-label": `${report.passed} of ${report.total} tests passed` });
+        tests.forEach((t) => marks.appendChild(el("i", { class: t.pass ? "ok" : "bad" })));
+        box.appendChild(el("div", { class: "tests" }, el("div", { class: "panel-title" }, "Tests"), marks));
+      }
+      return box;
     }
     if (passed && report.growth && report.growth.ok) {
       const ch = Arena.growthChart(report.growth);

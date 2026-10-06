@@ -1,10 +1,10 @@
-# 01 · Introduction — What Is an Algorithm?
+# Chapter 1 · Introduction — What Is an Algorithm?
 
 **Why this chapter matters.** Before you can design fast algorithms you need a precise idea of what an algorithm
-*is*, how to write one down so a machine (or a grader) cannot misread it, and how the same problem can have several
+*is*, how to write one down so a machine (or a reader) cannot misread it, and how the same problem can have several
 algorithms of wildly different speed. This chapter gives you that vocabulary with one tiny problem — the greatest
 common divisor — solved three ways, plus the Sieve of Eratosthenes, the standard problem-solving process, the
-problem types you will meet all semester, and the data structures every later chapter assumes you know.
+problem types you will meet in every later chapter, and the data structures every later chapter assumes you know.
 (Levitin Chapter 1.)
 
 🎮 [Sim: gcd three ways + sieve](https://normansrule.github.io/algorithm-forge/sims/euclid-gcd.html) ·
@@ -47,7 +47,7 @@ The same problem can be solved by very different algorithms. For $\gcd(m, n)$:
 - **Middle-school factoring** multiplies the common prime factors — familiar, but "factor the number" is not yet a
   precise instruction, so it is not an algorithm until you specify *how* (for example, with the sieve).
 
-So the two big questions of this whole course are already visible: **how do I design an algorithm?** and **how do I
+So the two big questions of this whole subject are already visible: **how do I design an algorithm?** and **how do I
 know how good it is?**
 
 ```mermaid
@@ -703,7 +703,7 @@ and number-theory libraries.
 ## Build Card E — Comparison counting sort
 
 This one comes from Levitin's section on problem types (Exercise 1.3.1) and is the cleanest way to learn two words
-you'll use all semester: **stable** and **in-place**.
+you'll use again and again: **stable** and **in-place**.
 
 ### 🎯 Problem in one sentence
 Given an array of $n$ orderable items → output them sorted, by counting for each item how many items are smaller.
@@ -813,7 +813,7 @@ A few TA notes on each step:
 
 1. **Understand.** Work 2–3 examples by hand, *including a weird one* (empty input, zero, duplicates). Most exam
    mistakes are misreadings, not bad algorithms.
-2. **Model.** This course assumes the **Random-Access Machine (RAM)** model: instructions run one after another, and
+2. **Model.** These lessons assume the **Random-Access Machine (RAM)** model: instructions run one after another, and
    each basic operation takes constant time. Also decide early whether an **approximate** answer is acceptable
    (square roots, integrals, or intractable problems like the Traveling Salesman Problem (TSP)).
 3. **Strategy + data structures.** "Program = algorithm + data structure." Choosing a heap instead of a sorted list
@@ -835,7 +835,7 @@ bounds** (Chapter 11).
 
 (Levitin §1.3.) Almost every problem you meet will be one of these — or a disguise of one.
 
-| Type | The task | Examples in this course | In real software |
+| Type | The task | Examples in these lessons | In real software |
 |---|---|---|---|
 | **Sorting** | Rearrange items into nondecreasing order of a *key* | selection, bubble, insertion, merge, quick, heap sort | database `ORDER BY`, search result ranking |
 | **Searching** | Find an item with a given key | sequential search, binary search, Binary Search Trees (BSTs), hashing | indexes, caches, dictionaries |
@@ -1082,7 +1082,7 @@ $h \ge \lfloor \log_2 n \rfloor$.
 - cp-algorithms — Euclidean algorithm: <https://cp-algorithms.com/algebra/euclid-algorithm.html>
 - cp-algorithms — Sieve of Eratosthenes: <https://cp-algorithms.com/algebra/sieve-of-eratosthenes.html>
 - Sedgewick & Wayne, *Algorithms* 4th ed., §1.3 Bags, Queues, and Stacks — <https://algs4.cs.princeton.edu/home/>
-- MIT (Massachusetts Institute of Technology) OpenCourseWare 6.006 (Spring 2020), Lecture 1 "Algorithms and Computation" and Lecture 2 "Data Structures and
+- MIT (Massachusetts Institute of Technology) OpenCourseWare 6.006 (Spring 2020), the first two sessions, "Algorithms and Computation" and "Data Structures and
   Dynamic Arrays": <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
 - Cormen, Leiserson, Rivest, and Stein (CLRS), *Introduction to Algorithms*, Chapter 1 (The Role of Algorithms in Computing) and §31.2 (Greatest common
   divisor).

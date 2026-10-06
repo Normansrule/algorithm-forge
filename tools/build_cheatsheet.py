@@ -190,9 +190,9 @@ PAGE = """<!doctype html>
 <main class="wrap">
   <header class="hero">
     <div class="eyebrow">Cheat Sheet</div>
-    <h1>The course on a few pages</h1>
-    <p class="lead">Five cheat sheets you can keep open while you study, or print for the exam: asymptotic notation,
-      sums and recurrences, the design strategies with runnable templates, the complexity of every algorithm in the course,
+    <h1>All of algorithms on a few pages</h1>
+    <p class="lead">Five cheat sheets you can keep open while you study, or print for review: asymptotic notation,
+      sums and recurrences, the design strategies with runnable templates, the complexity of every algorithm on this site,
       and the Forge Pseudocode language reference.</p>
     <p class="small muted" style="max-width:900px">Acronyms used on this page: Traveling Salesman Problem (TSP), Dynamic Programming (DP),
       Greatest Common Divisor (GCD), Depth-First Search (DFS), Breadth-First Search (BFS), Minimum Spanning Tree (MST),

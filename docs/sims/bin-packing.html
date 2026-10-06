@@ -46,7 +46,7 @@
       <button class="btn primary" id="load">Load</button>
       <label class="field">Preset
         <select id="preset">
-          <option value="lec">Lecture example</option>
+          <option value="classic">Classic example (0.4, 0.2, 0.6, 0.7)</option>
           <option value="nf">Next Fit trap</option>
           <option value="ff">First Fit's bad family (ratio 5/3)</option>
           <option value="ffd">FFD's tricky case</option>
@@ -109,12 +109,12 @@
       <p><b>Columns are bins</b> of capacity 1 (the dashed line at the top). Items stack from the bottom; the number on a block is its size. The strip above shows the items in the order the rule processes them.</p>
       <p><b>The four rules.</b> <b>Next Fit</b> keeps only the newest bin open. <b>First Fit</b> scans bins left to right and uses the first with room. <b>First-Fit Decreasing</b> sorts the items largest first, then runs First Fit. <b>Best Fit</b> picks the bin that would be left <i>fullest</i> (least room to spare).</p>
       <p><b>Lower bound.</b> Every bin holds at most 1, so any packing needs at least ⌈Σ sizes⌉ bins. bins / ⌈Σ⌉ therefore overestimates the true accuracy ratio. For small inputs (n ≤ 14) the table also finds the true optimum by exhaustive backtracking, so you see the exact ratio bins / OPT.</p>
-      <p><b>Known guarantees</b> (Levitin §12.3 and exercises): FF uses at most about 1.7·OPT bins, FFD at most about (11/9)·OPT + a small constant (the lecture quotes the simpler ratio 1.5), and NF at most 2·OPT. On random inputs all of them do much better.</p>
+      <p><b>Known guarantees</b> (Levitin §12.3 and exercises): FF uses at most about 1.7·OPT bins, FFD at most about (11/9)·OPT + a small constant (a simpler, easier-to-prove bound is 1.5), and NF at most 2·OPT. On random inputs all of them do much better.</p>
     </div>
     <div class="panel">
       <h2>Try this</h2>
       <ol>
-        <li><b>Lecture example 0.4, 0.2, 0.6, 0.7.</b> Predict FF's result: 0.4 and 0.2 share bin 1, 0.6 no longer fits there, 0.7 fits nowhere, so 3 bins. FFD sorts first (0.7, 0.6, 0.4, 0.2) and needs only 2 = ⌈1.9⌉, which is optimal.</li>
+        <li><b>Classic example 0.4, 0.2, 0.6, 0.7.</b> Predict FF's result: 0.4 and 0.2 share bin 1, 0.6 no longer fits there, 0.7 fits nowhere, so 3 bins. FFD sorts first (0.7, 0.6, 0.4, 0.2) and needs only 2 = ⌈1.9⌉, which is optimal.</li>
         <li><b>Next Fit trap</b> (0.5, 0.1, 0.5, 0.1, …): NF opens a new bin for almost every 0.5 while FF tucks every 0.1 into an earlier bin. Count the bins for each.</li>
         <li><b>First Fit's bad family:</b> six items each of 0.15, 0.34 and 0.51. The optimum packs one of each per bin (6 bins, all exactly full), but FF in this order uses 10: ratio 5/3. Does FFD fix it?</li>
         <li><b>Random experiment</b> with n = 30 and uniform sizes: the average bins / ⌈Σ⌉ for FFD is typically only a few percent above 1. Switch the distribution to “small”: which rule suffers most?</li>

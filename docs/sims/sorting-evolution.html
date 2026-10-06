@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorting Evolution · Algorithm Forge</title>
+<meta name="description" content="From insertion sort to Timsort, Powersort and pdqsort: watch natural runs, the run stack and galloping merges, Powersort's node-power merge policy, introsort's depth limit and pdqsort's pattern detection, then race seven sorts on structured inputs with exact comparison counts.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/sorting-evolution-core.js"></script>
+<style>
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes .btn.on { background: var(--ember); border-color: var(--ember); color: #1b0f05; }
+  label.field { min-width: 0; max-width: 100%; }
+  .grow { flex: 1 1 260px; }
+  .grow input { width: 100%; }
+  .runstack { display: flex; flex-direction: column-reverse; gap: 6px; min-height: 40px; }
+  .runstack .run { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: .82rem; }
+  .runstack .bar { height: 18px; border-radius: 4px; min-width: 6px; }
+  .runstack .tag { min-width: 18px; font-weight: 700; color: var(--ink-2); }
+  .runstack .run.merging .bar { outline: 2px solid var(--c-swap); outline-offset: 1px; }
+  .inv { margin-top: 10px; font-size: .85rem; display: grid; gap: 4px; }
+  .inv .ok { color: var(--ok); font-weight: 700; }
+  .inv .bad { color: var(--bad); font-weight: 700; }
+  .race-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; margin-top: 12px; }
+  .race-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; }
+  .race-card h3 { font-size: .92rem; margin: 0 0 2px; }
+  .race-card .win { font-size: .78rem; color: var(--muted); margin-bottom: 4px; }
+  .race-card svg { width: 100%; display: block; }
+  .race-card svg text { font-family: var(--mono); }
+  .race-card rect.hit:hover + rect, .race-card rect.mk:hover { filter: brightness(1.15); }
+  /* categorical series colours (validated reference palette, dark default) */
+  body { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #9085e9; --s7: #2fb5c4; }
+  :root[data-theme="light"] body { --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #4a3aa7; --s7: #0e8796; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) body { --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #4a3aa7; --s7: #0e8796; } }
+  .runstack .pw { font-size: .74rem; color: var(--ember-2); font-weight: 700; white-space: nowrap; }
+  .inp-err { margin: 10px 0 0; color: var(--bad); font-weight: 600; font-size: .9rem; }
+  .inp-err.note { color: var(--muted); font-weight: 500; }
+  .field input[aria-invalid="true"] { border-color: var(--bad); }
+  .race .legend i { border-radius: 3px; }
+  .race table.t td.best { color: var(--c-done); font-weight: 700; }
+  .race table.t td:first-child, .race table.t th:first-child { text-align: left; }
+  .rq { border: 1px solid color-mix(in srgb, var(--c-pivot) 55%, transparent); background: color-mix(in srgb, var(--c-pivot) 10%, transparent); border-radius: 10px; padding: 10px 12px; }
+  .rq .btn.right { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 24%, transparent); opacity: 1; }
+  .rq .btn.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 20%, transparent); opacity: 1; }
+  .refs li { margin-bottom: 4px; }
+  .tip { position: fixed; pointer-events: none; z-index: 60; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 9px; font-size: .8rem; box-shadow: var(--shadow); }
+  .tip b { font-family: var(--mono); font-size: .95rem; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 18 · The Frontier</div>
+    <h1>Sorting evolution: from insertion sort to Timsort, Powersort and pdqsort</h1>
+    <p class="lead muted">The sorts inside Python, Java, Rust and C++ standard libraries are hybrids built from the classics you already know. They win because they notice structure: runs that are already sorted, lopsided splits, and repeated keys.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="modes" role="tablist" aria-label="Mode">
+      <button class="btn on" id="modeTim" role="tab" aria-selected="true">1 · Timsort &amp; Powersort (runs + galloping)</button>
+      <button class="btn" id="modeQuick" role="tab" aria-selected="false">2 · Introsort &amp; pdqsort</button>
+      <a class="btn ghost" href="#race">3 · The race ↓</a>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field grow">Your array (comma separated, up to 64 numbers)<input id="inp" type="text" aria-describedby="inpErr"></label>
+      <button class="btn primary" id="load">Load</button>
+      <label class="field">Shape
+        <select id="shape">
+          <option value="demo">Demo (runs + gallop)</option>
+          <option value="random">Random</option>
+          <option value="sorted">Sorted</option>
+          <option value="reversed">Reversed</option>
+          <option value="sawtooth">Sawtooth</option>
+          <option value="organ">Organ pipe</option>
+          <option value="few">Few unique</option>
+          <option value="mostly">Mostly sorted</option>
+          <option value="uneven">Uneven runs</option>
+        </select>
+      </label>
+      <label class="field"><span>n = <b id="nOut">36</b></span><input type="range" id="n" min="8" max="64" value="36" style="width:120px"></label>
+      <button class="btn" id="rand">New random</button>
+    </div>
+    <p class="inp-err" id="inpErr" role="alert" hidden></p>
+    <div class="row" style="margin-top:10px">
+      <label class="field">Constants
+        <select id="scale">
+          <option value="teach">Teaching scale (small thresholds — every phase visible)</option>
+          <option value="lib">Library constants (minrun from 64, cutoff 16 / 24)</option>
+        </select>
+      </label>
+      <label class="field" id="policyWrap">Merge policy
+        <select id="policy">
+          <option value="tim">Classic Timsort: run-stack length rules</option>
+          <option value="power">Powersort: node powers (CPython 3.11+)</option>
+        </select>
+      </label>
+      <label class="field" id="algoWrap" hidden>Algorithm
+        <select id="algo">
+          <option value="intro">Introsort (median-of-3 quicksort + heapsort)</option>
+          <option value="pdq">pdqsort (pattern-defeating quicksort)</option>
+        </select>
+      </label>
+      <label class="field" id="limitWrap" hidden>Safety limit
+        <select id="limit">
+          <option value="std">Standard (2⌊log₂ n⌋ depth / ⌊log₂ n⌋ bad partitions)</option>
+          <option value="tiny">Tiny (force the heapsort fallback)</option>
+        </select>
+      </label>
+      <span class="small muted" id="cfgNote"></span>
+    </div>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Array as bars with runs or partition ranges highlighted"></svg>
+      <div class="legend" id="legend"></div>
+      <div id="player"></div>
+      <div class="panel" id="predictHost"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel" id="stackPanel"><div class="panel-title">Run stack (top = Z)</div><div class="runstack" id="runstack"></div><div class="inv" id="inv"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel race" id="race" style="margin-top:16px">
+    <h2>The race: real data has structure</h2>
+    <p class="muted small" style="margin-top:0">Seven sorts, eight input shapes, the same n. Each bar is the <b>exact number of key comparisons</b> the code on this page makes (library constants: Timsort and Powersort minrun threshold 64 and minGallop 7; introsort cutoff 16 and depth 2⌊log₂ n⌋; pdqsort insertion threshold 24, ninther above 128, partial-insertion limit 8). The axis is logarithmic, so each grid line is ×10.</p>
+    <div class="row">
+      <label class="field">n
+        <select id="raceN"><option>100</option><option selected>1000</option><option>2000</option></select>
+      </label>
+      <label class="field">Seed <input type="number" id="raceSeed" value="7" style="width:90px"></label>
+      <button class="btn steel" id="raceGo">Run the race</button>
+      <span class="small muted" id="raceNote"></span>
+    </div>
+    <div class="rq" id="rq" style="margin-top:12px"></div>
+    <div class="legend" id="raceLegend" style="margin-top:12px"></div>
+    <div class="race-grid" id="raceGrid"></div>
+    <div class="callout steel" id="raceLesson" style="margin-top:12px" hidden></div>
+    <details style="margin-top:12px">
+      <summary>Show the numbers as a table</summary>
+      <div class="scroll-x" style="margin-top:8px"><table class="t" id="raceTable"></table></div>
+    </details>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>How to read this</h2>
+    <ul>
+      <li><b>Bars</b> are the array. Red = just written or swapped, purple = pivot, green = known to be in its final place, grey = outside the range being worked on.</li>
+      <li><b>Timsort &amp; Powersort mode:</b> coloured bands under the bars are <b>runs</b> (already-sorted stretches). A dashed band is the run being found or extended right now. The run stack lists runs waiting to be merged; Z is the newest. Timsort keeps two rules true: |X| &gt; |Y| + |Z| and |Y| &gt; |Z|, so run lengths shrink fast going up the stack and every merge is between runs of similar size. During a merge, the small strip at the bottom is the <b>temp buffer</b> (a copy of the shorter run); faded cells are already used.</li>
+      <li><b>Powersort policy:</b> same runs, same galloping merges, different decision about <i>when</i> to merge. Each boundary between two neighbouring runs gets a <b>node power</b> (the circled number): take the two runs' midpoints as fractions of n, write them in binary, and find the first digit where they differ. That is the boundary's depth in a perfectly balanced merge tree over the whole array. When a new run arrives, runs on the stack are merged while the boundary under the top run has a greater power than the new boundary, so deeper (more local) boundaries are always merged first. Computing a power needs only integer arithmetic on positions, never a key comparison, so the comparison counter is unchanged by the policy itself.</li>
+      <li><b>Introsort / pdqsort mode:</b> the bracket shows the range being partitioned. Introsort spends one unit of its depth budget per level; at 0 it switches to heapsort. pdqsort instead counts <b>bad partitions</b> (one side smaller than one eighth), tries a capped insertion sort when a partition needed no swaps, and skips runs of keys equal to the previous pivot.</li>
+      <li><b>Counters</b> count every key comparison (<code>a &lt; b</code>) exactly. Writes count stores into the array (temp-buffer copies are not counted). <b>Merge cost</b> adds up the lengths of the two runs in every merge: the number of elements that pass through merges, the quantity Powersort keeps close to optimal.</li>
+    </ul>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Try this</h2>
+    <ol>
+      <li><b>Demo, Timsort.</b> Play the demo array (n = 36). The descending runs are reversed, short runs are extended to minrun = 5 by binary insertion, and the last merge enters galloping mode. Total: 102 comparisons. Top-down mergesort needs 122 on the same array, insertion sort 375.</li>
+      <li><b>Powersort versus Timsort.</b> Pick the shape <i>Uneven runs</i> and n = 64 in mode 1. Play it once with Merge policy = <i>Classic Timsort</i>, then switch to <i>Powersort</i>. The runs have lengths 29, 24, 8 and 3. Classic Timsort's length rule breaks when the 8-run arrives, so it merges 24 + 8, then 29 + 32, and finally drags all 61 elements through one more merge just to add the last 3: merge cost 157. Powersort gives the boundary between the two big runs power 1 (it sits near the middle of the array), so that boundary waits while the small runs on the right merge first: merge cost 110, and fewer comparisons too.</li>
+      <li><b>Sorted and reversed.</b> Pick <i>Sorted</i>, then <i>Reversed</i>, in Timsort mode. Both take exactly n − 1 comparisons: the whole array is one run (a reversed array is one strictly descending run that gets flipped).</li>
+      <li><b>Few unique, pdqsort.</b> Switch to mode 2, pick pdqsort and <i>Few unique</i>. Watch for the "many equal keys" step: once a pivot equals the previous pivot, every copy of that key is finished in one pass.</li>
+      <li><b>Force the fallback.</b> In mode 2 (teaching constants), choose <i>Introsort</i>, Safety limit = <i>Tiny</i> and any shape. After two levels of partitioning the depth budget is gone, so heapsort finishes every piece still bigger than the cutoff. With the standard budget this only happens on adversarial inputs, and it is exactly what saves introsort from quicksort's O(n²) worst case. pdqsort with <i>Tiny</i> switches to heapsort at its first bad partition (try <i>Organ pipe</i>).</li>
+      <li><b>The race.</b> Before pressing the button, answer the two questions. Then compare quicksort (first pivot) on Sorted (about n²/2 comparisons) with Timsort (n − 1). Look at <i>Uneven runs</i> to see where Powersort's policy pays off, and notice how often it ties with Timsort elsewhere. On Random with n = 1,000, Timsort and mergesort are within 1% of each other: when there is no structure, looking for it costs almost nothing.</li>
+    </ol>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson 18 · The Frontier</a>
+      <a href="../atlas.html#sorting">🗺️ Atlas · Sorting ladder</a>
+      <a href="../arena/index.html?level=7">🏟️ Arena Level 7 · Frontier</a>
+      <a href="sorting-studio.html">🎮 Sorting Studio (the classics)</a>
+      <a href="heap-lab.html">🎮 Heap Lab (heapsort)</a>
+      <a href="empirical-lab.html">🎮 Empirical Lab</a>
+      <a href="vector-search.html">🎮 Vector search</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>T. Peters, <i>listsort.txt</i> — the design notes for Timsort in CPython (runs, minrun, galloping, merge_lo / merge_hi): <a href="https://github.com/python/cpython/blob/main/Objects/listsort.txt">github.com/python/cpython/…/listsort.txt</a>. Since Python 3.11, CPython picks merges with the Powersort rule instead of the classic stack invariants (see <code>powerloop()</code> and <code>found_new_run()</code> in <a href="https://github.com/python/cpython/blob/main/Objects/listobject.c">Objects/listobject.c</a>); this page shows both, with the minrun rule of Python 3.11–3.14.</li>
+      <li>J. I. Munro and S. Wild, "Nearly-Optimal Mergesorts: Fast, Practical Sorting Methods That Optimally Adapt to Existing Runs", European Symposium on Algorithms (ESA) 2018, LIPIcs 112, 63:1–63:16 (<a href="https://doi.org/10.4230/LIPIcs.ESA.2018.63">doi:10.4230/LIPIcs.ESA.2018.63</a>; <a href="https://arxiv.org/abs/1805.04154">arXiv:1805.04154</a>) — Powersort and its node-power merge policy; its merge cost is at most n·H + 2n, where H is the entropy of the run lengths.</li>
+      <li>S. de Gouw, J. Rot, F. de Boer, R. Bubel, R. Hähnle, "OpenJDK's Java.utils.Collection.sort() Is Broken: The Good, the Bad and the Worst Case", Computer Aided Verification (CAV) 2015 (<a href="https://link.springer.com/chapter/10.1007/978-3-319-21690-4_16">Springer</a>): checking only the top three runs can let the invariant fail deeper in the stack. CPython adopted their fix (also check one level deeper), and so does this page.</li>
+      <li>D. R. Musser, "Introspective Sorting and Selection Algorithms", <i>Software: Practice and Experience</i> 27(8), 1997 — introsort.</li>
+      <li>O. R. L. Peters, "Pattern-defeating Quicksort", 2021: <a href="https://arxiv.org/abs/2106.05123">arXiv:2106.05123</a>; reference code <a href="https://github.com/orlp/pdqsort">github.com/orlp/pdqsort</a> (constants 24 / 128 / 8 used above).</li>
+      <li>Where these sorts ship: <a href="https://go.dev/doc/go1.19">Go 1.19 release notes</a> (sort package rewritten as pdqsort); <a href="https://releases.rs/docs/1.81.0/">Rust 1.81.0</a> (new stable and unstable sort implementations, driftsort and ipnsort).</li>
+      <li>A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed. — insertion sort (§4.1), mergesort and quicksort (§5.1–5.2), heapsort (§6.4).</li>
+    </ul>
+    <p class="small muted" style="margin:0">Simplifications: pdqsort's block (branchless) partition and introsort's single final insertion pass are replaced by their plain equivalents; comparison counts are exact for the code on this page.</p>
+  </section>
+</main>
+<script src="js/sorting-evolution.js"></script>
+</body>
+</html>

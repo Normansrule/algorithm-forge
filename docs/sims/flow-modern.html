@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maximum Flow Beyond Augmenting Paths · Algorithm Forge</title>
+<meta name="description" content="The same flow network solved by Edmonds–Karp, Dinic's blocking flows on a layered level graph, and Goldberg–Tarjan push–relabel with heights, excess, FIFO or highest-label selection and the gap heuristic, ending with the minimum cut.">
+<link rel="stylesheet" href="../assets/css/forge.css">
+<script src="../assets/js/forge-kit.js"></script>
+<script src="js/sim-extras.js"></script>
+<script src="js/flow-modern-core.js"></script>
+<style>
+  .sim-layout { grid-template-columns: minmax(0, 1fr) 410px; }
+  @media (max-width: 980px) { .sim-layout { grid-template-columns: minmax(0, 1fr); } }
+  .code { font-size: .78rem; }
+  label.field { min-width: 0; max-width: 100%; }
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .modes .btn.on { background: var(--ember); border-color: var(--ember); color: #1b0f05; }
+  .edge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 6px 10px; margin-top: 8px; }
+  .edge-row { display: flex; align-items: center; gap: 6px; }
+  .edge-row.add { grid-column: 1 / -1; flex-wrap: wrap; }
+  .edge-row .mono { min-width: 44px; }
+  .edge-row input[type="number"] { width: 58px; padding: 4px 6px; }
+  .err { color: var(--bad); font-weight: 600; font-size: .9rem; }
+  .aux { font-family: var(--mono); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 28px; }
+  .aux .lbl { font-family: var(--font); color: var(--muted); font-size: .78rem; font-weight: 600; margin-right: 4px; }
+  .aux .it { padding: 2px 7px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel-2); }
+  .aux .it.hot { border-color: var(--ember); background: var(--ember-soft); font-weight: 700; }
+  table.t.cmp td, table.t.cmp th { text-align: right; }
+  table.t.cmp td:first-child, table.t.cmp th:first-child { text-align: left; }
+  table.t.cmp td.ok { color: var(--ok); font-weight: 700; }
+  table.t.cmp td.bad { color: var(--bad); font-weight: 700; }
+  table.t.cmp td.best { color: var(--c-done); font-weight: 700; }
+  .refs li { margin-bottom: 4px; }
+  .outline { font-family: var(--mono); font-size: .8rem; white-space: pre; overflow-x: auto; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  #stage { touch-action: manipulation; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="stack">
+    <div class="eyebrow">Chapter 18 · The Frontier</div>
+    <h1>Maximum flow beyond augmenting paths</h1>
+    <p class="lead muted">One network, three generations of maximum-flow algorithms. Edmonds–Karp runs a fresh Breadth-First Search (BFS) of the whole graph for every augmenting path. Dinic builds a layered level graph once per phase and pushes many paths through it with Depth-First Search (DFS). Push–relabel forgets about paths altogether: vertices hold excess flow and push it downhill.</p>
+  </header>
+
+  <section class="panel" style="margin-top:16px">
+    <div class="modes" role="tablist" aria-label="Algorithm">
+      <button class="btn" data-mode="ek" role="tab">Edmonds–Karp</button>
+      <button class="btn on" data-mode="dinic" role="tab">Dinic (blocking flows)</button>
+      <button class="btn" data-mode="pr" role="tab">Push–relabel</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="field">Network
+        <select id="preset">
+          <option value="textbook">Classic 6-vertex network (Levitin §10.2)</option>
+          <option value="bipartite">Bipartite matching (4 + 4)</option>
+          <option value="chain">Bad case for augmenting paths</option>
+          <option value="random">Random network</option>
+        </select>
+      </label>
+      <label class="field" id="kBox" hidden>Fan width k = <b id="kOut">6</b><input type="range" id="k" min="2" max="8" value="6" style="width:120px" aria-label="Fan width k"></label>
+      <label class="field" id="seedBox" hidden>Seed <input type="number" id="seed" value="18" style="width:76px"></label>
+      <button class="btn" id="rand">Random</button>
+      <span id="prOpts" class="row" hidden>
+        <label class="field">Active vertex
+          <select id="sel"><option value="fifo">first-in first-out (FIFO) queue</option><option value="highest">highest label first</option></select>
+        </label>
+        <label class="small muted"><input type="checkbox" id="gap"> gap heuristic</label>
+      </span>
+      <label class="small muted" id="layBox"><input type="checkbox" id="layered" checked> draw the level graph in layers</label>
+    </div>
+    <details style="margin-top:10px">
+      <summary class="small" style="cursor:pointer;font-weight:700">Edit capacities, add or remove edges</summary>
+      <div id="edges" class="edge-grid"></div>
+      <div id="err" class="err"></div>
+    </details>
+  </section>
+
+  <div class="sim-layout" style="margin-top:16px">
+    <section class="stack">
+      <svg class="stage" id="stage" role="img" aria-label="Flow network with flow and capacity on each edge"></svg>
+      <div class="legend" id="legend"></div>
+      <div class="panel" style="padding:10px 12px"><div class="aux" id="aux"></div></div>
+      <div id="player"></div>
+      <div class="panel" id="predictHost"></div>
+      <div class="callout steel" id="thm"></div>
+    </section>
+    <aside class="stack">
+      <div class="panel"><div class="panel-title">Pseudocode</div><div id="code"></div></div>
+      <div class="panel"><div class="panel-title">Counters</div><div id="ctr"></div></div>
+      <div class="panel"><div class="panel-title">What's happening</div><div id="say"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Same network, every algorithm</h2>
+    <p class="small muted" style="margin-top:0">"Agrees" checks the flow value against a brute-force minimum cut (every split of the vertices into a source side and a sink side). <b>Arc inspections</b> counts every time an algorithm looks at a residual arc — BFS scans, DFS pointer moves, push attempts and relabel scans — so the methods can be compared on one scale.</p>
+    <div class="scroll-x"><table class="t cmp" id="cmp"></table></div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Beyond: maximum flow in almost-linear time</h2>
+    <p>In 2022, Li Chen, Rasmus Kyng, Yang P. Liu, Richard Peng, Maximilian Probst Gutenberg and Sushant Sachdeva showed that exact maximum flow — and minimum-cost flow — on a directed graph with m edges and polynomially bounded integer capacities and costs can be computed in <b>m<sup>1+o(1)</sup></b> time: almost as fast as reading the input. Their algorithm does not augment along paths at all. It is an <b>Interior-Point Method (IPM)</b>: it keeps a fractional flow strictly inside the feasible region and lowers a potential function, built from the cost and a barrier that keeps every edge away from its limits, in a sequence of m<sup>1+o(1)</sup> small steps. Each step sends flow around an approximate <i>minimum-ratio cycle</i> — the cycle with the best ratio of improvement (gradient) to barrier-weighted length. The breakthrough is a new dynamic graph data structure, built on low-stretch spanning trees and recursive graph decompositions, that finds and updates such a cycle in m<sup>o(1)</sup> amortized time while the edge weights keep changing. A nearly optimal fractional flow is then rounded to an exact integral one. The algorithm is randomized; van den Brand and coauthors made it deterministic in 2023. The m<sup>o(1)</sup> factors are huge, so practical codes still use push–relabel and augmenting-path methods like the ones above.</p>
+    <div class="outline">MaxFlowAlmostLinear(G, s, t)                 // outline, not animated
+    start from a feasible fractional flow, strictly inside every capacity
+    repeat about m^(1+o(1)) times:                // interior-point steps
+        lengths and gradients for every edge ← from the current flow and the barrier
+        C ← an approximate minimum-ratio cycle      // dynamic data structure, m^o(1) amortized
+        push a small amount of flow around C        // the potential function drops
+    round the nearly optimal fractional flow to an exact integral maximum flow</div>
+    <p class="small muted" style="margin:10px 0 0">Source: L. Chen, R. Kyng, Y. P. Liu, R. Peng, M. Probst Gutenberg and S. Sachdeva, "Maximum Flow and Minimum-Cost Flow in Almost-Linear Time," IEEE Symposium on Foundations of Computer Science (FOCS) 2022, Best Paper Award — <a href="https://arxiv.org/abs/2203.00671">arXiv:2203.00671</a>. Lesson 18, Frontier Card 7, tells the whole story from 1956 to 2024.</p>
+  </section>
+
+  <section class="grid cols-2" style="margin-top:16px">
+    <div class="panel">
+      <h2>How to read this</h2>
+      <ul>
+        <li><b>Edges</b> show <b>flow/capacity</b>. Blue edges carry flow (thicker when full). Orange = the augmenting path being used; a dashed purple edge is used <i>backwards</i>, cancelling flow. At the end, red dashed edges form the minimum cut, and green vertices are the source side.</li>
+        <li><b>Edmonds–Karp:</b> the small number on each vertex is its BFS distance from the source in the residual graph. Every augmentation starts a new BFS.</li>
+        <li><b>Dinic:</b> vertices are drawn in columns by <b>level</b> (BFS distance); unreachable vertices sit in the "∞" column. Only arcs from one level to the next (with room left) belong to the level graph; others are faded. Orange vertices are the current DFS path; a small orange ring at the start of an arc marks each vertex's <b>current arc</b>; grey vertices are dead ends.</li>
+        <li><b>Push–relabel:</b> a vertex's height is its vertical position (gridlines are heights 0, 1, 2, …; the source sits at n). The yellow badge is its <b>excess</b> (flow in minus flow out). Flow may only move from height h to height h − 1. Relabel lifts a stuck vertex; the gap heuristic lifts a whole group at once.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Try this</h2>
+      <ol>
+        <li><b>Phases vs augmentations.</b> On the bipartite network, Edmonds–Karp needs 5 BFS runs for 4 augmentations. Dinic needs only 2 phases: the first finds 3 matching edges in one level graph (paths of 3 edges); the second finds the long rerouting path s→B→1⇠A→2⇠C→3⇠D→4→t, which shifts three earlier pairs at once.</li>
+        <li><b>The shared prefix.</b> Choose "Bad case for augmenting paths" with k = 8. Every augmenting path walks the same 4-edge chain, and Edmonds–Karp runs 9 full BFS scans: 321 arc inspections. Dinic finds all 8 paths in a single phase (81), and push–relabel moves all 8 units down the chain as one packet (100).</li>
+        <li><b>Predict the level.</b> In Dinic on the classic 6-vertex network, phase 1 uses paths of 3 edges. Before phase 2, guess the new sink level. (It must be longer: that is why Dinic has at most n − 1 phases.)</li>
+        <li><b>Excess has to go home.</b> In push–relabel on the classic network, the source pushes 5 units but only 3 reach the sink. Edge 4→3 only takes 1 unit, so vertex 4 is left with 2 extra units: watch it climb to height 7, above the source's height n = 6, so they can drain back.</li>
+        <li><b>Mind the gap.</b> Pick a random network with seed 18 and FIFO selection: 37 relabels. Turn on the gap heuristic: 13 relabels — the vertices that can no longer reach the sink jump straight to n + 1.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Go deeper</h2>
+    <div class="fx-godeeper">
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/18-the-frontier/README.md">📖 Lesson 18 · The Frontier (Card 7)</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/10-iterative-improvement/README.md">📖 Lesson 10 · Iterative improvement</a>
+      <a href="https://github.com/Normansrule/algorithm-forge/blob/main/lessons/14-advanced-graphs/README.md">📖 Lesson 14 · Advanced graphs</a>
+      <a href="../atlas.html#maximum-flow">🗺️ Atlas · Maximum-flow ladder</a>
+      <a href="../arena/problem.html?id=max-flow-sap">🧩 Problem: shortest-augmenting-path max flow</a>
+      <a href="../arena/problem.html?id=min-cut-capacity">🧩 Problem: min-cut capacity</a>
+      <a href="../arena/problem.html?id=bipartite-matching-size">🧩 Problem: bipartite matching size</a>
+      <a href="../arena/index.html?chapter=10">🏟️ Arena · Chapter 10</a>
+      <a href="max-flow.html">🎮 Max flow with Levitin's labels</a>
+      <a href="bipartite-matching.html">🎮 Bipartite matching</a>
+      <a href="shortest-path-frontier.html">🎮 Shortest paths to the 2025 frontier</a>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>References</h2>
+    <ul class="refs small">
+      <li>J. Edmonds and R. M. Karp, "Theoretical improvements in algorithmic efficiency for network flow problems," <i>Journal of the ACM</i> 19(2), 1972 — O(VE²).</li>
+      <li>E. A. Dinic, "Algorithm for solution of a problem of maximum flow in a network with power estimation," <i>Soviet Mathematics Doklady</i> 11, 1970 — blocking flows, O(V²E).</li>
+      <li>A. V. Goldberg and R. E. Tarjan, "A new approach to the maximum-flow problem," <i>Journal of the ACM</i> 35(4), 1988 — push–relabel: O(V²E) generic, O(V³) with FIFO selection.</li>
+      <li>L. Chen, R. Kyng, Y. P. Liu, R. Peng, M. Probst Gutenberg and S. Sachdeva, "Maximum Flow and Minimum-Cost Flow in Almost-Linear Time," FOCS 2022 — <a href="https://arxiv.org/abs/2203.00671">arXiv:2203.00671</a>. J. van den Brand et al., "A Deterministic Almost-Linear Time Algorithm for Minimum-Cost Flow," FOCS 2023 — <a href="https://arxiv.org/abs/2309.16629">arXiv:2309.16629</a>.</li>
+      <li>A. Levitin, <i>Introduction to the Design and Analysis of Algorithms</i>, 3rd ed. — the maximum-flow problem and the shortest-augmenting-path algorithm (§10.2), maximum matching in bipartite graphs (§10.3).</li>
+    </ul>
+  </section>
+</main>
+<script src="js/flow-modern.js"></script>
+</body>
+</html>

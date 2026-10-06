@@ -126,9 +126,9 @@
         continue;
       }
       // identifiers / keywords (allow unicode letters and subscripts)
-      if (/[A-Za-z_À-ɏͰ-Ͽ]/.test(c)) {
+      if (/[A-Za-z_À-ɏͰ-Ͽ]/.test(c) && c !== "×" && c !== "÷") {
         let j = i;
-        while (j < n && /[A-Za-z0-9_'À-ɏͰ-Ͽ₀-₉]/.test(text[j])) {
+        while (j < n && /[A-Za-z0-9_'À-ɏͰ-Ͽ₀-₉]/.test(text[j]) && text[j] !== "×" && text[j] !== "÷") {
           // stop at an apostrophe that begins a char literal like 'A'
           if (text[j] === "'" && j > i) {
             // treat trailing prime (x') as part of identifier only if followed by non-letter
@@ -1215,6 +1215,7 @@
     }
 
     const globals = new Map();
+    let returnedFromEntry = false;
 
     function invoke(algo, vals, line) {
       ops.calls++;
@@ -1231,7 +1232,7 @@
         execBlock(algo.body, frame);
         return null;
       } catch (sig) {
-        if (sig instanceof ReturnSignal) return sig.value;
+        if (sig instanceof ReturnSignal) { if (depth === 1) returnedFromEntry = true; return sig.value; }
         if (sig === BREAK || sig === CONTINUE) throw new ForgeError(`"${sig.signal}" was used outside of a loop.`, curLine, "syntax");
         throw sig;
       } finally {
@@ -1275,10 +1276,13 @@
         case "break": throw BREAK;
         case "continue": throw CONTINUE;
         case "swap": {
-          const a = evaluate(s.a, frame), b = evaluate(s.b, frame);
+          // freeze the index expressions first, so "swap x and T[x]" writes to the T[x] it read
+          const freeze = (lhs) => (lhs && lhs.k === "index" ? { ...lhs, obj: freeze(lhs.obj), idx: { k: "lit", v: evaluate(lhs.idx, frame) } } : lhs);
+          const ta = freeze(s.a), tb = freeze(s.b);
+          const a = evaluate(ta, frame), b = evaluate(tb, frame);
           ops.swaps++;
-          assignTo(s.a, b, frame);
-          assignTo(s.b, a, frame);
+          assignTo(ta, b, frame);
+          assignTo(tb, a, frame);
           ops.assignments -= 2;
           snapshotFrame(frame, s.line);
           return;
@@ -1398,8 +1402,8 @@
       length: (v, line) => { need(v, 1, "length", line); const x = v[0]; if (isArr(x) || typeof x === "string") return lengthOf(x); if (x instanceof Map || x instanceof Set) return x.size; if (x instanceof PQ) return x.h.length; throw new ForgeError(`length(…) needs an array or text, not ${fmt(x, 1)}.`, line); },
       array: (v, line) => { need(v, 1, "array", line); const n = num(v[0], line, "array size"); if (n < 0 || !Number.isInteger(n)) throw new ForgeError("array(n) needs a whole number n ≥ 0.", line); const fill = v.length > 1 ? v[1] : 0; return Array.from({ length: n }, () => (isArr(fill) ? toArray(fill).slice() : fill)); },
       matrix: (v, line) => { need(v, 2, "matrix", line); const r = num(v[0], line), c = num(v[1], line); const fill = v.length > 2 ? v[2] : 0; return Array.from({ length: r }, () => Array.from({ length: c }, () => fill)); },
-      min: (v, line) => { const xs = v.length === 1 && isArr(v[0]) ? toArray(v[0]) : v; charge(xs.length - 1); if (!xs.length) throw new ForgeError("min of nothing.", line); ops.comparisons += xs.length - 1; ops.keyComparisons += xs.length - 1; return xs.reduce((a, b) => (cmp(b, a, line) < 0 ? b : a)); },
-      max: (v, line) => { const xs = v.length === 1 && isArr(v[0]) ? toArray(v[0]) : v; charge(xs.length - 1); if (!xs.length) throw new ForgeError("max of nothing.", line); ops.comparisons += xs.length - 1; ops.keyComparisons += xs.length - 1; return xs.reduce((a, b) => (cmp(b, a, line) > 0 ? b : a)); },
+      min: (v, line) => { const overArray = v.length === 1 && isArr(v[0]); const xs = overArray ? toArray(v[0]) : v; charge(xs.length - 1); if (!xs.length) throw new ForgeError("min of nothing.", line); ops.comparisons += xs.length - 1; if (overArray) ops.keyComparisons += xs.length - 1; return xs.reduce((a, b) => (cmp(b, a, line) < 0 ? b : a)); },
+      max: (v, line) => { const overArray = v.length === 1 && isArr(v[0]); const xs = overArray ? toArray(v[0]) : v; charge(xs.length - 1); if (!xs.length) throw new ForgeError("max of nothing.", line); ops.comparisons += xs.length - 1; if (overArray) ops.keyComparisons += xs.length - 1; return xs.reduce((a, b) => (cmp(b, a, line) > 0 ? b : a)); },
       abs: (v, line) => Math.abs(num(v[0], line)),
       sqrt: (v, line) => { const x = num(v[0], line); if (x < 0) throw new ForgeError("sqrt of a negative number.", line); return Math.sqrt(x); },
       floor: (v, line) => Math.floor(num(v[0], line)),
@@ -1487,6 +1491,7 @@
         const args = opt.args || [];
         const value = invoke(prog.algorithms[entry], args, prog.algorithms[entry].line);
         result.value = toPlain(value);
+        result.returned = returnedFromEntry; // false when the entry algorithm finished without a return statement
         result.args = args.map((a) => toPlain(a));
       }
       result.ok = true;

@@ -415,12 +415,12 @@ ForgeProblems.add({
   level: 4, chapter: 8, difficulty: 1,
   topics: ["dynamic programming", "2-D table", "counting", "grid paths"],
   strategy: "Dynamic programming (sum of predecessors)",
-  source: "CSC 501 Lecture 8 (path counting) · Levitin Exercises 8.1.5 & 8.1.7 (adapted)",
+  source: "Levitin Exercises 8.1.5 & 8.1.7 (adapted; path counting)",
   summary: "Count the right/down paths from the top-left to the bottom-right corner of a grid with blocked cells.",
   statement: `
 <p>In a city of perfectly straight streets, how many shortest routes lead from one corner to the opposite one? Without obstacles the answer
 is a binomial coefficient; with roadblocks you need Dynamic Programming (DP): the number of routes into a crossing is the number into the
-crossing above it <b>plus</b> the number into the crossing on its left (see "path counting" in Computer Science (CSC) 501, Lecture 8).</p>
+crossing above it <b>plus</b> the number into the crossing on its left (the classic "path counting" recurrence).</p>
 <p>The grid <code>G</code> has <code>n</code> rows and <code>m</code> columns; <code>G[i, j] = 1</code> means that cell is <b>blocked</b>,
 0 means it is open. Moving only <b>right</b> or <b>down</b>, count the paths from (0, 0) to (n−1, m−1) that never step on a blocked cell.
 If the start or the finish is blocked, the answer is 0.</p>
@@ -524,7 +524,7 @@ ForgeProblems.add({
   level: 4, chapter: 8, difficulty: 1,
   topics: ["dynamic programming", "2-D table", "combinatorics"],
   strategy: "Dynamic programming (Pascal's triangle)",
-  source: "Levitin Exercise 8.1.9 (adapted) · CSC 501 Lecture 8",
+  source: "Levitin Exercise 8.1.9 (adapted)",
   summary: "Compute C(n, k) using only additions, by filling Pascal's triangle.",
   statement: `
 <p>The binomial coefficient <code>C(n, k)</code> counts the k-element subsets of an n-element set. Pascal's rule

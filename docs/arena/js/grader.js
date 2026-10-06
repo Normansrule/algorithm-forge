@@ -1,5 +1,5 @@
 /* Forge Arena — main-thread client for worker.js.
-   Arena.grader.check({id, lang, code, mode}) / .trace({id, code, args}) → Promise.
+   Arena.grader.check({id, lang, code, mode}) / .trace({id, code, args}) / .compare({id, code, args}) → Promise.
    Requests are serialized. A request that runs too long gets the worker terminated and recreated:
    pseudocode/JS 10 s, Python 20 s (plus up to 120 s while Pyodide itself downloads). */
 (function () {
@@ -38,7 +38,7 @@
     this.pending = null;
     clearTimeout(p.timer);
     if (m.fatal) p.reject({ fatal: m.fatal });
-    else p.resolve(m.type === "trace" ? m.result : m.type === "pong" ? m : m.report);
+    else p.resolve(m.type === "trace" || m.type === "compare" ? m.result : m.type === "pong" ? m : m.report);
   };
   Grader.prototype.send = function (msg, limit) {
     const run = () => new Promise((resolve, reject) => {
@@ -62,6 +62,7 @@
   };
   Grader.prototype.check = function (o) { return this.send({ type: "check", id: o.id, lang: o.lang, code: o.code, mode: o.mode || "run" }, LIMIT[o.lang] || 10000); };
   Grader.prototype.trace = function (o) { return this.send({ type: "trace", id: o.id, code: o.code, args: o.args }, LIMIT.trace); };
+  Grader.prototype.compare = function (o) { return this.send({ type: "compare", id: o.id, code: o.code, args: o.args }, LIMIT.trace); };
   Grader.prototype.ping = function () { return this.send({ type: "ping", id: null }, 10000); };
 
   Arena.Grader = Grader;

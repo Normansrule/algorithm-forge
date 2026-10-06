@@ -48,7 +48,7 @@
     ui(h) {
       h.append(field("Denominations", txt("cm-d", "25, 10, 5, 1", "180px")), field("Amount n (≤ 99)", E("input", { type: "number", id: "cm-n", value: 48, min: 1, max: 99, style: { width: "84px" } })),
         field("Preset", E("select", { id: "cm-pre", onchange: (e) => { const [d, n] = e.target.value.split("|"); $("cm-d").value = d; $("cm-n").value = n; run(); } },
-          E("option", { value: "25, 10, 5, 1|48" }, "US coins, 48¢ (lecture)"),
+          E("option", { value: "25, 10, 5, 1|48" }, "US coins, 48¢"),
           E("option", { value: "1, 3, 4|6" }, "1, 3, 4 and 6 (Levitin)"),
           E("option", { value: "1, 5, 10, 20, 25|40" }, "1, 5, 10, 20, 25 and 40"),
           E("option", { value: "1, 7, 10|14" }, "1, 7, 10 and 14"),
@@ -149,7 +149,7 @@
   /* Activity selection                                                 */
   /* ================================================================== */
   const ACT_PRESETS = {
-    lecture: ["1, 3, 0, 5, 8, 5", "2, 4, 6, 7, 9, 9"],
+    classic: ["1, 3, 0, 5, 8, 5", "2, 4, 6, 7, 9, 9"],
     start: ["0, 1, 3, 5", "10, 2, 4, 6"],
     short: ["0, 4, 6", "5, 7, 11"],
     big: ["1, 2, 4, 1, 5, 8, 9, 11, 13, 2", "3, 5, 7, 8, 9, 10, 11, 14, 16, 12"],
@@ -187,11 +187,11 @@
     ],
     counters: { "compatibility checks": 0, picked: 0, optimum: "–" },
     ui(h) {
-      h.append(field("Start times", txt("ac-s", ACT_PRESETS.lecture[0], "220px")), field("End times", txt("ac-e", ACT_PRESETS.lecture[1], "220px")),
+      h.append(field("Start times", txt("ac-s", ACT_PRESETS.classic[0], "220px")), field("End times", txt("ac-e", ACT_PRESETS.classic[1], "220px")),
         field("Greedy rule", E("select", { id: "ac-rule", onchange: run },
           E("option", { value: "finish" }, "earliest finish time ✓"), E("option", { value: "start" }, "earliest start time"), E("option", { value: "short" }, "shortest duration"))),
         field("Preset", E("select", { id: "ac-pre", onchange: (e) => { const p = ACT_PRESETS[e.target.value]; $("ac-s").value = p[0]; $("ac-e").value = p[1]; if (e.target.value === "start" || e.target.value === "short") $("ac-rule").value = e.target.value; run(); } },
-          E("option", { value: "lecture" }, "Lecture interview example"), E("option", { value: "start" }, "Trap for “earliest start”"), E("option", { value: "short" }, "Trap for “shortest duration”"), E("option", { value: "big" }, "Ten activities"))));
+          E("option", { value: "classic" }, "Classic interview example"), E("option", { value: "start" }, "Trap for “earliest start”"), E("option", { value: "short" }, "Trap for “shortest duration”"), E("option", { value: "big" }, "Ten activities"))));
     },
     random() {
       const n = 6 + rnd(4), s = [], e = [];

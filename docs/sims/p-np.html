@@ -42,7 +42,7 @@
         <label class="field">Examples
           <select id="preset">
             <option value="">— pick one —</option>
-            <option value="(A | ~B | ~C) & (A | B) & (~B | ~D | E) & (~D | ~E)">Course example (5 variables)</option>
+            <option value="(A | ~B | ~C) & (A | B) & (~B | ~D | E) & (~D | ~E)">Worked example (5 variables)</option>
             <option value="(x1 | x2) & (~x1 | x2) & (x1 | ~x2) & (~x1 | ~x2)">Unsatisfiable (2 variables)</option>
             <option value="(~h | g | ~f) & (~g | ~h | ~b) & (c | ~d | e) & (a | ~d | e) & (a | ~d | b) & (a | ~b | h) & (c | d | f) & (~g | d | ~h) & (~c | d | f) & (f | ~c | ~b) & (~a | g | b) & (c | ~b | ~d) & (~a | b | g) & (g | ~b | h) & (~f | ~c | g) & (f | e | ~c) & (b | d | ~f) & (b | d | ~a) & (h | ~f | ~g) & (~a | ~f | b) & (d | ~c | e) & (~g | ~h | ~e) & (~h | g | f)">8 variables, 23 clauses — a needle in 256</option>
             <option value="(A | B | C) & (~A | ~B) & (~A | ~C) & (~B | ~C)">Exactly one of A, B, C</option>
@@ -104,7 +104,7 @@
 
   <section class="panel" style="margin-top:16px">
     <h2>🤔 Practice: which diagrams do not contradict current knowledge?</h2>
-    <p class="small muted">Mark each picture of P, NP and NPC (the NP-complete problems) as consistent or contradicting, then check. (Course practice; Levitin Exercise 11.3.11.)</p>
+    <p class="small muted">Mark each picture of P, NP and NPC (the NP-complete problems) as consistent or contradicting, then check. (Levitin Exercise 11.3.11.)</p>
     <div id="quiz" class="quiz-grid"></div>
     <div class="row" style="margin-top:10px"><button class="btn primary" id="qcheck">Check my answers</button><button class="btn" id="qreset">Reset</button><span id="qscore" class="small" style="font-weight:700"></span></div>
   </section>
@@ -154,7 +154,7 @@
     <div class="panel">
       <h2>Try this</h2>
       <ol>
-        <li>Course formula, brute force: 32 assignments, 12 satisfy it. Now tick “stop at the first” — assignment #9 (A=0 B=1 C=0 D=0 E=0) is the first hit.</li>
+        <li>Worked-example formula, brute force: 32 assignments, 12 satisfy it. Now tick “stop at the first” — assignment #9 (A=0 B=1 C=0 D=0 E=0) is the first hit.</li>
         <li>Switch to “guess, then check” and press <b>Lucky guess</b>: 4 clause checks and done. Flip D to 1 — which clause rejects it now?</li>
         <li>Load the unsatisfiable example. Why can a verifier never convince you of a “no” answer with one certificate, while brute force can?</li>
         <li>Load the 8-variable example: only 2 of the 256 assignments work, and the first is #155. A verifier handed that one certificate needs just 23 clause checks. Each extra variable doubles the grid — see the table: at n = 64 brute force needs centuries.</li>

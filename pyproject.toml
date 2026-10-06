@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "algoforge"
 version = "1.0.0"
-description = "Algorithm Forge: tested, beginner-readable implementations of the algorithms in Levitin's textbook (chapters 1-12) plus beyond chapters 13-16."
+description = "Algorithm Forge: tested, beginner-readable implementations of the algorithms in chapters 1-18: Levitin's textbook (chapters 1-12), the Beyond chapters (13-17) and the Frontier (chapter 18)."
 readme = "src/python/README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Aleksander Norman" }]

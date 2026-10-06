@@ -167,7 +167,7 @@ So $T(n) = n + \tfrac{1}{2} n \log_2 n (\log_2 n + 1) \in \Theta(n \log^2 n)$. (
 
 🎯 **Problem in one sentence:** array $A[0..n-1]$ → the same elements in nondecreasing order, guaranteed $\Theta(n \log n)$ and stable.
 
-📖 **Story.** Two teaching assistants each alphabetize half of a stack of exams. To combine, you look at the top exam of each sorted pile and always take the one that comes first. One glance per exam — merging is fast because both piles are already sorted.
+📖 **Story.** Two librarians each alphabetize half of a stack of index cards. To combine, you look at the top card of each sorted pile and always take the one that comes first. One glance per card — merging is fast because both piles are already sorted.
 
 👀 **See it:** [Sorting Studio → Mergesort](https://normansrule.github.io/algorithm-forge/sims/sorting-studio.html)
 
@@ -1227,7 +1227,7 @@ static void hanoi(int n, char from, char via, char to, java.util.List<String> mo
 
 The merge step is a reusable tool: two sorted sequences, two fingers, one pass.
 
-### (a) Union of two sorted sequences without duplicates — course midterm Q1
+### (a) Union of two sorted sequences without duplicates — a classic exam problem
 
 > Two $n$-element sorted sequences $A$ and $B$ may contain duplicates (they are not sets). Compute a sequence representing the set $A \cup B$ (no duplicates) in $O(n)$ time, and justify the bound.
 
@@ -1597,7 +1597,7 @@ $M(n) = 2M(n-1) + 1$, $M(1) = 1$ → $M(n) = 2^n - 1$. The subproblems have size
 - Cormen, Leiserson, Rivest, Stein — *Introduction to Algorithms* (CLRS), chapter on divide-and-conquer (maximum subarray, Strassen, the Master method with its proof).
 - VisuAlgo sorting animations (merge sort, quick sort, randomized quick sort): <https://visualgo.net/en/sorting>
 - Sedgewick & Wayne, *Algorithms, 4th ed.* — Mergesort and Quicksort sections: <https://algs4.cs.princeton.edu/22mergesort/> · <https://algs4.cs.princeton.edu/23quicksort/>
-- Abdul Bari (YouTube) — "Master Theorem", "Merge Sort", "Quick Sort", "Strassen's Matrix Multiplication" lectures.
+- Abdul Bari (YouTube) — "Master Theorem", "Merge Sort", "Quick Sort", "Strassen's Matrix Multiplication" videos.
 - Tim Peters's design notes on Timsort: `listsort.txt` in the CPython source repository.
 
 **Previous / next:** [Chapter 4 · Decrease-and-Conquer](../04-decrease-and-conquer/README.md) · [Chapter 6 · Transform-and-Conquer](../06-transform-and-conquer/README.md)

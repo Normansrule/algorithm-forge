@@ -1,10 +1,10 @@
-# 02 · Fundamentals of the Analysis of Algorithm Efficiency
+# Chapter 2 · Fundamentals of the Analysis of Algorithm Efficiency
 
 **Why this chapter matters.** Every other chapter ends with the same question: *how fast is it?* This chapter is the
 toolbox for answering it — choosing an input size and a basic operation, telling best/worst/average cases apart,
 comparing growth rates with $O$, $\Omega$ and $\Theta$, turning loops into **sums** and recursion into
 **recurrences**, and solving them by hand. It also shows how to check your math with experiments (and how a
-misplaced counter can quietly lie to you). If you master one chapter for the exams, make it this one.
+misplaced counter can quietly lie to you). If you master one chapter for practice exams and interviews, make it this one.
 (Levitin Chapter 2.)
 
 🎮 Sims: [growth rates](https://normansrule.github.io/algorithm-forge/sims/growth-rates.html) ·
@@ -76,7 +76,7 @@ flowchart LR
 ## Part 1 — The analysis framework (Levitin §2.1)
 
 We judge algorithms on **time efficiency** (how fast) and **space efficiency** (how much extra memory). Modern
-memory is plentiful, so most of this course focuses on time — but space matters again in Chapter 7.
+memory is plentiful, so most of these lessons focus on time — but space matters again in Chapter 7.
 
 ### 1.1 Measuring input size
 
@@ -226,7 +226,7 @@ $n_0 = 5$ works. (Many other pairs work too; you only need one.)
 **Example 3.** $n^3 \notin O(n^2)$. Suppose $n^3 \le c\,n^2$ for all $n \ge n_0$. Dividing by $n^2$: $n \le c$ for
 all large $n$ — impossible. (To *disprove* membership, assume constants exist and derive a contradiction.)
 
-**Example 4 (from the lecture).** $10n \in O(n^2)$ since $10n \le 10n^2$ for $n \ge 1$ ($c = 10$, $n_0 = 1$), or
+**Example 4.** $10n \in O(n^2)$ since $10n \le 10n^2$ for $n \ge 1$ ($c = 10$, $n_0 = 1$), or
 $10n \le n^2$ for $n \ge 10$ ($c = 1$, $n_0 = 10$). And $5n + 20 \in O(n)$ since $5n + 20 \le 10n$ for $n \ge 4$.
 
 ### 2.3 Useful properties
@@ -571,7 +571,7 @@ Strassen's algorithm ($\Theta(n^{\log_2 7}) \approx \Theta(n^{2.807})$, Chapter 
 still use $\Theta(n^3)$ arithmetic but reorder the loops into cache-sized **blocks** — 10–100× faster than the naive
 triple loop, same efficiency class. Constant factors matter!
 
-#### Bonus: Gaussian elimination (from the lecture)
+#### Bonus: Gaussian elimination (Levitin Exercise 2.3.11)
 
 ```
 ALGORITHM GaussianEliminationForward(A[0..n-1])
@@ -592,7 +592,7 @@ $$C(n) = \sum_{t=1}^{n-1} t(t+2) = \sum_{t=1}^{n-1}t^2 + 2\sum_{t=1}^{n-1}t = \f
 
 (Check: $n = 3$ gives $\tfrac{2\cdot3\cdot11}{6} = 11$; by hand, $i = 0$: $2 \times 4 = 8$, $i = 1$: $1\times3 = 3$. ✔)
 
-⚠️ **This pseudocode has a real bug** — and fixing it is also the "constant-factor improvement" the lecture asks for.
+⚠️ **This pseudocode has a real bug** — and fixing it is also the "glaring inefficiency" that Levitin Exercise 2.3.11(b) asks you to remove.
 When $k = i$, the statement sets $A[j, i]$ to 0; every later $k$ then uses the *new* $A[j, i] = 0$ as the multiplier.
 Fix: compute the multiplier once, before the $k$-loop — `temp ← A[j, i] / A[i, i]`, then
 `A[j, k] ← A[j, k] - A[i, k] * temp`. This is correct *and* removes a division from the innermost loop.
@@ -1718,13 +1718,13 @@ $n\log_2 n$ at $n=1000$ is $\approx 9{,}966$ — it matches exactly.
 **English-language resources**
 - Sedgewick & Wayne, *Algorithms* 4th ed., §1.4 Analysis of Algorithms (doubling experiments, tilde notation):
   <https://algs4.cs.princeton.edu/14analysis/>
-- MIT (Massachusetts Institute of Technology) OpenCourseWare 6.006 (Spring 2020) — lectures and recitations on asymptotic analysis and recurrences:
+- MIT (Massachusetts Institute of Technology) OpenCourseWare 6.006 (Spring 2020) — video sessions and recitations on asymptotic analysis and recurrences:
   <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
 - MIT OpenCourseWare 6.042J *Mathematics for Computer Science* — chapters on sums, asymptotics and recurrences
   (the free textbook by Lehman, Leighton, and Meyer).
 - Cormen, Leiserson, Rivest, and Stein (CLRS), *Introduction to Algorithms* — Chapter 3 (Growth of Functions) and Chapter 4 (Divide-and-Conquer:
   substitution, recursion-tree, and master methods).
 - cp-algorithms — Fibonacci numbers (matrix form, fast doubling): <https://cp-algorithms.com/algebra/fibonacci-numbers.html>
-- Abdul Bari — YouTube lectures on asymptotic notations and on solving recurrence relations (English).
+- Abdul Bari — YouTube videos on asymptotic notations and on solving recurrence relations (English).
 
 ➡️ **Next:** [03 · Brute Force and Exhaustive Search](../03-brute-force/README.md)

@@ -1289,7 +1289,7 @@ static long lcm(long m, long n) { return m / gcd(m, n) * n; }
 
 ## Worked interview and exam problems
 
-### Problem 1 — Pairs whose sum is a multiple of 60 (course interview problem)
+### Problem 1 — Pairs whose sum is a multiple of 60 (a classic interview problem)
 
 > Given $n$ integers, count the pairs $(i < j)$ with $A[i] + A[j]$ divisible by 60 — in **linear** time. Brute force checks all $n(n-1)/2$ pairs: $O(n^2)$.
 
@@ -1569,11 +1569,11 @@ The $k$ smallest keys form a connected set containing the root, and the $k + 1$ 
 - Exercises worth doing: Levitin Exercises 6.1 (presorting, closest numbers), 6.3 (AVL and 2-3 constructions), 6.4 (heap construction and heapsort traces, $k$-th smallest in a heap), 6.5 (Horner, synthetic division), 6.6 (reductions).
 
 **English-language resources**
-- Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 *Introduction to Algorithms* — lectures on heaps/priority queues, binary trees and AVL trees: <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
+- Massachusetts Institute of Technology (MIT) OpenCourseWare 6.006 *Introduction to Algorithms* — video sessions on heaps/priority queues, binary trees and AVL trees: <https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/>
 - VisuAlgo — [binary heap](https://visualgo.net/en/heap) and [BST/AVL](https://visualgo.net/en/bst) animations.
 - Sedgewick & Wayne, *Algorithms, 4th ed.* — [Priority queues](https://algs4.cs.princeton.edu/24pq/) and [Balanced search trees (2-3 trees, red-black BSTs)](https://algs4.cs.princeton.edu/33balanced/).
 - cp-algorithms — [Binary exponentiation](https://cp-algorithms.com/algebra/binary-exp.html) · [Gauss method for solving systems](https://cp-algorithms.com/linear_algebra/linear-system-gauss.html)
-- Gilbert Strang, *Linear Algebra* lectures on MIT OpenCourseWare 18.06 (elimination and LU factorization): <https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/>
-- Abdul Bari (YouTube) — "Heap Sort", "AVL Trees – Insertion and Rotations", "2-3 Trees" lectures.
+- Gilbert Strang, *Linear Algebra* video series on MIT OpenCourseWare 18.06 (elimination and LU factorization): <https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/>
+- Abdul Bari (YouTube) — "Heap Sort", "AVL Trees – Insertion and Rotations", "2-3 Trees" videos.
 
 **Previous / next:** [Chapter 5 · Divide-and-Conquer](../05-divide-and-conquer/README.md) · [Chapter 7 · Space and Time Trade-Offs](../07-space-time-tradeoffs/README.md)

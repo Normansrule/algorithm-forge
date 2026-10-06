@@ -3,4 +3,4 @@
    tools/validate-problems.mjs ignores this file. */
 self.FORGE_PACKS = ["exemplars.js", "foundations.js", "brute-force.js",
   "decrease-divide.js", "transform-space.js", "dynamic-programming.js", "greedy-iterative.js", "hard-problems.js",
-  "beyond-structures-graphs.js", "beyond-patterns.js", "expert.js"];
+  "beyond-structures-graphs.js", "beyond-patterns.js", "expert.js", "frontier.js", "systems-frontier.js"];
